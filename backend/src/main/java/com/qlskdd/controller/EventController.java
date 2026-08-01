@@ -1,8 +1,8 @@
 package com.qlskdd.controller;
 
-import com.qlskdd.dto.response.BaseRes;
-import com.qlskdd.dto.response.EventRes;
-import com.qlskdd.dto.response.PageRes;
+import com.qlskdd.mapper.response.BaseRes;
+import com.qlskdd.mapper.response.EventRes;
+import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.service.EventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;

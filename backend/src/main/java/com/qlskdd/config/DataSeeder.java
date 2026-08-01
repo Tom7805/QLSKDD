@@ -9,6 +9,7 @@ import com.qlskdd.repository.RoleRepository;
 import com.qlskdd.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -21,11 +22,14 @@ public class DataSeeder implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public DataSeeder(RoleRepository roleRepository, UserRepository userRepository, EventRepository eventRepository) {
+    public DataSeeder(RoleRepository roleRepository, UserRepository userRepository, EventRepository eventRepository,
+                       PasswordEncoder passwordEncoder) {
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
         this.eventRepository = eventRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // ĐÂY CHÍNH LÀ HÀM RUN() BẮT BUỘC PHẢI CÓ MÀ BẠN ĐANG THIẾU
@@ -42,10 +46,11 @@ public class DataSeeder implements CommandLineRunner {
 
         // 2. Tạo 1 tài khoản Admin
         if (userRepository.count() == 0) {
-            Role adminRole = roleRepository.findByName("ROLE_ADMIN");
+            Role adminRole = roleRepository.findByName("ROLE_ADMIN")
+                    .orElseThrow(() -> new IllegalStateException("Chưa seed Role ROLE_ADMIN"));
             User admin = new User();
             admin.setUsername("admin");
-            admin.setPassword("admin123"); 
+            admin.setPassword(passwordEncoder.encode("admin123"));
             admin.setFullName("Quản trị viên Hệ thống");
             admin.setEmail("admin@qlskdd.com");
             admin.setRole(adminRole);

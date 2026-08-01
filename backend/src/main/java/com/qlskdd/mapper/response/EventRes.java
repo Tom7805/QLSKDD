@@ -1,4 +1,4 @@
-package com.qlskdd.dto.response;
+package com.qlskdd.mapper.response;
 
 import com.qlskdd.enums.EventStatus;
 import lombok.Data;
