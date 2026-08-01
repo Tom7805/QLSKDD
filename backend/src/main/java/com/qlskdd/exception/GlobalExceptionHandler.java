@@ -1,6 +1,5 @@
 package com.qlskdd.exception;
 
-import com.qlskdd.dto.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +8,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.qlskdd.mapper.response.ErrorResponse;
 
 import java.time.LocalDateTime;
 import java.util.List;

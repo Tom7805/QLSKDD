@@ -1,8 +1,8 @@
 package com.qlskdd.service.impl;
 
-import com.qlskdd.dto.response.EventRes;
-import com.qlskdd.dto.response.PageRes;
 import com.qlskdd.entity.Event;
+import com.qlskdd.mapper.response.EventRes;
+import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.repository.EventRepository;
 import com.qlskdd.service.EventService;
 import lombok.RequiredArgsConstructor;
