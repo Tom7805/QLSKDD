@@ -1,0 +1,8 @@
+# Maven
+backend/target/
+*.class
+
+# IDE
+.vscode/
+.idea/
+*.iml
