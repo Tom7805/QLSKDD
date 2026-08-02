@@ -6,3 +6,7 @@ backend/target/
 .vscode/
 .idea/
 *.iml
+
+node_modules/
+dist/
+.env
