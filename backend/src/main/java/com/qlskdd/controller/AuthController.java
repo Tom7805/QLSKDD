@@ -8,7 +8,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication; // <-- Nhớ import Authentication
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -30,13 +29,5 @@ public class AuthController {
         String username = authentication.getName();
         LoginRes.UserLoginInfo userInfo = authService.getCurrentUserInfo(username);
         return ResponseEntity.ok(BaseRes.success("Lấy thông tin người dùng thành công", userInfo));
-    }
-
-    // Endpoint đăng xuất cho task B1.2-T1
-    @PostMapping("/logout")
-    public ResponseEntity<BaseRes<Void>> logout() {
-        // Xóa thông tin xác thực trong SecurityContextHolder
-        SecurityContextHolder.clearContext();
-        return ResponseEntity.ok(BaseRes.success("Đã đăng xuất", null));
     }
 }
