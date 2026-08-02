@@ -1,0 +1,86 @@
+import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { getMe } from '../../modules/auth/authApi';
+import type { User } from '../../modules/auth/authTypes';
+import type { RootState } from '../store';
+
+export interface AuthState {
+  user: User | null;
+  token: string | null;
+  isLoggedIn: boolean;
+  loading: boolean;
+  error: string | null;
+}
+
+const initialState: AuthState = {
+  user: null,
+  token: localStorage.getItem('accessToken'),
+  isLoggedIn: false,
+  loading: false,
+  error: null,
+};
+
+// Khi app khởi động: đọc token đã lưu trong localStorage và gọi /auth/me để khôi phục phiên
+export const restoreSession = createAsyncThunk<User, void, { rejectValue: string }>(
+  'auth/restoreSession',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getMe();
+    } catch {
+      return rejectWithValue('Không thể khôi phục phiên đăng nhập');
+    }
+  },
+);
+
+const authSlice = createSlice({
+  name: 'auth',
+  initialState,
+  reducers: {
+    setCredentials: (state, action: PayloadAction<{ user: User; token: string }>) => {
+      state.user = action.payload.user;
+      state.token = action.payload.token;
+      state.isLoggedIn = true;
+      state.error = null;
+      localStorage.setItem('accessToken', action.payload.token);
+    },
+    clearCredentials: (state) => {
+      state.user = null;
+      state.token = null;
+      state.isLoggedIn = false;
+      localStorage.removeItem('accessToken');
+    },
+    setLoading: (state, action: PayloadAction<boolean>) => {
+      state.loading = action.payload;
+    },
+    setError: (state, action: PayloadAction<string | null>) => {
+      state.error = action.payload;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(restoreSession.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(restoreSession.fulfilled, (state, action: PayloadAction<User>) => {
+        state.user = action.payload;
+        state.isLoggedIn = true;
+        state.loading = false;
+      })
+      .addCase(restoreSession.rejected, (state, action) => {
+        state.user = null;
+        state.token = null;
+        state.isLoggedIn = false;
+        state.loading = false;
+        state.error = action.payload ?? 'Phiên đăng nhập đã hết hạn';
+        localStorage.removeItem('accessToken');
+      });
+  },
+});
+
+export const { setCredentials, clearCredentials, setLoading, setError } = authSlice.actions;
+
+export const selectIsLoggedIn = (state: RootState) => state.auth.isLoggedIn;
+export const selectUser = (state: RootState) => state.auth.user;
+export const selectRole = (state: RootState) => state.auth.user?.role ?? null;
+
+export default authSlice.reducer;
