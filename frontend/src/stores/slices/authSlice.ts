@@ -82,5 +82,7 @@ export const { setCredentials, clearCredentials, setLoading, setError } = authSl
 export const selectIsLoggedIn = (state: RootState) => state.auth.isLoggedIn;
 export const selectUser = (state: RootState) => state.auth.user;
 export const selectRole = (state: RootState) => state.auth.user?.role ?? null;
+export const selectAuthLoading = (state: RootState) => state.auth.loading;
+export const selectAuthError = (state: RootState) => state.auth.error;
 
 export default authSlice.reducer;
