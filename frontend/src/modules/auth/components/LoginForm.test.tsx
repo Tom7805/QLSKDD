@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ToastProvider } from '../../../components/common/Toast';
 import authReducer from '../../../stores/slices/authSlice';
 import { login } from '../authApi';
 import LoginForm from './LoginForm';
@@ -20,12 +21,14 @@ function renderLoginForm() {
 
   render(
     <Provider store={store}>
-      <MemoryRouter initialEntries={['/login']}>
-        <Routes>
-          <Route path="/login" element={<LoginForm />} />
-          <Route path="/" element={<h1>Trang chính</h1>} />
-        </Routes>
-      </MemoryRouter>
+      <ToastProvider>
+        <MemoryRouter initialEntries={['/login']}>
+          <Routes>
+            <Route path="/login" element={<LoginForm />} />
+            <Route path="/" element={<h1>Trang chính</h1>} />
+          </Routes>
+        </MemoryRouter>
+      </ToastProvider>
     </Provider>,
   );
 
@@ -60,8 +63,24 @@ describe('LoginForm', () => {
     await user.type(screen.getByLabelText('Mật khẩu'), 'wrong-password');
     await user.click(screen.getByRole('button', { name: 'Đăng nhập' }));
 
-    expect(await screen.findByText('Sai tài khoản hoặc mật khẩu')).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Sai tài khoản hoặc mật khẩu');
     expect(localStorage.getItem('accessToken')).toBeNull();
+  });
+
+  it('hiện thông báo khi backend không phản hồi', async () => {
+    const user = userEvent.setup();
+    mockedLogin.mockRejectedValueOnce({
+      isAxiosError: true,
+      code: 'ERR_NETWORK',
+      message: 'Network Error',
+    });
+    renderLoginForm();
+
+    await user.type(screen.getByLabelText('Tên đăng nhập'), 'admin');
+    await user.type(screen.getByLabelText('Mật khẩu'), 'correct-password');
+    await user.click(screen.getByRole('button', { name: 'Đăng nhập' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Không kết nối được máy chủ');
   });
 
   it('lưu token và điều hướng sang trang chính khi API trả về 200', async () => {
@@ -84,6 +103,7 @@ describe('LoginForm', () => {
     await user.click(screen.getByRole('button', { name: 'Đăng nhập' }));
 
     expect(await screen.findByRole('heading', { name: 'Trang chính' })).toBeInTheDocument();
+    expect(await screen.findByText('Đăng nhập thành công')).toBeInTheDocument();
     expect(localStorage.getItem('accessToken')).toBe('valid-jwt-token');
     await waitFor(() => expect(store.getState().auth.isLoggedIn).toBe(true));
   });

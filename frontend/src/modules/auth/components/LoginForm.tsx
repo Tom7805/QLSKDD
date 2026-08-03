@@ -11,6 +11,7 @@ import {
   selectAuthError,
 } from '../../../stores/slices/authSlice';
 import { ROUTES } from '../../../constants/routes';
+import { useToast } from '../../../components/common/Toast';
 
 interface FieldErrors {
   username?: string;
@@ -61,6 +62,7 @@ export default function LoginForm() {
   const location = useLocation();
   const loading = useAppSelector(selectAuthLoading);
   const error = useAppSelector(selectAuthError);
+  const { showToast } = useToast();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -96,15 +98,29 @@ export default function LoginForm() {
     try {
       const res = await loginApi({ username, password });
       dispatch(setCredentials({ user: res.user, token: res.accessToken }));
+      showToast('Đăng nhập thành công', 'success');
       const from = (location.state as { from?: Location } | null)?.from;
       const destination = from
         ? `${from.pathname}${from.search}${from.hash}`
         : ROUTES.HOME;
       navigate(destination, { replace: true });
     } catch (err) {
-      const message = axios.isAxiosError<{ message?: string }>(err)
-        ? err.response?.data?.message ?? 'Sai tài khoản hoặc mật khẩu'
-        : 'Không kết nối được máy chủ, vui lòng thử lại';
+      let message = 'Không kết nối được máy chủ';
+
+      if (axios.isAxiosError<{ message?: string }>(err)) {
+        const code = err.code;
+        if (code === 'ERR_NETWORK' || code === 'ECONNABORTED' || !err.response) {
+          message = 'Không kết nối được máy chủ';
+        } else {
+          message = err.response?.data?.message ?? 'Sai tài khoản hoặc mật khẩu';
+        }
+      } else if (typeof err === 'object' && err !== null && 'code' in err) {
+        const code = (err as { code?: string }).code;
+        if (code === 'ERR_NETWORK' || code === 'ECONNABORTED') {
+          message = 'Không kết nối được máy chủ';
+        }
+      }
+
       dispatch(setError(message));
     } finally {
       dispatch(setLoading(false));
@@ -114,7 +130,10 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="w-full space-y-5" noValidate>
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
           {error}
         </div>
       )}
