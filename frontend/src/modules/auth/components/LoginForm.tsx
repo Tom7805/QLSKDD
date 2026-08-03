@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, type Location } from 'react-router-dom';
 import axios from 'axios';
 import { login as loginApi } from '../authApi';
 import { useAppDispatch, useAppSelector } from '../../../stores/store';
@@ -53,6 +53,7 @@ function SpinnerIcon() {
 export default function LoginForm() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const loading = useAppSelector(selectAuthLoading);
   const error = useAppSelector(selectAuthError);
 
@@ -69,7 +70,11 @@ export default function LoginForm() {
     try {
       const res = await loginApi({ username, password });
       dispatch(setCredentials({ user: res.user, token: res.accessToken }));
-      navigate(ROUTES.HOME);
+      const from = (location.state as { from?: Location } | null)?.from;
+      const destination = from
+        ? `${from.pathname}${from.search}${from.hash}`
+        : ROUTES.HOME;
+      navigate(destination, { replace: true });
     } catch (err) {
       const message = axios.isAxiosError<{ message?: string }>(err)
         ? err.response?.data?.message ?? 'Sai tài khoản hoặc mật khẩu'
