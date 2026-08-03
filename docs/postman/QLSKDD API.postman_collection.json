@@ -1,0 +1,119 @@
+{
+  "info": {
+    "_postman_id": "2cf0ccfd-fd70-4b84-aca4-88a360764cbc",
+    "name": "QLSKDD API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "56137981",
+    "_collection_link": "https://go.postman.co/collection/56137981-2cf0ccfd-fd70-4b84-aca4-88a360764cbc?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth & User Management",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{bearer_token_03df}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/auth/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Get All Events",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "123456",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "user",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/events",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "events"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Registrations",
+      "item": []
+    },
+    {
+      "name": "Users",
+      "item": []
+    },
+    {
+      "name": "Check-in",
+      "item": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "auth_password_0qu4",
+      "secret": true
+    },
+    {
+      "key": "bearer_token_03df",
+      "secret": true
+    },
+    {
+      "key": "supabase_service_role_api_key_03f8",
+      "secret": true
+    }
+  ]
+}

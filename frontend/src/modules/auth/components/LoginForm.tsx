@@ -12,6 +12,11 @@ import {
 } from '../../../stores/slices/authSlice';
 import { ROUTES } from '../../../constants/routes';
 
+interface FieldErrors {
+  username?: string;
+  password?: string;
+}
+
 function EyeIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
@@ -60,10 +65,31 @@ export default function LoginForm() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  const validate = (): FieldErrors => {
+    const errors: FieldErrors = {};
+
+    if (!username.trim()) {
+      errors.username = 'Tên đăng nhập là bắt buộc';
+    } else if (username.trim().length < 4) {
+      errors.username = 'Tên đăng nhập phải có ít nhất 4 ký tự';
+    }
+
+    if (!password) {
+      errors.password = 'Mật khẩu là bắt buộc';
+    }
+
+    return errors;
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (loading) return; // chống bấm gửi 2 lần khi đang gọi API
+
+    const validationErrors = validate();
+    setFieldErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
 
     dispatch(setLoading(true));
     dispatch(setError(null));
@@ -103,11 +129,21 @@ export default function LoginForm() {
           type="text"
           autoComplete="username"
           required
+          aria-invalid={Boolean(fieldErrors.username)}
+          aria-describedby={fieldErrors.username ? 'username-error' : undefined}
           value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          onChange={(e) => {
+            setUsername(e.target.value);
+            setFieldErrors((current) => ({ ...current, username: undefined }));
+          }}
           placeholder="Nhập tên đăng nhập"
-          className="block min-h-11 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          className={`block min-h-11 w-full rounded-lg border px-3.5 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 ${fieldErrors.username ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500/20'}`}
         />
+        {fieldErrors.username && (
+          <p id="username-error" className="mt-1 text-sm text-red-600">
+            {fieldErrors.username}
+          </p>
+        )}
       </div>
 
       <div>
@@ -121,10 +157,15 @@ export default function LoginForm() {
             type={showPassword ? 'text' : 'password'}
             autoComplete="current-password"
             required
+            aria-invalid={Boolean(fieldErrors.password)}
+            aria-describedby={fieldErrors.password ? 'password-error' : undefined}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setFieldErrors((current) => ({ ...current, password: undefined }));
+            }}
             placeholder="Nhập mật khẩu"
-            className="block min-h-11 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 pr-11 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className={`block min-h-11 w-full rounded-lg border px-3.5 py-2.5 pr-11 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 ${fieldErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500/20'}`}
           />
           <button
             type="button"
@@ -136,6 +177,11 @@ export default function LoginForm() {
             {showPassword ? <EyeOffIcon /> : <EyeIcon />}
           </button>
         </div>
+        {fieldErrors.password && (
+          <p id="password-error" className="mt-1 text-sm text-red-600">
+            {fieldErrors.password}
+          </p>
+        )}
       </div>
 
       <button

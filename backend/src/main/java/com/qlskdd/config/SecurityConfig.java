@@ -44,8 +44,9 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/**").permitAll() // Cho phép các API auth không cần đăng nhập
-                .anyRequest().authenticated() // Các API còn lại phải xác thực
+                // CHỈ cho phép API login không cần token, các API khác (bao gồm /auth/me, /auth/logout) bắt buộc phải xác thực
+                .requestMatchers("/api/v1/auth/login").permitAll()
+                .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
