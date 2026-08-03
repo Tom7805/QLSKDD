@@ -17,11 +17,13 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.security.Key;
 import java.util.Date;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -68,6 +70,22 @@ class AuthControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.message").isNotEmpty());
+    }
+
+    @Test
+    void goiAuthMe_voiTokenGiaMao_traVe401_khongPhai500() throws Exception {
+        // /auth/me nằm trong permitAll, nên token hỏng không bị JwtAuthFilter chặn ở
+        // tầng filter — request vẫn lọt vào controller với principal "anonymousUser".
+        // Giả lập đúng hành vi thật của AuthServiceImpl khi không tìm thấy user đó.
+        when(authService.getCurrentUserInfo("anonymousUser"))
+                .thenThrow(new UsernameNotFoundException("Không tìm thấy tài khoản"));
+
+        String tokenGiaMao = "eyJhbGciOiJIUzI1Ni.tokenBiCatCut";
+
+        mockMvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + tokenGiaMao))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(401));
     }
 
     private String generateExpiredToken() {

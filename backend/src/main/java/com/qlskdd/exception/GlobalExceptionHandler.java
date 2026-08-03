@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -49,6 +50,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DisabledException.class)
     public ResponseEntity<ErrorResponse> handleDisabled(DisabledException ex, HttpServletRequest request) {
         return build(HttpStatus.FORBIDDEN, "Tài khoản đã bị khoá", request, null);
+    }
+
+    // Xảy ra khi request tới /auth/me (permitAll) mà không có/token không hợp lệ nên
+    // SecurityContext rơi về anonymousUser, hoặc bất kỳ chỗ nào tra user theo username
+    // không thấy — phải trả 401 (chưa xác thực được), không phải 500.
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUsernameNotFound(UsernameNotFoundException ex, HttpServletRequest request) {
+        return build(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để thực hiện thao tác này", request, null);
     }
 
     @ExceptionHandler(Exception.class)
