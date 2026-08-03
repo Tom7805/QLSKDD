@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { getMe } from '../../modules/auth/authApi';
+import { getMe, logout as logoutApi } from '../../modules/auth/authApi';
 import type { User } from '../../modules/auth/authTypes';
 import type { RootState } from '../store';
 
@@ -78,6 +78,21 @@ const authSlice = createSlice({
 });
 
 export const { setCredentials, clearCredentials, setLoading, setError } = authSlice.actions;
+
+// Đăng xuất: gọi API logout (best-effort — JWT stateless nên dù lỗi mạng vẫn phải
+// đăng xuất được ở client), sau đó xoá token + reset state qua clearCredentials.
+// Các slice khác (nếu về sau có cache dữ liệu người dùng) nên tự lắng nghe
+// `logout.fulfilled` trong extraReducers của mình để xoá cache theo, tránh lộ dữ liệu
+// của người dùng trước sang phiên đăng nhập tiếp theo trên cùng một máy.
+export const logout = createAsyncThunk<void, void>('auth/logout', async (_, { dispatch }) => {
+  try {
+    await logoutApi();
+  } catch {
+    // Bỏ qua lỗi gọi API — vẫn đăng xuất bình thường ở phía client
+  } finally {
+    dispatch(clearCredentials());
+  }
+});
 
 export const selectIsLoggedIn = (state: RootState) => state.auth.isLoggedIn;
 export const selectUser = (state: RootState) => state.auth.user;

@@ -12,3 +12,6 @@ export const getMe = (): Promise<User> =>
   apiClient
     .get<ApiResponse<User>>(`${AUTH_BASE_URL}/me`)
     .then((res) => res.data.data);
+
+export const logout = (): Promise<void> =>
+  apiClient.post<ApiResponse<void>>(`${AUTH_BASE_URL}/logout`).then(() => undefined);

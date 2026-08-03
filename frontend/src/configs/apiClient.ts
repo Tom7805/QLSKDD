@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { SESSION_EXPIRED_EVENT } from '../constants/events';
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -16,15 +17,20 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Gặp 401 (hết hạn/không hợp lệ token) → xoá token và đẩy về trang đăng nhập
+// Gặp 401 (token hết hạn/không hợp lệ) → xoá token và phát sự kiện để useAuth xử lý
+// đăng xuất + điều hướng + toast (không tự điều hướng ở đây vì apiClient không phải
+// React component, không dùng được react-router/redux/toast trực tiếp).
+// Bỏ qua chính các endpoint auth (login/logout) vì 401 ở đó là do sai thông tin đăng
+// nhập bình thường, không phải phiên bị hết hạn.
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const url: string = error.config?.url ?? '';
+    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/logout');
+
+    if (error.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('accessToken');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
+      window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
     }
     return Promise.reject(error);
   },
