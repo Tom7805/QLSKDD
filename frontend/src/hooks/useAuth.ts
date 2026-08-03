@@ -4,12 +4,12 @@ import { useAppDispatch } from '../stores/store';
 import { clearCredentials } from '../stores/slices/authSlice';
 import { useToast } from '../components/common/Toast';
 import { ROUTES } from '../constants/routes';
-import { SESSION_EXPIRED_EVENT } from '../constants/events';
+import { FORBIDDEN_EVENT, SESSION_EXPIRED_EVENT } from '../constants/events';
 
 /**
- * Lắng nghe sự kiện phiên hết hạn do apiClient phát ra khi bắt được lỗi 401
+ * Lắng nghe các sự kiện do apiClient phát ra khi bắt được lỗi 401/403
  * (interceptor không thể tự dispatch redux/toast/navigate vì nó không phải React).
- * Gọi hook này một lần duy nhất ở App root (B1.2-T6).
+ * Gọi hook này một lần duy nhất ở App root (B1.2-T6, B1.3-T8).
  */
 export function useAuth() {
   const dispatch = useAppDispatch();
@@ -23,7 +23,16 @@ export function useAuth() {
       navigate(ROUTES.LOGIN, { replace: true });
     };
 
+    // 403: chỉ báo toast, không đăng xuất/điều hướng — khác hẳn 401
+    const handleForbidden = () => {
+      showToast('Bạn không có quyền thực hiện thao tác này', 'error');
+    };
+
     window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
-    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+    window.addEventListener(FORBIDDEN_EVENT, handleForbidden);
+    return () => {
+      window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+      window.removeEventListener(FORBIDDEN_EVENT, handleForbidden);
+    };
   }, [dispatch, navigate, showToast]);
 }

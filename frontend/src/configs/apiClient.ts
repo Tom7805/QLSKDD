@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { SESSION_EXPIRED_EVENT } from '../constants/events';
+import { FORBIDDEN_EVENT, SESSION_EXPIRED_EVENT } from '../constants/events';
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -32,6 +32,13 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('accessToken');
       window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
     }
+
+    // Gặp 403 (đủ đăng nhập nhưng không đủ quyền) → chỉ cần báo toast, không đăng
+    // xuất/điều hướng (khác hẳn 401) — B1.3-T8.
+    if (error.response?.status === 403) {
+      window.dispatchEvent(new Event(FORBIDDEN_EVENT));
+    }
+
     return Promise.reject(error);
   },
 );
