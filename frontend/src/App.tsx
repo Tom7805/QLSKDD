@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from './stores/store';
 import { restoreSession, selectIsLoggedIn, selectUser } from './stores/slices/authSlice';
 import LoginPage from './modules/auth/pages/LoginPage';
 import { ROUTES } from './constants/routes';
+import PrivateRoute from './routers/PrivateRoute';
 
 function HomePage() {
   const isLoggedIn = useAppSelector(selectIsLoggedIn);
@@ -30,7 +31,9 @@ function App() {
 
   return (
     <Routes>
-      <Route path={ROUTES.HOME} element={<HomePage />} />
+      <Route element={<PrivateRoute />}>
+        <Route path={ROUTES.HOME} element={<HomePage />} />
+      </Route>
       <Route path={ROUTES.LOGIN} element={<LoginPage />} />
     </Routes>
   );
