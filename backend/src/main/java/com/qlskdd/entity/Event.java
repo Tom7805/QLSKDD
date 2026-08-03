@@ -27,5 +27,8 @@ public class Event {
     @Column(nullable = false)
     private EventStatus status = EventStatus.OPEN;
 
+    @Column(name = "created_by")
+    private String createdBy;
+
     private LocalDateTime createdAt = LocalDateTime.now();
 }
