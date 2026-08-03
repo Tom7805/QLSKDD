@@ -57,14 +57,8 @@ public class JwtProvider {
                     .build()
                     .parse(token);
             return true;
-        } catch (MalformedJwtException ex) {
-            System.err.println("Invalid JWT token");
-        } catch (ExpiredJwtException ex) {
-            System.err.println("Expired JWT token");
-        } catch (UnsupportedJwtException ex) {
-            System.err.println("Unsupported JWT token");
-        } catch (IllegalArgumentException ex) {
-            System.err.println("JWT claims string is empty");
+        } catch (JwtException | IllegalArgumentException ex) {
+            System.err.println("Invalid JWT token or signature mismatch");
         }
         return false;
     }
