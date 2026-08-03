@@ -3,6 +3,7 @@ package com.qlskdd.controller;
 import com.qlskdd.config.SecurityConfig;
 import com.qlskdd.security.JwtAuthFilter;
 import com.qlskdd.security.JwtProvider;
+import com.qlskdd.security.RestAccessDeniedHandler;
 import com.qlskdd.security.RestAuthenticationEntryPoint;
 import com.qlskdd.service.AuthService;
 import io.jsonwebtoken.Jwts;
@@ -31,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * là: request không kèm token, hoặc kèm token đã hết hạn, đều phải bị chặn 401.
  */
 @WebMvcTest(controllers = AuthController.class)
-@Import({SecurityConfig.class, JwtAuthFilter.class, RestAuthenticationEntryPoint.class, JwtProvider.class})
+@Import({SecurityConfig.class, JwtAuthFilter.class, RestAuthenticationEntryPoint.class, RestAccessDeniedHandler.class, JwtProvider.class})
 class AuthControllerTest {
 
     // Endpoint bất kỳ nằm ngoài "/api/v1/auth/**" (permitAll) để đại diện cho "endpoint cần quyền"
