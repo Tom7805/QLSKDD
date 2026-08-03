@@ -63,6 +63,8 @@ public class JwtProvider {
             System.err.println("Expired JWT token");
         } catch (UnsupportedJwtException ex) {
             System.err.println("Unsupported JWT token");
+        } catch (io.jsonwebtoken.security.SignatureException ex) {
+            System.err.println("Invalid JWT signature");
         } catch (IllegalArgumentException ex) {
             System.err.println("JWT claims string is empty");
         }
