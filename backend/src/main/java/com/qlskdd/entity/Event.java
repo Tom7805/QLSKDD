@@ -16,11 +16,18 @@ public class Event {
     @Column(nullable = false)
     private String name;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @Column(nullable = false)
     private String location;
 
+    // Không NOT NULL ở DB: 3 sự kiện mẫu do DataSeeder tạo (B0.4) chưa set capacity —
+    // ràng buộc bắt buộc >0 chỉ áp dụng khi tạo mới qua API (EventReq @NotNull @Positive)
+    private Integer capacity;
+
     // B2.1: FK sang loại sự kiện — cần có để CategoryService chặn xoá loại đang còn sự
-    // kiện (B2.2 sẽ hoàn thiện thêm capacity/description/createdBy cho Event).
+    // kiện. Cũng không NOT NULL vì lý do tương tự capacity.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private EventCategory category;

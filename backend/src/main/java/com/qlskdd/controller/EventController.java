@@ -1,9 +1,12 @@
 package com.qlskdd.controller;
 
+import com.qlskdd.dto.request.EventReq;
 import com.qlskdd.mapper.response.BaseRes;
+import com.qlskdd.mapper.response.EventDetailRes;
 import com.qlskdd.mapper.response.EventRes;
 import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.service.EventService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,9 +35,10 @@ public class EventController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<BaseRes<Void>> createEvent() {
+    public ResponseEntity<BaseRes<EventDetailRes>> createEvent(@Valid @RequestBody EventReq req) {
+        EventDetailRes created = eventService.create(req);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(BaseRes.success("Tạo sự kiện thành công", null));
+                .body(BaseRes.of(HttpStatus.CREATED.value(), "Tạo sự kiện thành công", created));
     }
 
     @PutMapping("/{id}")

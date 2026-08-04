@@ -13,6 +13,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 import static org.mockito.Mockito.when;
@@ -26,6 +28,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PermissionSecurityTest {
 
     private static final String EVENT_URL = "/api/v1/events";
+    private static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+    // B2.2: POST /events giờ cần @Valid @RequestBody EventReq hợp lệ mới invoke được
+    // controller method (và do đó mới chạm tới @PreAuthorize) — trước đây stub không
+    // nhận body nên test cũ gọi post(EVENT_URL) không kèm gì cũng qua được.
+    private String validEventBody() {
+        LocalDateTime start = LocalDateTime.now().plusDays(5).withNano(0);
+        LocalDateTime end = start.plusHours(3);
+        return """
+                {
+                  "name": "Hội thảo AI",
+                  "location": "Hội trường A",
+                  "capacity": 100,
+                  "startAt": "%s",
+                  "endAt": "%s",
+                  "categoryId": 1
+                }
+                """.formatted(start.format(ISO), end.format(ISO));
+    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -42,14 +63,14 @@ class PermissionSecurityTest {
     @Test
     @WithMockUser(username = "user", roles = "USER")
     void user_goiPostEvent_traVe403() throws Exception {
-        mockMvc.perform(post(EVENT_URL))
+        mockMvc.perform(post(EVENT_URL).contentType("application/json").content(validEventBody()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     @WithMockUser(username = "organizer", roles = "ORGANIZER")
     void organizer_goiPostEvent_traVe201() throws Exception {
-        mockMvc.perform(post(EVENT_URL))
+        mockMvc.perform(post(EVENT_URL).contentType("application/json").content(validEventBody()))
                 .andExpect(status().isCreated());
     }
 
@@ -80,7 +101,7 @@ class PermissionSecurityTest {
     @Test
     @WithMockUser(username = "admin", roles = "ADMIN")
     void admin_goiMoiEndpoint_thanhCong() throws Exception {
-        mockMvc.perform(post(EVENT_URL))
+        mockMvc.perform(post(EVENT_URL).contentType("application/json").content(validEventBody()))
                 .andExpect(status().isCreated());
 
         // ADMIN không cần qua kiểm tra quyền sở hữu — sửa được sự kiện của bất kỳ ai
