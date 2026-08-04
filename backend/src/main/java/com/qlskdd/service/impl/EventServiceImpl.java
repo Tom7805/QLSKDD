@@ -1,6 +1,7 @@
 package com.qlskdd.service.impl;
 
 import com.qlskdd.dto.request.EventReq;
+import com.qlskdd.dto.request.EventStatusReq;
 import com.qlskdd.entity.Event;
 import com.qlskdd.entity.EventCategory;
 import com.qlskdd.enums.EventStatus;
@@ -77,6 +78,26 @@ public class EventServiceImpl implements EventService {
         event.setStartAt(req.getStartAt());
         event.setEndAt(req.getEndAt());
 
+        return eventMapper.toDetailRes(eventRepository.save(event));
+    }
+
+    @Override
+    public EventDetailRes changeStatus(Long id, EventStatusReq req) {
+        Event event = findEventOrThrow(id);
+        EventStatus current = event.getStatus();
+        EventStatus target = req.getStatus();
+
+        // B2.4-T1: chỉ cho phép đúng 3 cặp chuyển trạng thái này
+        boolean allowed =
+                (current == EventStatus.OPEN && target == EventStatus.CLOSED)
+                || (current == EventStatus.OPEN && target == EventStatus.CANCELLED)
+                || (current == EventStatus.CLOSED && target == EventStatus.OPEN);
+
+        if (!allowed) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Không thể chuyển trạng thái này");
+        }
+
+        event.setStatus(target);
         return eventMapper.toDetailRes(eventRepository.save(event));
     }
 

@@ -1,6 +1,7 @@
 package com.qlskdd.controller;
 
 import com.qlskdd.dto.request.EventReq;
+import com.qlskdd.dto.request.EventStatusReq;
 import com.qlskdd.mapper.response.BaseRes;
 import com.qlskdd.mapper.response.EventDetailRes;
 import com.qlskdd.mapper.response.EventRes;
@@ -46,5 +47,13 @@ public class EventController {
     public ResponseEntity<BaseRes<EventDetailRes>> updateEvent(@PathVariable Long id, @Valid @RequestBody EventReq req) {
         EventDetailRes updated = eventService.update(id, req);
         return ResponseEntity.ok(BaseRes.success("Cập nhật sự kiện thành công", updated));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('ORGANIZER') and @eventSecurityService.canManageEvent(authentication.name, #id))")
+    public ResponseEntity<BaseRes<EventDetailRes>> changeStatus(@PathVariable Long id,
+                                                                  @Valid @RequestBody EventStatusReq req) {
+        EventDetailRes updated = eventService.changeStatus(id, req);
+        return ResponseEntity.ok(BaseRes.success("Cập nhật trạng thái sự kiện thành công", updated));
     }
 }

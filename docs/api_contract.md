@@ -625,3 +625,82 @@ Cùng format với lỗi validate của `POST /events` (thiếu trường, `capa
   "timestamp": "2026-08-05T00:00:00"
 }
 ```
+
+## 9. Đóng / huỷ sự kiện (B2.4)
+
+* **URL:** `PATCH /api/v1/events/{id}/status`
+* **Headers:** `Authorization: Bearer {{accessToken}}`
+* **Quyền:** giống hệt `PUT /events/{id}` — ADMIN đổi được trạng thái **mọi** sự kiện; ORGANIZER chỉ đổi được sự kiện do chính mình tạo (403 nếu không phải chủ).
+
+### Request
+
+Chỉ 1 trường `status`, nhận 1 trong 3 giá trị: `OPEN`, `CLOSED`, `CANCELLED`.
+```json
+{
+  "status": "CLOSED"
+}
+```
+
+**Các cặp chuyển trạng thái được phép** — chuyển ngoài 3 cặp này (kể cả giữ nguyên trạng thái hiện tại) đều bị từ chối:
+
+| Từ | Sang |
+|---|---|
+| `OPEN` | `CLOSED` |
+| `OPEN` | `CANCELLED` |
+| `CLOSED` | `OPEN` |
+
+### Response — 200 OK
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Cập nhật trạng thái sự kiện thành công",
+  "data": {
+    "id": 1,
+    "name": "Hội thảo Trí tuệ nhân tạo 2026",
+    "description": "...",
+    "location": "Hội trường A",
+    "capacity": 100,
+    "startAt": "2026-09-01T08:00:00",
+    "endAt": "2026-09-01T11:00:00",
+    "status": "CLOSED",
+    "categoryId": 1,
+    "categoryName": "Hội thảo",
+    "createdBy": "organizer",
+    "createdAt": "2026-08-02T00:00:00"
+  },
+  "timestamp": "2026-08-05T00:00:00"
+}
+```
+
+### Response — 400 Bad Request (chuyển trạng thái không hợp lệ, vd `CANCELLED` → `OPEN`)
+```json
+{
+  "success": false,
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Không thể chuyển trạng thái này",
+  "path": "/api/v1/events/1/status",
+  "timestamp": "2026-08-05T00:00:00"
+}
+```
+
+### Response — 404 Not Found / 403 Forbidden
+
+Giống hệt `PUT /events/{id}` — xem mục 8.
+
+### Ảnh hưởng tới đăng ký (B2.4-T2)
+
+Khi sự kiện **không còn `OPEN`** (đã `CLOSED` hoặc `CANCELLED`), mọi lượt đăng ký mới đều bị chặn ở tầng service với lỗi:
+```json
+{
+  "success": false,
+  "status": 409,
+  "error": "Conflict",
+  "message": "Sự kiện đã đóng đăng ký",
+  "path": "/api/v1/registrations",
+  "timestamp": "2026-08-05T00:00:00"
+}
+```
+
+> **Lưu ý cho FE**: API `POST /api/v1/registrations` (đăng ký tham gia) **chưa có** — đây là phạm vi của **B3.1 (Đăng ký tham gia sự kiện)**, hiện chưa triển khai. Backend hiện tại mới có phần logic chặn theo trạng thái (đã kiểm chứng bằng unit test `RegistrationServiceTest`), chưa lộ ra endpoint HTTP nào để FE gọi thử qua Postman. Khi B3.1 hoàn thành API `POST /registrations`, hành vi 409 ở trên sẽ áp dụng nguyên vẹn — không cần đổi gì thêm ở phần đã làm trong B2.4.

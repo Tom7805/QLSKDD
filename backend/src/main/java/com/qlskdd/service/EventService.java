@@ -3,6 +3,7 @@ package com.qlskdd.service;
 import org.springframework.data.domain.Pageable;
 
 import com.qlskdd.dto.request.EventReq;
+import com.qlskdd.dto.request.EventStatusReq;
 import com.qlskdd.mapper.response.EventDetailRes;
 import com.qlskdd.mapper.response.EventRes;
 import com.qlskdd.mapper.response.PageRes;
@@ -17,4 +18,8 @@ public interface EventService {
     // chặn giảm capacity xuống dưới số đăng ký ACTIVE hiện có. Quyền sở hữu (ORGANIZER
     // chỉ sửa được sự kiện của mình) đã chặn ở @PreAuthorize của controller.
     EventDetailRes update(Long id, EventReq req);
+
+    // B2.4-T1: đóng/huỷ/mở lại sự kiện. Chỉ cho phép OPEN→CLOSED, OPEN→CANCELLED,
+    // CLOSED→OPEN; chuyển khác các cặp này → 400.
+    EventDetailRes changeStatus(Long id, EventStatusReq req);
 }

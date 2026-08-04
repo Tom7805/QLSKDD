@@ -1,6 +1,7 @@
 package com.qlskdd.service;
 
 import com.qlskdd.dto.request.EventReq;
+import com.qlskdd.dto.request.EventStatusReq;
 import com.qlskdd.entity.Event;
 import com.qlskdd.entity.EventCategory;
 import com.qlskdd.enums.EventStatus;
@@ -160,6 +161,40 @@ class EventServiceTest {
         BusinessException ex = assertThrows(BusinessException.class, () -> eventService.update(1L, req));
 
         assertEquals(org.springframework.http.HttpStatus.CONFLICT, ex.getStatus());
+        verify(eventRepository, never()).save(any());
+    }
+
+    /**
+     * Test case B2.4-T3: đổi trạng thái sự kiện.
+     */
+    @Test
+    void testChangeStatus_OpenSangClosed_ThanhCong() {
+        Event existing = buildExistingEvent();
+        existing.setStatus(EventStatus.OPEN);
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(eventRepository.save(any(Event.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EventStatusReq req = new EventStatusReq();
+        req.setStatus(EventStatus.CLOSED);
+
+        EventDetailRes result = eventService.changeStatus(1L, req);
+
+        assertEquals(EventStatus.CLOSED, result.getStatus());
+        assertEquals(EventStatus.CLOSED, existing.getStatus());
+    }
+
+    @Test
+    void testChangeStatus_TC3_ChuyenCancelledSangOpen_Nem400() {
+        Event existing = buildExistingEvent();
+        existing.setStatus(EventStatus.CANCELLED);
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        EventStatusReq req = new EventStatusReq();
+        req.setStatus(EventStatus.OPEN);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> eventService.changeStatus(1L, req));
+
+        assertEquals(org.springframework.http.HttpStatus.BAD_REQUEST, ex.getStatus());
         verify(eventRepository, never()).save(any());
     }
 

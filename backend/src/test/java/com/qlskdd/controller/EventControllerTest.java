@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -192,6 +193,32 @@ class EventControllerTest {
         mockMvc.perform(put(EVENTS_URL + "/1")
                         .contentType("application/json")
                         .content(body))
+                .andExpect(status().isForbidden());
+    }
+
+    /**
+     * Test case B2.4-T3 (kiểm chứng wiring qua HTTP thật cho PATCH /events/{id}/status).
+     */
+    @Test
+    @WithMockUser(username = "organizer", roles = "ORGANIZER")
+    void doiTrangThai_ThieuStatus_traVe400() throws Exception {
+        when(eventSecurityService.canManageEvent("organizer", 1L)).thenReturn(true);
+
+        mockMvc.perform(patch(EVENTS_URL + "/1/status")
+                        .contentType("application/json")
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[?(@.field == 'status')]").exists());
+    }
+
+    @Test
+    @WithMockUser(username = "organizer2", roles = "ORGANIZER")
+    void doiTrangThai_NguoiKhongPhaiChuSuKien_traVe403() throws Exception {
+        when(eventSecurityService.canManageEvent("organizer2", 1L)).thenReturn(false);
+
+        mockMvc.perform(patch(EVENTS_URL + "/1/status")
+                        .contentType("application/json")
+                        .content("{\"status\": \"CLOSED\"}"))
                 .andExpect(status().isForbidden());
     }
 
