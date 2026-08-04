@@ -16,6 +16,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -72,5 +73,90 @@ class UserControllerTest {
     void taoTaiKhoan_KhongPhaiAdmin_traVe403() throws Exception {
         mockMvc.perform(post(USERS_URL).contentType("application/json").content("{}"))
                 .andExpect(status().isForbidden());
+    }
+
+    // Test case B1.5-T3, TC2 — mật khẩu quá yếu chỉ có thể kiểm chứng ở tầng controller
+    // vì @ValidPasswordChange chỉ thực thi khi request đi qua @Valid của Spring MVC,
+    // giống lý do TC2 của B1.4-T5 ở trên test bằng MockMvc thay vì gọi thẳng service.
+    private static final String CHANGE_PASSWORD_URL = "/api/v1/users/me/password";
+
+    @Test
+    @WithMockUser(username = "user1", roles = "USER")
+    void doiMatKhau_TC2_MatKhauMoiQuaYeu_traVe400() throws Exception {
+        String body = """
+                {
+                  "oldPassword": "matKhauCu123",
+                  "newPassword": "yeu",
+                  "confirmPassword": "yeu"
+                }
+                """;
+
+        mockMvc.perform(put(CHANGE_PASSWORD_URL)
+                        .contentType("application/json")
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.errors[?(@.field == 'newPassword')]").exists());
+    }
+
+    @Test
+    @WithMockUser(username = "user1", roles = "USER")
+    void doiMatKhau_MatKhauMoiTrungMatKhauCu_traVe400() throws Exception {
+        String body = """
+                {
+                  "oldPassword": "matKhauCu123",
+                  "newPassword": "matKhauCu123",
+                  "confirmPassword": "matKhauCu123"
+                }
+                """;
+
+        mockMvc.perform(put(CHANGE_PASSWORD_URL)
+                        .contentType("application/json")
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[?(@.field == 'newPassword')]").exists());
+    }
+
+    @Test
+    @WithMockUser(username = "user1", roles = "USER")
+    void doiMatKhau_XacNhanKhongKhopMatKhauMoi_traVe400() throws Exception {
+        String body = """
+                {
+                  "oldPassword": "matKhauCu123",
+                  "newPassword": "matKhauMoi123",
+                  "confirmPassword": "khongKhop123"
+                }
+                """;
+
+        mockMvc.perform(put(CHANGE_PASSWORD_URL)
+                        .contentType("application/json")
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[?(@.field == 'confirmPassword')]").exists());
+    }
+
+    @Test
+    void doiMatKhau_ChuaDangNhap_traVe401() throws Exception {
+        mockMvc.perform(put(CHANGE_PASSWORD_URL).contentType("application/json").content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // Xác nhận SecurityConfig cho phép người dùng thường (không phải ADMIN) gọi được
+    // endpoint này — khác với mọi endpoint /users/** khác vốn chỉ ADMIN mới gọi được.
+    @Test
+    @WithMockUser(username = "user1", roles = "USER")
+    void doiMatKhau_NguoiDungThuong_KhongBi403() throws Exception {
+        String body = """
+                {
+                  "oldPassword": "matKhauCu123",
+                  "newPassword": "matKhauMoi123",
+                  "confirmPassword": "matKhauMoi123"
+                }
+                """;
+
+        mockMvc.perform(put(CHANGE_PASSWORD_URL)
+                        .contentType("application/json")
+                        .content(body))
+                .andExpect(status().isOk());
     }
 }

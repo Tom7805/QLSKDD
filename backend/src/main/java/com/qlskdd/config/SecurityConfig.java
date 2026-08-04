@@ -51,6 +51,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/events/**", "/api/v1/categories/**").permitAll()
+                // B1.5-T1: đổi mật khẩu của chính mình — phải khai báo TRƯỚC rule ADMIN bên
+                // dưới vì Spring Security áp dụng luật khớp đầu tiên (first match wins), và
+                // route này nằm trong "/api/v1/users/**" nhưng không giới hạn riêng ADMIN.
+                .requestMatchers(HttpMethod.PUT, "/api/v1/users/me/password").authenticated()
                 .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )

@@ -1,5 +1,6 @@
 package com.qlskdd.service.impl;
 
+import com.qlskdd.dto.request.ChangePasswordReq;
 import com.qlskdd.dto.request.UserReq;
 import com.qlskdd.entity.Role;
 import com.qlskdd.entity.User;
@@ -111,6 +112,22 @@ public class UserServiceImpl implements UserService {
 
         user.setEnabled(!Boolean.TRUE.equals(user.getEnabled()));
         return userMapper.toRes(userRepository.save(user));
+    }
+
+    @Override
+    public void changePassword(ChangePasswordReq req) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("Tài khoản", "username", currentUsername));
+
+        // B1.5-T1: so khớp oldPassword bằng passwordEncoder.matches (không so sánh chuỗi
+        // trực tiếp vì password trong DB đã bị BCrypt băm)
+        if (!passwordEncoder.matches(req.getOldPassword(), user.getPassword())) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Mật khẩu hiện tại không đúng");
+        }
+
+        user.setPassword(passwordEncoder.encode(req.getNewPassword()));
+        userRepository.save(user);
     }
 
     private User findUserOrThrow(Long id) {

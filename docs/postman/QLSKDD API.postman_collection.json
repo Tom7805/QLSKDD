@@ -95,7 +95,51 @@
     },
     {
       "name": "Users",
-      "item": []
+      "item": [
+        {
+          "name": "Change Password (Me)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{bearer_token_03df}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"matKhauCu123\",\n  \"newPassword\": \"matKhauMoi123\",\n  \"confirmPassword\": \"matKhauMoi123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/users/me/password",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me",
+                "password"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     },
     {
       "name": "Check-in",

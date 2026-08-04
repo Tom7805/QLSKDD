@@ -1,5 +1,6 @@
 package com.qlskdd.controller;
 
+import com.qlskdd.dto.request.ChangePasswordReq;
 import com.qlskdd.dto.request.UserReq;
 import com.qlskdd.mapper.response.BaseRes;
 import com.qlskdd.mapper.response.PageRes;
@@ -13,9 +14,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-// Chỉ ADMIN mới gọi được toàn bộ endpoint dưới đây — đã chặn sẵn ở tầng URL trong
-// SecurityConfig ("/api/v1/users/**" -> hasRole("ADMIN"), xem B1.3-T2), nên không cần
-// lặp lại @PreAuthorize ở đây.
+// Các endpoint CRUD tài khoản dưới đây chỉ ADMIN gọi được — đã chặn sẵn ở tầng URL
+// trong SecurityConfig ("/api/v1/users/**" -> hasRole("ADMIN"), xem B1.3-T2), nên không
+// cần lặp lại @PreAuthorize ở đây.
+// Riêng PUT /me/password (B1.5-T1) là ngoại lệ: bất kỳ ai đã đăng nhập cũng gọi được để
+// tự đổi mật khẩu của chính mình — SecurityConfig khai báo route này TRƯỚC rule ADMIN ở
+// trên với requirement "authenticated" (không phải hasRole("ADMIN")).
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
@@ -50,5 +54,12 @@ public class UserController {
     public ResponseEntity<BaseRes<UserRes>> toggleStatus(@PathVariable Long id) {
         UserRes updated = userService.toggleStatus(id);
         return ResponseEntity.ok(BaseRes.success("Cập nhật trạng thái tài khoản thành công", updated));
+    }
+
+    // B1.5-T1: API đổi mật khẩu
+    @PutMapping("/me/password")
+    public ResponseEntity<BaseRes<Void>> changePassword(@Valid @RequestBody ChangePasswordReq req) {
+        userService.changePassword(req);
+        return ResponseEntity.ok(BaseRes.success("Đổi mật khẩu thành công, vui lòng đăng nhập lại", null));
     }
 }

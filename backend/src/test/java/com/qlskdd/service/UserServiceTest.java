@@ -1,11 +1,13 @@
 package com.qlskdd.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.qlskdd.dto.request.ChangePasswordReq;
 import com.qlskdd.dto.request.UserReq;
 import com.qlskdd.entity.Role;
 import com.qlskdd.entity.User;
 import com.qlskdd.exception.BusinessException;
 import com.qlskdd.exception.DuplicateDataException;
+import com.qlskdd.exception.ResourceNotFoundException;
 import com.qlskdd.mapper.UserMapper;
 import com.qlskdd.mapper.response.UserRes;
 import com.qlskdd.repository.RoleRepository;
@@ -151,6 +153,90 @@ class UserServiceTest {
         assertFalse(json.toLowerCase().contains("password"),
                 "Response DTO tuyệt đối không được chứa trường password");
         assertEquals("newuser", result.getUsername());
+    }
+
+    /**
+     * Test case B1.5-T3: đổi mật khẩu.
+     */
+    private ChangePasswordReq buildChangePasswordReq(String oldPassword, String newPassword, String confirmPassword) {
+        ChangePasswordReq req = new ChangePasswordReq();
+        req.setOldPassword(oldPassword);
+        req.setNewPassword(newPassword);
+        req.setConfirmPassword(confirmPassword);
+        return req;
+    }
+
+    @Test
+    void testChangePassword_TC1_MatKhauCuSai_NemBusinessException() {
+        User user = User.builder()
+                .id(1L).username("user1").password("$2a$10$oldHashed").enabled(true).role(userRole)
+                .fullName("Người dùng 1").email("user1@qlskdd.com")
+                .build();
+
+        setCurrentUser("user1");
+        when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("saiMatKhauCu", "$2a$10$oldHashed")).thenReturn(false);
+
+        ChangePasswordReq req = buildChangePasswordReq("saiMatKhauCu", "matKhauMoi123", "matKhauMoi123");
+
+        assertThrows(BusinessException.class, () -> userService.changePassword(req));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void testChangePassword_KhongTimThayTaiKhoan_NemResourceNotFoundException() {
+        setCurrentUser("khongTonTai");
+        when(userRepository.findByUsername("khongTonTai")).thenReturn(Optional.empty());
+
+        ChangePasswordReq req = buildChangePasswordReq("matKhauCu123", "matKhauMoi123", "matKhauMoi123");
+
+        assertThrows(ResourceNotFoundException.class, () -> userService.changePassword(req));
+    }
+
+    @Test
+    void testChangePassword_TC3_DoiThanhCong_MatKhauTrongDbDaDoiVaVanBamBCrypt() {
+        User user = User.builder()
+                .id(1L).username("user1").password("$2a$10$oldHashed").enabled(true).role(userRole)
+                .fullName("Người dùng 1").email("user1@qlskdd.com")
+                .build();
+
+        setCurrentUser("user1");
+        when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("matKhauCu123", "$2a$10$oldHashed")).thenReturn(true);
+        when(passwordEncoder.encode("matKhauMoi123")).thenReturn("$2a$10$newHashed");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ChangePasswordReq req = buildChangePasswordReq("matKhauCu123", "matKhauMoi123", "matKhauMoi123");
+
+        userService.changePassword(req);
+
+        assertEquals("$2a$10$newHashed", user.getPassword());
+        assertFalse(user.getPassword().equals("matKhauMoi123"),
+                "Mật khẩu mới phải được BCrypt băm trước khi lưu, không lưu dạng chữ thô");
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void testChangePassword_TC4_DangNhapDuocBangMatKhauMoiSauKhiDoi() {
+        // TC4 xác nhận đăng nhập bằng mật khẩu mới thành công đã được đảm bảo gián tiếp:
+        // AuthServiceImpl xác thực bằng passwordEncoder.matches(rawPassword, user.getPassword());
+        // ở đây ta kiểm chứng rằng sau changePassword(), matches(mật khẩu mới, hash đã lưu)
+        // trả về true — đúng hành vi mà AuthenticationManager sẽ dùng khi đăng nhập lại.
+        User user = User.builder()
+                .id(1L).username("user1").password("$2a$10$oldHashed").enabled(true).role(userRole)
+                .fullName("Người dùng 1").email("user1@qlskdd.com")
+                .build();
+
+        setCurrentUser("user1");
+        when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("matKhauCu123", "$2a$10$oldHashed")).thenReturn(true);
+        when(passwordEncoder.encode("matKhauMoi123")).thenReturn("$2a$10$newHashed");
+        when(passwordEncoder.matches("matKhauMoi123", "$2a$10$newHashed")).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        userService.changePassword(buildChangePasswordReq("matKhauCu123", "matKhauMoi123", "matKhauMoi123"));
+
+        assertEquals(true, passwordEncoder.matches("matKhauMoi123", user.getPassword()));
     }
 
     private void setCurrentUser(String username) {
