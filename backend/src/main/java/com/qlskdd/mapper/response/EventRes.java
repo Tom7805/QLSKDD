@@ -12,4 +12,8 @@ public class EventRes {
     private LocalDateTime startAt;
     private LocalDateTime endAt;
     private EventStatus status;
+
+    // B2.5-T1: null nếu sự kiện chưa có capacity (dữ liệu mẫu cũ từ B0.4)
+    private Integer capacity;
+    private Integer availableSeats;
 }

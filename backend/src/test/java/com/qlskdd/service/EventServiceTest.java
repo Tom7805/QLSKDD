@@ -10,6 +10,8 @@ import com.qlskdd.exception.BusinessException;
 import com.qlskdd.exception.ResourceNotFoundException;
 import com.qlskdd.mapper.EventMapper;
 import com.qlskdd.mapper.response.EventDetailRes;
+import com.qlskdd.mapper.response.EventRes;
+import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.repository.CategoryRepository;
 import com.qlskdd.repository.EventRepository;
 import com.qlskdd.repository.RegistrationRepository;
@@ -21,17 +23,26 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -196,6 +207,57 @@ class EventServiceTest {
 
         assertEquals(org.springframework.http.HttpStatus.BAD_REQUEST, ex.getStatus());
         verify(eventRepository, never()).save(any());
+    }
+
+    /**
+     * Test case B2.5-T3: danh sách & chi tiết sự kiện.
+     */
+    @Test
+    void testGetAllEvents_TC1_25SuKien_Size10_TongPages3TrangDauCo10PhanTu() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
+        List<Event> tenEvents = new ArrayList<>();
+        for (long i = 1; i <= 10; i++) {
+            Event e = new Event();
+            e.setId(i);
+            e.setName("Sự kiện " + i);
+            e.setLocation("Địa điểm " + i);
+            e.setStartAt(LocalDateTime.now().plusDays(i));
+            e.setEndAt(LocalDateTime.now().plusDays(i).plusHours(2));
+            e.setStatus(EventStatus.OPEN);
+            tenEvents.add(e);
+        }
+        Page<Event> page = new PageImpl<>(tenEvents, pageable, 25);
+        when(eventRepository.findAll(pageable)).thenReturn(page);
+        when(registrationRepository.countGroupedByEventIdsAndStatus(any(), eq(RegistrationStatus.ACTIVE)))
+                .thenReturn(Collections.emptyList());
+
+        PageRes<EventRes> result = eventService.getAllEvents(pageable);
+
+        assertEquals(3, result.getTotalPages());
+        assertEquals(10, result.getContent().size());
+        assertEquals(25, result.getTotalElements());
+    }
+
+    @Test
+    void testGetById_TC2_Capacity50_20DangKyActive_AvailableSeats30() {
+        Event existing = buildExistingEvent();
+        existing.setCapacity(50);
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(existing));
+        // Query group by đã tự lọc status=ACTIVE ở tầng SQL nên 5 lượt CANCELLED không
+        // được tính vào đây — chỉ 20 lượt ACTIVE được trả về
+        when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(20L);
+
+        EventDetailRes result = eventService.getById(1L);
+
+        assertEquals(20L, result.getTotalRegistered());
+        assertEquals(30, result.getAvailableSeats());
+    }
+
+    @Test
+    void testGetById_TC3_KhongTonTai_Nem404() {
+        when(eventRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> eventService.getById(999L));
     }
 
     private void setCurrentUser(String username) {

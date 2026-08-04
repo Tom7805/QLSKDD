@@ -25,4 +25,8 @@ public class EventDetailRes {
     private String categoryName;
     private String createdBy;
     private LocalDateTime createdAt;
+
+    // B2.5-T2: tổng đăng ký ACTIVE + số chỗ còn lại (null nếu event chưa có capacity)
+    private Long totalRegistered;
+    private Integer availableSeats;
 }

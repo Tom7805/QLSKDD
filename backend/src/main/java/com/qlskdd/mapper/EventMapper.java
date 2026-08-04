@@ -7,13 +7,18 @@ import org.springframework.stereotype.Component;
 @Component
 public class EventMapper {
 
-    public EventDetailRes toDetailRes(Event event) {
+    // B2.5-T2: totalRegistered truyền vào từ service (đếm bằng RegistrationRepository)
+    // vì mapper không nên tự query DB
+    public EventDetailRes toDetailRes(Event event, long totalRegistered) {
+        Integer capacity = event.getCapacity();
+        Integer availableSeats = capacity != null ? (int) (capacity - totalRegistered) : null;
+
         return EventDetailRes.builder()
                 .id(event.getId())
                 .name(event.getName())
                 .description(event.getDescription())
                 .location(event.getLocation())
-                .capacity(event.getCapacity())
+                .capacity(capacity)
                 .startAt(event.getStartAt())
                 .endAt(event.getEndAt())
                 .status(event.getStatus())
@@ -21,6 +26,8 @@ public class EventMapper {
                 .categoryName(event.getCategory() != null ? event.getCategory().getName() : null)
                 .createdBy(event.getCreatedBy())
                 .createdAt(event.getCreatedAt())
+                .totalRegistered(totalRegistered)
+                .availableSeats(availableSeats)
                 .build();
     }
 }

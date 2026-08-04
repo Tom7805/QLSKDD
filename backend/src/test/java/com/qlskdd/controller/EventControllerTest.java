@@ -6,6 +6,7 @@ import com.qlskdd.security.JwtAuthFilter;
 import com.qlskdd.security.JwtProvider;
 import com.qlskdd.security.RestAccessDeniedHandler;
 import com.qlskdd.security.RestAuthenticationEntryPoint;
+import com.qlskdd.exception.ResourceNotFoundException;
 import com.qlskdd.service.EventService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -220,6 +222,19 @@ class EventControllerTest {
                         .contentType("application/json")
                         .content("{\"status\": \"CLOSED\"}"))
                 .andExpect(status().isForbidden());
+    }
+
+    /**
+     * Test case B2.5-T3, TC3 — kiểm chứng wiring HTTP thật cho GET /events/{id} (không
+     * cần @WithMockUser vì permitAll).
+     */
+    @Test
+    void layChiTietSuKien_KhongTonTai_traVe404() throws Exception {
+        when(eventService.getById(999L)).thenThrow(new ResourceNotFoundException("Sự kiện", "id", 999L));
+
+        mockMvc.perform(get(EVENTS_URL + "/999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Sự kiện không tồn tại với id = '999'"));
     }
 
     private LocalDateTime future(long days) {

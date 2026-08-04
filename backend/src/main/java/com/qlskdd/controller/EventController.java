@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,10 +29,17 @@ public class EventController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Pageable pageable = PageRequest.of(page, size);
+        // B2.5-T2: mặc định sort theo startAt tăng dần (sự kiện sắp diễn ra lên trước)
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "startAt"));
         PageRes<EventRes> result = eventService.getAllEvents(pageable);
 
         return ResponseEntity.ok(BaseRes.success("Lấy danh sách sự kiện thành công", result));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<BaseRes<EventDetailRes>> getEventById(@PathVariable Long id) {
+        EventDetailRes result = eventService.getById(id);
+        return ResponseEntity.ok(BaseRes.success("Lấy chi tiết sự kiện thành công", result));
     }
 
     @PostMapping

@@ -9,7 +9,11 @@ import com.qlskdd.mapper.response.EventRes;
 import com.qlskdd.mapper.response.PageRes;
 
 public interface EventService {
+    // B2.5-T1/T2: sort mặc định startAt,asc áp dụng ở tầng controller khi build Pageable
     PageRes<EventRes> getAllEvents(Pageable pageable);
+
+    // B2.5-T2: chi tiết 1 sự kiện, gồm loại, người tạo, tổng đăng ký, số chỗ còn lại
+    EventDetailRes getById(Long id);
 
     // B2.2-T4: tạo sự kiện mới, gán createdBy = người đang đăng nhập, status = OPEN
     EventDetailRes create(EventReq req);
