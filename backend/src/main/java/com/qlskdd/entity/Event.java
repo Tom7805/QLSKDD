@@ -19,6 +19,12 @@ public class Event {
     @Column(nullable = false)
     private String location;
 
+    // B2.1: FK sang loại sự kiện — cần có để CategoryService chặn xoá loại đang còn sự
+    // kiện (B2.2 sẽ hoàn thiện thêm capacity/description/createdBy cho Event).
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private EventCategory category;
+
     private LocalDateTime startAt;
     
     private LocalDateTime endAt;
