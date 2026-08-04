@@ -127,6 +127,48 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{bearer_token_03df}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hội thảo Trí tuệ nhân tạo 2026 (đã sửa)\",\n  \"description\": \"Cập nhật lại nội dung mô tả\",\n  \"location\": \"Hội trường B\",\n  \"capacity\": 150,\n  \"startAt\": \"2026-09-01T08:00:00\",\n  \"endAt\": \"2026-09-01T12:00:00\",\n  \"categoryId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/events/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "events",
+                "1"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },

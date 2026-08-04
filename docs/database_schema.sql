@@ -42,3 +42,16 @@ CREATE TABLE events (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES event_categories(id)
 );
+
+-- Bảng registrations (bản tối thiểu phục vụ B2.3 — chặn giảm capacity dưới số đã đăng
+-- ký; B3.1 sẽ hoàn thiện thêm cột code, ràng buộc unique (event_id, user_id)...)
+CREATE TABLE registrations (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    event_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (event_id, user_id),
+    FOREIGN KEY (event_id) REFERENCES events(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);

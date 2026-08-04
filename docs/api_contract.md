@@ -538,3 +538,90 @@ FE dùng `data` này để điều hướng thẳng sang trang chi tiết sự k
   "timestamp": "2026-08-05T00:00:00"
 }
 ```
+
+## 8. Sửa thông tin sự kiện (B2.3)
+
+* **URL:** `PUT /api/v1/events/{id}`
+* **Headers:** `Authorization: Bearer {{accessToken}}`
+* **Quyền:** ADMIN sửa được **mọi** sự kiện. ORGANIZER **chỉ sửa được sự kiện do chính mình tạo** — sửa sự kiện của người khác nhận `403`. USER nhận `403` với mọi sự kiện.
+
+### Request
+
+Y hệt body của `POST /api/v1/events` (dùng lại toàn bộ validate: `name/location/capacity/startAt/endAt/categoryId`, `endAt` phải sau `startAt`).
+```json
+{
+  "name": "Hội thảo Trí tuệ nhân tạo 2026 (đã sửa)",
+  "description": "Cập nhật lại nội dung mô tả",
+  "location": "Hội trường B",
+  "capacity": 150,
+  "startAt": "2026-09-01T08:00:00",
+  "endAt": "2026-09-01T12:00:00",
+  "categoryId": 1
+}
+```
+
+### Response — 200 OK
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Cập nhật sự kiện thành công",
+  "data": {
+    "id": 1,
+    "name": "Hội thảo Trí tuệ nhân tạo 2026 (đã sửa)",
+    "description": "Cập nhật lại nội dung mô tả",
+    "location": "Hội trường B",
+    "capacity": 150,
+    "startAt": "2026-09-01T08:00:00",
+    "endAt": "2026-09-01T12:00:00",
+    "status": "OPEN",
+    "categoryId": 1,
+    "categoryName": "Hội thảo",
+    "createdBy": "organizer",
+    "createdAt": "2026-08-02T00:00:00"
+  },
+  "timestamp": "2026-08-05T00:00:00"
+}
+```
+
+### Response — 404 Not Found (`id` sự kiện không tồn tại)
+```json
+{
+  "success": false,
+  "status": 404,
+  "error": "Not Found",
+  "message": "Sự kiện không tồn tại với id = '999'",
+  "path": "/api/v1/events/999",
+  "timestamp": "2026-08-05T00:00:00"
+}
+```
+
+### Response — 409 Conflict (hạ `capacity` xuống dưới số người đã đăng ký)
+```json
+{
+  "success": false,
+  "status": 409,
+  "error": "Conflict",
+  "message": "Sức chứa không thể nhỏ hơn số người đã đăng ký (10)",
+  "path": "/api/v1/events/1",
+  "timestamp": "2026-08-05T00:00:00"
+}
+```
+
+FE hiển thị nguyên văn `message` này (đã có sẵn số lượng) làm alert đỏ ngay trên ô `capacity`.
+
+### Response — 400 Bad Request
+
+Cùng format với lỗi validate của `POST /events` (thiếu trường, `capacity ≤ 0`, `endAt` không sau `startAt`) — xem mục 7.
+
+### Response — 403 Forbidden (ORGANIZER sửa sự kiện không phải của mình)
+```json
+{
+  "success": false,
+  "status": 403,
+  "error": "Forbidden",
+  "message": "Bạn không có quyền truy cập tài nguyên này",
+  "path": "/api/v1/events/1",
+  "timestamp": "2026-08-05T00:00:00"
+}
+```
