@@ -43,7 +43,8 @@ public class EventController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('ORGANIZER') and @eventSecurityService.canManageEvent(authentication.name, #id))")
-    public ResponseEntity<BaseRes<Void>> updateEvent(@PathVariable Long id) {
-        return ResponseEntity.ok(BaseRes.success("Cập nhật sự kiện thành công", null));
+    public ResponseEntity<BaseRes<EventDetailRes>> updateEvent(@PathVariable Long id, @Valid @RequestBody EventReq req) {
+        EventDetailRes updated = eventService.update(id, req);
+        return ResponseEntity.ok(BaseRes.success("Cập nhật sự kiện thành công", updated));
     }
 }

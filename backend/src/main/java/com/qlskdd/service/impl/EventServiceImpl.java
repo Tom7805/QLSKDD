@@ -4,6 +4,8 @@ import com.qlskdd.dto.request.EventReq;
 import com.qlskdd.entity.Event;
 import com.qlskdd.entity.EventCategory;
 import com.qlskdd.enums.EventStatus;
+import com.qlskdd.enums.RegistrationStatus;
+import com.qlskdd.exception.BusinessException;
 import com.qlskdd.exception.ResourceNotFoundException;
 import com.qlskdd.mapper.EventMapper;
 import com.qlskdd.mapper.response.EventDetailRes;
@@ -11,10 +13,12 @@ import com.qlskdd.mapper.response.EventRes;
 import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.repository.CategoryRepository;
 import com.qlskdd.repository.EventRepository;
+import com.qlskdd.repository.RegistrationRepository;
 import com.qlskdd.service.EventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +30,7 @@ public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
     private final CategoryRepository categoryRepository;
+    private final RegistrationRepository registrationRepository;
     private final EventMapper eventMapper;
 
     @Override
@@ -48,6 +53,36 @@ public class EventServiceImpl implements EventService {
         event.setCreatedAt(LocalDateTime.now());
 
         return eventMapper.toDetailRes(eventRepository.save(event));
+    }
+
+    @Override
+    public EventDetailRes update(Long id, EventReq req) {
+        Event event = findEventOrThrow(id);
+
+        EventCategory category = categoryRepository.findById(req.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Loại sự kiện", "id", req.getCategoryId()));
+
+        // B2.3-T1: chặn giảm sức chứa xuống dưới số người đã đăng ký ACTIVE
+        long activeRegistrations = registrationRepository.countByEventIdAndStatus(id, RegistrationStatus.ACTIVE);
+        if (req.getCapacity() < activeRegistrations) {
+            throw new BusinessException(HttpStatus.CONFLICT,
+                    "Sức chứa không thể nhỏ hơn số người đã đăng ký (" + activeRegistrations + ")");
+        }
+
+        event.setName(req.getName());
+        event.setDescription(req.getDescription());
+        event.setLocation(req.getLocation());
+        event.setCapacity(req.getCapacity());
+        event.setCategory(category);
+        event.setStartAt(req.getStartAt());
+        event.setEndAt(req.getEndAt());
+
+        return eventMapper.toDetailRes(eventRepository.save(event));
+    }
+
+    private Event findEventOrThrow(Long id) {
+        return eventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Sự kiện", "id", id));
     }
 
     @Override

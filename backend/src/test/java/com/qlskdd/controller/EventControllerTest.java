@@ -19,14 +19,17 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Test case B2.2-T6, phần TC2/TC3/TC4 — chỉ kiểm tra được ở tầng controller vì
- * @Valid (bao gồm @ValidEventTime) chỉ thực thi khi request đi qua Spring MVC,
- * giống lý do TC2 của B1.4-T5 dùng MockMvc thay vì gọi thẳng service.
+ * Test case B2.2-T6 (TC2/TC3/TC4 tạo sự kiện) và B2.3-T3 (TC3/TC4 sửa sự kiện) — chỉ
+ * kiểm tra được ở tầng controller vì @Valid (bao gồm @ValidEventTime) và @PreAuthorize
+ * chỉ thực thi khi request đi qua Spring MVC, giống lý do TC2 của B1.4-T5 dùng MockMvc
+ * thay vì gọi thẳng service.
  */
 @WebMvcTest(controllers = EventController.class)
 @Import({SecurityConfig.class, JwtAuthFilter.class, RestAuthenticationEntryPoint.class, RestAccessDeniedHandler.class,
@@ -46,9 +49,10 @@ class EventControllerTest {
     private UserDetailsService userDetailsService;
 
     // EventController dùng @eventSecurityService trong SpEL của @PreAuthorize cho
-    // PUT /events/{id} — không dùng ở test này nhưng WebMvcTest vẫn cần bean để khởi
-    // tạo được ApplicationContext.
-    @MockBean
+    // PUT /events/{id}. Phải đặt name="eventSecurityService" tường minh — @MockBean
+    // không tự đăng ký đúng tên bean theo tên field trong mọi trường hợp, và Spring
+    // Security SpEL resolve bean theo đúng tên chuỗi trong "@eventSecurityService".
+    @MockBean(name = "eventSecurityService")
     private EventSecurityService eventSecurityService;
 
     @Test
@@ -139,6 +143,55 @@ class EventControllerTest {
                 """.formatted(future(5).format(ISO), future(5).plusHours(3).format(ISO));
 
         mockMvc.perform(post(EVENTS_URL).contentType("application/json").content(body))
+                .andExpect(status().isForbidden());
+    }
+
+    /**
+     * Test case B2.3-T3.
+     */
+    @Test
+    @WithMockUser(username = "organizer", roles = "ORGANIZER")
+    void suaSuKien_TC3_EndAtTruocStartAt_traVe400() throws Exception {
+        when(eventSecurityService.canManageEvent("organizer", 1L)).thenReturn(true);
+
+        String body = """
+                {
+                  "name": "Hội thảo AI",
+                  "location": "Hội trường A",
+                  "capacity": 100,
+                  "startAt": "%s",
+                  "endAt": "%s",
+                  "categoryId": 1
+                }
+                """.formatted(future(5).format(ISO), future(5).minusHours(1).format(ISO));
+
+        mockMvc.perform(put(EVENTS_URL + "/1")
+                        .contentType("application/json")
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[?(@.field == 'endAt')]").exists());
+    }
+
+    @Test
+    @WithMockUser(username = "organizer2", roles = "ORGANIZER")
+    void suaSuKien_TC4_NguoiKhongPhaiChuSuKien_traVe403() throws Exception {
+        // sự kiện id=1 do "organizer" tạo, ở đây "organizer2" cố sửa
+        when(eventSecurityService.canManageEvent("organizer2", 1L)).thenReturn(false);
+
+        String body = """
+                {
+                  "name": "Hội thảo AI",
+                  "location": "Hội trường A",
+                  "capacity": 100,
+                  "startAt": "%s",
+                  "endAt": "%s",
+                  "categoryId": 1
+                }
+                """.formatted(future(5).format(ISO), future(5).plusHours(3).format(ISO));
+
+        mockMvc.perform(put(EVENTS_URL + "/1")
+                        .contentType("application/json")
+                        .content(body))
                 .andExpect(status().isForbidden());
     }
 

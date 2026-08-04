@@ -82,7 +82,7 @@ class PermissionSecurityTest {
         eventCuaNguoiKhac.setCreatedBy("another-organizer");
         when(eventRepository.findById(999L)).thenReturn(Optional.of(eventCuaNguoiKhac));
 
-        mockMvc.perform(put(EVENT_URL + "/999"))
+        mockMvc.perform(put(EVENT_URL + "/999").contentType("application/json").content(validEventBody()))
                 .andExpect(status().isForbidden());
     }
 
@@ -94,7 +94,7 @@ class PermissionSecurityTest {
         eventCuaMinh.setCreatedBy("organizer");
         when(eventRepository.findById(1000L)).thenReturn(Optional.of(eventCuaMinh));
 
-        mockMvc.perform(put(EVENT_URL + "/1000"))
+        mockMvc.perform(put(EVENT_URL + "/1000").contentType("application/json").content(validEventBody()))
                 .andExpect(status().isOk());
     }
 
@@ -105,7 +105,7 @@ class PermissionSecurityTest {
                 .andExpect(status().isCreated());
 
         // ADMIN không cần qua kiểm tra quyền sở hữu — sửa được sự kiện của bất kỳ ai
-        mockMvc.perform(put(EVENT_URL + "/999"))
+        mockMvc.perform(put(EVENT_URL + "/999").contentType("application/json").content(validEventBody()))
                 .andExpect(status().isOk());
     }
 }
