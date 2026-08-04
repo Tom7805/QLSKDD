@@ -10,6 +10,7 @@ import RoleRoute from './routers/RoleRoute';
 import MainLayout from './layouts/MainLayout';
 import { useAuth } from './hooks/useAuth';
 import UserListPage from './modules/users/pages/UserListPage';
+import ChangePasswordPage from './modules/auth/pages/ChangePasswordPage';
 
 function HomePage() {
   const isLoggedIn = useAppSelector(selectIsLoggedIn);
@@ -42,6 +43,7 @@ function App() {
       <Route element={<PrivateRoute />}>
         <Route element={<MainLayout />}>
           <Route path={ROUTES.HOME} element={<HomePage />} />
+          <Route path={ROUTES.CHANGE_PASSWORD} element={<ChangePasswordPage />} />
           <Route element={<RoleRoute allow={['ROLE_ADMIN']} />}>
             <Route path={ROUTES.USERS} element={<UserListPage />} />
           </Route>

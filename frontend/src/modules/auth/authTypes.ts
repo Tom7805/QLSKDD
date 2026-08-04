@@ -30,3 +30,9 @@ export interface LoginResponse {
   tokenType: string;
   user: User;
 }
+
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
