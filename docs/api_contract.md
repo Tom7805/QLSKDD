@@ -427,3 +427,114 @@ Body giống `POST`. Khi kiểm tra trùng tên sẽ **bỏ qua chính bản ghi
 ```
 
 FE hiển thị đúng nguyên văn `message` này (đã có sẵn số lượng) khi bắt lỗi 409 lúc xoá.
+
+## 7. Tạo sự kiện (B2.2)
+
+* **URL:** `POST /api/v1/events`
+* **Headers:** `Authorization: Bearer {{accessToken}}` (role **ADMIN** hoặc **ORGANIZER**, người khác nhận `403`)
+
+### Request
+```json
+{
+  "name": "Hội thảo Trí tuệ nhân tạo 2026",
+  "description": "Chia sẻ kiến thức AI cho sinh viên",
+  "location": "Hội trường A",
+  "capacity": 100,
+  "startAt": "2026-09-01T08:00:00",
+  "endAt": "2026-09-01T11:00:00",
+  "categoryId": 1
+}
+```
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc |
+|---|---|---|---|
+| `name` | string | ✅ | Không trống, tối đa 255 ký tự |
+| `description` | string | ❌ | Tự do |
+| `location` | string | ✅ | Không trống |
+| `capacity` | number | ✅ | Số nguyên dương (>0) |
+| `startAt` | datetime ISO (`yyyy-MM-ddTHH:mm:ss`) | ✅ | Phải ở tương lai |
+| `endAt` | datetime ISO | ✅ | Phải sau `startAt` |
+| `categoryId` | number | ✅ | Phải tồn tại (lấy từ `GET /categories`) |
+
+`status` **không** nằm trong request — sự kiện mới tạo luôn mặc định `OPEN`. `createdBy` cũng không nhận từ client — backend tự lấy từ token.
+
+### Response — 201 Created
+```json
+{
+  "success": true,
+  "status": 201,
+  "message": "Tạo sự kiện thành công",
+  "data": {
+    "id": 5,
+    "name": "Hội thảo Trí tuệ nhân tạo 2026",
+    "description": "Chia sẻ kiến thức AI cho sinh viên",
+    "location": "Hội trường A",
+    "capacity": 100,
+    "startAt": "2026-09-01T08:00:00",
+    "endAt": "2026-09-01T11:00:00",
+    "status": "OPEN",
+    "categoryId": 1,
+    "categoryName": "Hội thảo",
+    "createdBy": "organizer",
+    "createdAt": "2026-08-05T00:00:00"
+  },
+  "timestamp": "2026-08-05T00:00:00"
+}
+```
+
+FE dùng `data` này để điều hướng thẳng sang trang chi tiết sự kiện vừa tạo (không cần gọi lại `GET /events/{id}`).
+
+### Response — 400 Bad Request (thiếu trường / sai định dạng)
+```json
+{
+  "success": false,
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Dữ liệu không hợp lệ",
+  "path": "/api/v1/events",
+  "timestamp": "2026-08-05T00:00:00",
+  "errors": [
+    { "field": "name", "message": "Tên sự kiện không được để trống" },
+    { "field": "capacity", "message": "Sức chứa phải lớn hơn 0" }
+  ]
+}
+```
+
+### Response — 400 Bad Request (endAt trước hoặc bằng startAt)
+```json
+{
+  "success": false,
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Dữ liệu không hợp lệ",
+  "path": "/api/v1/events",
+  "timestamp": "2026-08-05T00:00:00",
+  "errors": [
+    { "field": "endAt", "message": "Thời gian kết thúc phải sau thời gian bắt đầu" }
+  ]
+}
+```
+
+### Response — 404 Not Found (`categoryId` không tồn tại)
+```json
+{
+  "success": false,
+  "status": 404,
+  "error": "Not Found",
+  "message": "Loại sự kiện không tồn tại với id = '999'",
+  "path": "/api/v1/events",
+  "timestamp": "2026-08-05T00:00:00"
+}
+```
+
+### Response — 403 Forbidden (không phải ADMIN/ORGANIZER)
+```json
+{
+  "success": false,
+  "status": 403,
+  "error": "Forbidden",
+  "message": "Bạn không có quyền truy cập tài nguyên này",
+  "path": "/api/v1/events",
+  "timestamp": "2026-08-05T00:00:00"
+}
+```

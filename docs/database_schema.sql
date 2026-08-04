@@ -25,13 +25,16 @@ CREATE TABLE event_categories (
     description TEXT
 );
 
--- Bảng events (bản tối thiểu từ B0.4 + category_id ở B2.1; B2.2 sẽ bổ sung thêm
--- description/capacity)
+-- Bảng events (bản tối thiểu từ B0.4 + category_id ở B2.1 + description/capacity ở B2.2)
+-- created_by hiện lưu username dạng chuỗi (không FK sang users) để khớp với
+-- EventSecurityService/EventPermissionServiceImpl đã dùng cách so sánh chuỗi này.
 CREATE TABLE events (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     category_id BIGINT,
     name VARCHAR(255) NOT NULL,
+    description TEXT,
     location VARCHAR(255) NOT NULL,
+    capacity INT,
     start_at TIMESTAMP,
     end_at TIMESTAMP,
     status VARCHAR(20) NOT NULL DEFAULT 'OPEN',

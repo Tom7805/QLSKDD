@@ -86,6 +86,47 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Create Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{bearer_token_03df}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hội thảo Trí tuệ nhân tạo 2026\",\n  \"description\": \"Chia sẻ kiến thức AI cho sinh viên\",\n  \"location\": \"Hội trường A\",\n  \"capacity\": 100,\n  \"startAt\": \"2026-09-01T08:00:00\",\n  \"endAt\": \"2026-09-01T11:00:00\",\n  \"categoryId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/events",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "events"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
