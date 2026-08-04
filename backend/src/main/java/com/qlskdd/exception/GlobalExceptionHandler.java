@@ -7,6 +7,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -58,6 +59,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUsernameNotFound(UsernameNotFoundException ex, HttpServletRequest request) {
         return build(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để thực hiện thao tác này", request, null);
+    }
+
+    // Xảy ra khi gọi đúng path nhưng sai HTTP method (ví dụ PATCH /users/5 thay vì
+    // PATCH /users/5/status, trong khi PUT /users/5 tồn tại) — Spring MVC vốn tự trả
+    // 405 đúng chuẩn, nhưng handler Exception.class ở dưới bắt luôn nên phải chặn tay.
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex,
+                                                                    HttpServletRequest request) {
+        return build(HttpStatus.METHOD_NOT_ALLOWED, "Phương thức không được hỗ trợ cho địa chỉ này", request, null);
     }
 
     @ExceptionHandler(Exception.class)

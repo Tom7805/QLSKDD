@@ -18,7 +18,14 @@ import java.time.LocalDateTime;
 @Component
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
-    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+    // Dùng bean ObjectMapper do Spring Boot tự cấu hình (đã tắt WRITE_DATES_AS_TIMESTAMPS)
+    // thay vì tự new ObjectMapper() — nếu không, LocalDateTime sẽ serialize thành mảng số
+    // [năm, tháng, ngày, ...] thay vì chuỗi ISO như mọi response khác trong hệ thống.
+    private final ObjectMapper objectMapper;
+
+    public RestAuthenticationEntryPoint(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
