@@ -8,6 +8,7 @@ export interface ConfirmDialogProps {
   cancelLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
+  loading?: boolean;
 }
 
 export default function ConfirmDialog({
@@ -18,6 +19,7 @@ export default function ConfirmDialog({
   cancelLabel = 'Huỷ',
   onConfirm,
   onCancel,
+  loading = false,
 }: ConfirmDialogProps) {
   if (!open) return null;
 
@@ -37,6 +39,7 @@ export default function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
+            disabled={loading}
             className="min-h-11 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             {cancelLabel}
@@ -44,10 +47,11 @@ export default function ConfirmDialog({
           <button
             type="button"
             onClick={onConfirm}
+            disabled={loading}
             autoFocus
-            className="min-h-11 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+            className="min-h-11 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-400"
           >
-            {confirmLabel}
+            {loading ? 'Đang xử lý...' : confirmLabel}
           </button>
         </div>
       </div>
