@@ -1,4 +1,4 @@
-package com.qlskdd.dto.response;
+package com.qlskdd.mapper.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

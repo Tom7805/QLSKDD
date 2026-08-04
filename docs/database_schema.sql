@@ -1,0 +1,19 @@
+-- Bảng roles
+CREATE TABLE roles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- Bảng users
+CREATE TABLE users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    role_id BIGINT NOT NULL,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(60) NOT NULL,
+    full_name VARCHAR(255),
+    email VARCHAR(255) NOT NULL UNIQUE,
+    phone VARCHAR(15),
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (role_id) REFERENCES roles(id)
+);
