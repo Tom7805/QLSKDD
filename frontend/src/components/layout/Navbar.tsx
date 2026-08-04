@@ -67,9 +67,11 @@ export default function Navbar() {
                 </button>
                 <button
                   type="button"
-                  disabled
-                  title="Tính năng đang phát triển"
-                  className="block w-full cursor-not-allowed px-4 py-2 text-left text-sm text-slate-400"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate(ROUTES.CHANGE_PASSWORD);
+                  }}
+                  className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
                 >
                   Đổi mật khẩu
                 </button>

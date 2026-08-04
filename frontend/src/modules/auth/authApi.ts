@@ -1,5 +1,11 @@
 import apiClient from '../../configs/apiClient';
-import type { ApiResponse, LoginRequest, LoginResponse, User } from './authTypes';
+import type {
+  ApiResponse,
+  ChangePasswordRequest,
+  LoginRequest,
+  LoginResponse,
+  User,
+} from './authTypes';
 
 const AUTH_BASE_URL = '/auth';
 
@@ -15,3 +21,8 @@ export const getMe = (): Promise<User> =>
 
 export const logout = (): Promise<void> =>
   apiClient.post<ApiResponse<void>>(`${AUTH_BASE_URL}/logout`).then(() => undefined);
+
+export const changePassword = (req: ChangePasswordRequest): Promise<string> =>
+  apiClient
+    .put<ApiResponse<void>>('/users/me/password', req)
+    .then((res) => res.data.message);
