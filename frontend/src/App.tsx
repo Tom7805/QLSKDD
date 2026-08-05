@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from './stores/store';
 import { restoreSession, selectIsLoggedIn, selectUser } from './stores/slices/authSlice';
 import LoginPage from './modules/auth/pages/LoginPage';
 import ForbiddenPage from './modules/auth/pages/ForbiddenPage';
+import CategoryListPage from './modules/categories/pages/CategoryListPage';
 import { ROUTES } from './constants/routes';
 import PrivateRoute from './routers/PrivateRoute';
 import RoleRoute from './routers/RoleRoute';
@@ -46,6 +47,7 @@ function App() {
           <Route path={ROUTES.CHANGE_PASSWORD} element={<ChangePasswordPage />} />
           <Route element={<RoleRoute allow={['ROLE_ADMIN']} />}>
             <Route path={ROUTES.USERS} element={<UserListPage />} />
+            <Route path={ROUTES.CATEGORIES} element={<CategoryListPage />} />
           </Route>
         </Route>
       </Route>
