@@ -704,3 +704,82 @@ Khi sự kiện **không còn `OPEN`** (đã `CLOSED` hoặc `CANCELLED`), mọi
 ```
 
 > **Lưu ý cho FE**: API `POST /api/v1/registrations` (đăng ký tham gia) **chưa có** — đây là phạm vi của **B3.1 (Đăng ký tham gia sự kiện)**, hiện chưa triển khai. Backend hiện tại mới có phần logic chặn theo trạng thái (đã kiểm chứng bằng unit test `RegistrationServiceTest`), chưa lộ ra endpoint HTTP nào để FE gọi thử qua Postman. Khi B3.1 hoàn thành API `POST /registrations`, hành vi 409 ở trên sẽ áp dụng nguyên vẹn — không cần đổi gì thêm ở phần đã làm trong B2.4.
+
+## 10. Xem danh sách & chi tiết sự kiện (B2.5)
+
+* **Quyền:** công khai, không cần đăng nhập (`permitAll`) — giống mọi `GET /events/**`.
+
+### `GET /api/v1/events` — Danh sách sự kiện có phân trang
+
+**Query params:** `page` (mặc định `0`), `size` (mặc định `10`). Mặc định sắp xếp theo `startAt` tăng dần (sự kiện sắp diễn ra lên đầu) — không cần truyền tham số `sort`.
+
+**Response — 200 OK**
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Lấy danh sách sự kiện thành công",
+  "data": {
+    "content": [
+      {
+        "id": 1,
+        "name": "Hội thảo Trí tuệ nhân tạo 2026",
+        "location": "Hội trường A",
+        "startAt": "2026-09-01T08:00:00",
+        "endAt": "2026-09-01T11:00:00",
+        "status": "OPEN",
+        "capacity": 100,
+        "availableSeats": 65
+      }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 25,
+    "totalPages": 3,
+    "last": false
+  },
+  "timestamp": "2026-08-05T00:00:00"
+}
+```
+
+`availableSeats = capacity - (số lượt đăng ký ACTIVE)`, tính bằng **1 truy vấn group-by duy nhất cho cả trang** (không N+1). Với sự kiện chưa có `capacity` (dữ liệu mẫu cũ), cả `capacity` và `availableSeats` trả về `null` — FE nên ẩn dòng "còn X/Y chỗ" khi gặp `null`.
+
+### `GET /api/v1/events/{id}` — Chi tiết 1 sự kiện
+
+**Response — 200 OK**
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Lấy chi tiết sự kiện thành công",
+  "data": {
+    "id": 1,
+    "name": "Hội thảo Trí tuệ nhân tạo 2026",
+    "description": "Chia sẻ kiến thức AI cho sinh viên",
+    "location": "Hội trường A",
+    "capacity": 100,
+    "startAt": "2026-09-01T08:00:00",
+    "endAt": "2026-09-01T11:00:00",
+    "status": "OPEN",
+    "categoryId": 1,
+    "categoryName": "Hội thảo",
+    "createdBy": "organizer",
+    "createdAt": "2026-08-02T00:00:00",
+    "totalRegistered": 35,
+    "availableSeats": 65
+  },
+  "timestamp": "2026-08-05T00:00:00"
+}
+```
+
+**Response — 404 Not Found** (id không tồn tại)
+```json
+{
+  "success": false,
+  "status": 404,
+  "error": "Not Found",
+  "message": "Sự kiện không tồn tại với id = '999'",
+  "path": "/api/v1/events/999",
+  "timestamp": "2026-08-05T00:00:00"
+}
+```
