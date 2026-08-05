@@ -13,6 +13,7 @@ interface NavItem {
 // được triển khai ở các task khác.
 const NAV_ITEMS: NavItem[] = [
   { label: 'Trang chủ', to: ROUTES.HOME },
+  { label: 'Tạo sự kiện', to: ROUTES.EVENT_CREATE, allow: ['ROLE_ADMIN', 'ROLE_ORGANIZER'] },
   { label: 'Quản lý loại sự kiện', to: ROUTES.CATEGORIES, allow: ['ROLE_ADMIN'] },
   { label: 'Quản lý người dùng', to: ROUTES.USERS, allow: ['ROLE_ADMIN'] },
 ];
