@@ -698,12 +698,13 @@ Khi sự kiện **không còn `OPEN`** (đã `CLOSED` hoặc `CANCELLED`), mọi
   "status": 409,
   "error": "Conflict",
   "message": "Sự kiện đã đóng đăng ký",
+  "errorCode": "EVENT_CLOSED",
   "path": "/api/v1/registrations",
   "timestamp": "2026-08-05T00:00:00"
 }
 ```
 
-> **Lưu ý cho FE**: API `POST /api/v1/registrations` (đăng ký tham gia) **chưa có** — đây là phạm vi của **B3.1 (Đăng ký tham gia sự kiện)**, hiện chưa triển khai. Backend hiện tại mới có phần logic chặn theo trạng thái (đã kiểm chứng bằng unit test `RegistrationServiceTest`), chưa lộ ra endpoint HTTP nào để FE gọi thử qua Postman. Khi B3.1 hoàn thành API `POST /registrations`, hành vi 409 ở trên sẽ áp dụng nguyên vẹn — không cần đổi gì thêm ở phần đã làm trong B2.4.
+> API `POST /api/v1/registrations` đã triển khai đầy đủ ở **B3.1 (Đăng ký tham gia sự kiện)** — xem mục 11 bên dưới để có request/response mẫu và toàn bộ mã lỗi.
 
 ## 10. Xem danh sách & chi tiết sự kiện (B2.5)
 
@@ -783,3 +784,75 @@ Khi sự kiện **không còn `OPEN`** (đã `CLOSED` hoặc `CANCELLED`), mọi
   "timestamp": "2026-08-05T00:00:00"
 }
 ```
+
+## 11. Đăng ký tham gia sự kiện (B3.1)
+
+* **URL:** `POST /api/v1/registrations`
+* **Headers:** `Authorization: Bearer {{accessToken}}` — bất kỳ ai đã đăng nhập (ADMIN/ORGANIZER/USER) đều đăng ký được, không giới hạn vai trò.
+* **Quan trọng:** người đăng ký lấy từ token, **client không được gửi `userId`**.
+
+### Request
+```json
+{
+  "eventId": 1
+}
+```
+
+### Response — 201 Created (thành công)
+```json
+{
+  "success": true,
+  "status": 201,
+  "message": "Đăng ký thành công",
+  "data": {
+    "registrationId": 15,
+    "code": "3f2a9c1e-...-...",
+    "eventName": "Hội thảo Trí tuệ nhân tạo 2026"
+  },
+  "timestamp": "2026-08-05T00:00:00"
+}
+```
+
+FE dùng `data.code` hiển thị "Mã vé của bạn: XXXX" trong toast/dialog thành công (B3.1-T8).
+
+### Các nhánh lỗi — phân biệt bằng `errorCode`, không parse `message`
+
+| `errorCode` | HTTP | Khi nào xảy ra | `message` |
+|---|---|---|---|
+| `EVENT_CLOSED` | 409 | Sự kiện đang `CLOSED` hoặc `CANCELLED` (không `OPEN`) | "Sự kiện đã đóng đăng ký" |
+| (không có, dùng chung `BusinessException`) | 409 | `endAt` của sự kiện đã qua | "Sự kiện đã diễn ra" |
+| `DUPLICATE_REGISTRATION` | 409 | Đã có lượt đăng ký `ACTIVE` cho chính sự kiện này | "Bạn đã đăng ký sự kiện này" |
+| `OVERBOOKING` | 409 | Số đăng ký `ACTIVE` đã bằng `capacity` | "Sự kiện đã hết chỗ" |
+| — | 404 | `eventId` không tồn tại | "Sự kiện không tồn tại với id = '999'" |
+| — | 400 | Thiếu `eventId` trong body | "Dữ liệu không hợp lệ" kèm `errors: [{field:"eventId", message:"Sự kiện không được để trống"}]` |
+
+**Mẫu response lỗi OVERBOOKING:**
+```json
+{
+  "success": false,
+  "status": 409,
+  "error": "Conflict",
+  "message": "Sự kiện đã hết chỗ",
+  "errorCode": "OVERBOOKING",
+  "path": "/api/v1/registrations",
+  "timestamp": "2026-08-05T00:00:00"
+}
+```
+
+**Mẫu response lỗi DUPLICATE_REGISTRATION:**
+```json
+{
+  "success": false,
+  "status": 409,
+  "error": "Conflict",
+  "message": "Bạn đã đăng ký sự kiện này",
+  "errorCode": "DUPLICATE_REGISTRATION",
+  "path": "/api/v1/registrations",
+  "timestamp": "2026-08-05T00:00:00"
+}
+```
+
+FE bắt `errorCode` (không phải parse chuỗi `message`) để hiển thị đúng thông điệp theo B3.1-T8:
+- `OVERBOOKING` → `"Sự kiện đã hết chỗ"`
+- `DUPLICATE_REGISTRATION` → `"Bạn đã đăng ký sự kiện này"`
+- 401 (chưa đăng nhập) → dialog gợi ý chuyển sang trang đăng nhập.
