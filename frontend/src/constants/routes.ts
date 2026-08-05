@@ -4,6 +4,7 @@ export const ROUTES = {
   FORBIDDEN: '/403',
   USERS: '/users',
   CATEGORIES: '/categories',
+  EVENTS: '/events',
   EVENT_CREATE: '/events/new',
   EVENT_EDIT: '/events/:id/edit',
   EVENT_DETAIL: '/events/:id',

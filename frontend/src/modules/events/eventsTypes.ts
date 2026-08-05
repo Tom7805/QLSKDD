@@ -13,6 +13,28 @@ export interface EventDetail {
   categoryName: string | null;
   createdBy: string;
   createdAt: string;
+  totalRegistered: number | null;
+  availableSeats: number | null;
+}
+
+export interface EventSummary {
+  id: number;
+  name: string;
+  location: string;
+  startAt: string;
+  endAt: string;
+  status: EventStatus;
+  capacity: number | null;
+  availableSeats: number | null;
+}
+
+export interface EventsPage {
+  content: EventSummary[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
 }
 
 export interface EventStatusRequest {
