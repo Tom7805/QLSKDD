@@ -4,6 +4,7 @@ import com.qlskdd.config.SecurityConfig;
 import com.qlskdd.entity.Event;
 import com.qlskdd.repository.EventRepository;
 import com.qlskdd.service.EventService;
+import com.qlskdd.service.RegistrationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -56,6 +57,9 @@ class PermissionSecurityTest {
 
     @MockBean
     private EventRepository eventRepository;
+
+    @MockBean
+    private RegistrationService registrationService;
 
     @MockBean
     private UserDetailsService userDetailsService;

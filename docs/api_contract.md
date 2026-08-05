@@ -930,3 +930,74 @@ Sau khi huỷ, `availableSeats` của sự kiện đó tự tăng lại ngay ở
 ```
 
 > **Lưu ý còn thiếu (chặn B4.1):** tiêu chí "chặn huỷ khi đã điểm danh" trong user story B3.2 **chưa được kiểm tra** ở bản này, vì tính năng điểm danh (B4.1 — `CheckInHistory`/`CheckInHistoryRepository`) chưa được triển khai trong code (file hiện đang rỗng). Khi B4.1 xong, cần thêm đúng 1 điều kiện vào `RegistrationServiceImpl.cancel()`: nếu `checkInHistoryRepository.existsByRegistrationId(id)` → ném `BusinessException(CONFLICT, "Lượt đăng ký đã được điểm danh, không thể huỷ")`.
+
+## 13. Xem danh sách người đăng ký của 1 sự kiện (B3.3)
+
+* **URL:** `GET /api/v1/events/{eventId}/registrations`
+* **Headers:** `Authorization: Bearer {{accessToken}}`
+* **Quyền:** chỉ **ADMIN** và **ORGANIZER**. USER gọi nhận `403` (kể cả khi `{eventId}` không tồn tại — `@PreAuthorize` chạy trước khi vào controller nên chưa kịp kiểm tra sự kiện có tồn tại hay không).
+* **Query params:** `page` (mặc định `0`), `size` (mặc định `10`). Mặc định sắp xếp theo `registeredAt` **giảm dần** (người đăng ký gần nhất lên đầu).
+
+### Request
+
+Không có body.
+
+### Response — 200 OK (thành công)
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Lấy danh sách người đăng ký thành công",
+  "data": {
+    "registrations": {
+      "content": [
+        {
+          "id": 15,
+          "fullName": "Nguyễn Văn A",
+          "email": "a@qlskdd.com",
+          "phone": "0900000000",
+          "registeredAt": "2026-08-05T19:52:56",
+          "status": "ACTIVE",
+          "checkedIn": false
+        }
+      ],
+      "page": 0,
+      "size": 10,
+      "totalElements": 45,
+      "totalPages": 5,
+      "last": false
+    },
+    "summary": {
+      "totalRegistered": 45,
+      "capacity": 60
+    }
+  },
+  "timestamp": "2026-08-06T00:00:00"
+}
+```
+
+`summary.totalRegistered` chỉ tính lượt đăng ký `status = ACTIVE` (đã huỷ không tính) — FE dùng đúng 2 số này để vẽ thanh tiến độ "Đã đăng ký: 45 / 60" (B3.3-T5). `checkedIn` **luôn là `false`** ở bản hiện tại vì tính năng điểm danh (B4.1) chưa triển khai — khi B4.1 xong sẽ nối vào `CheckInHistoryRepository.existsByRegistrationId`.
+
+### Response — 404 Not Found (`eventId` không tồn tại)
+```json
+{
+  "success": false,
+  "status": 404,
+  "error": "Not Found",
+  "message": "Sự kiện không tồn tại với id = '999'",
+  "path": "/api/v1/events/999/registrations",
+  "timestamp": "2026-08-06T00:00:00"
+}
+```
+
+### Response — 403 Forbidden (USER gọi)
+```json
+{
+  "success": false,
+  "status": 403,
+  "error": "Forbidden",
+  "message": "Bạn không có quyền truy cập tài nguyên này",
+  "path": "/api/v1/events/1/registrations",
+  "timestamp": "2026-08-06T00:00:00"
+}
+```

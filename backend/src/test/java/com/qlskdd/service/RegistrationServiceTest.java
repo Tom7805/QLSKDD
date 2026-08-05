@@ -9,6 +9,7 @@ import com.qlskdd.enums.RegistrationStatus;
 import com.qlskdd.exception.BusinessException;
 import com.qlskdd.exception.DuplicateDataException;
 import com.qlskdd.exception.OverbookingException;
+import com.qlskdd.mapper.response.EventRegistrationsRes;
 import com.qlskdd.mapper.response.RegistrationRes;
 import com.qlskdd.repository.EventRepository;
 import com.qlskdd.repository.RegistrationRepository;
@@ -20,6 +21,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
@@ -27,6 +32,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -218,6 +224,46 @@ class RegistrationServiceTest {
 
         assertThrows(com.qlskdd.exception.ResourceNotFoundException.class,
                 () -> registrationService.cancel(999L));
+    }
+
+    /**
+     * Test case B3.3-T3 (TC3): phân trang đúng totalElements — kiểm tra ở tầng service
+     * vì @PreAuthorize (TC1/TC2 ORGANIZER 200 / USER 403) chỉ chạy qua MockMvc, xem
+     * EventControllerTest.xemDanhSachDangKy_Organizer_traVe200 / _User_traVe403.
+     */
+    @Test
+    void testGetRegistrationsByEvent_PhanTrang_TotalElementsDung() {
+        Event event = buildEvent(EventStatus.OPEN);
+        event.setCapacity(60);
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+
+        User participant = User.builder().id(5L).fullName("Nguyễn Văn A").email("a@qlskdd.com").phone("0900000000").build();
+        Registration r1 = Registration.builder().id(1L).user(participant).status(RegistrationStatus.ACTIVE)
+                .registeredAt(LocalDateTime.now()).build();
+        Registration r2 = Registration.builder().id(2L).user(participant).status(RegistrationStatus.ACTIVE)
+                .registeredAt(LocalDateTime.now()).build();
+
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Registration> page = new PageImpl<>(List.of(r1, r2), pageable, 25);
+        when(registrationRepository.findByEventId(1L, pageable)).thenReturn(page);
+        when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(25L);
+
+        EventRegistrationsRes res = registrationService.getRegistrationsByEvent(1L, pageable);
+
+        assertEquals(25L, res.getRegistrations().getTotalElements());
+        assertEquals(3, res.getRegistrations().getTotalPages());
+        assertEquals(2, res.getRegistrations().getContent().size());
+        assertEquals(25L, res.getSummary().getTotalRegistered());
+        assertEquals(60, res.getSummary().getCapacity());
+        assertEquals("Nguyễn Văn A", res.getRegistrations().getContent().get(0).getFullName());
+    }
+
+    @Test
+    void testGetRegistrationsByEvent_SuKienKhongTonTai_Nem404() {
+        when(eventRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(com.qlskdd.exception.ResourceNotFoundException.class,
+                () -> registrationService.getRegistrationsByEvent(999L, PageRequest.of(0, 10)));
     }
 
     private void setCurrentUser(String username) {

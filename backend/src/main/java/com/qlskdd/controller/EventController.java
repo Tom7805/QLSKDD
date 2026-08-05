@@ -4,9 +4,11 @@ import com.qlskdd.dto.request.EventReq;
 import com.qlskdd.dto.request.EventStatusReq;
 import com.qlskdd.mapper.response.BaseRes;
 import com.qlskdd.mapper.response.EventDetailRes;
+import com.qlskdd.mapper.response.EventRegistrationsRes;
 import com.qlskdd.mapper.response.EventRes;
 import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.service.EventService;
+import com.qlskdd.service.RegistrationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 public class EventController {
 
     private final EventService eventService;
+    private final RegistrationService registrationService;
 
     @GetMapping
     public ResponseEntity<BaseRes<PageRes<EventRes>>> getEvents(
@@ -63,5 +66,20 @@ public class EventController {
                                                                   @Valid @RequestBody EventStatusReq req) {
         EventDetailRes updated = eventService.changeStatus(id, req);
         return ResponseEntity.ok(BaseRes.success("Cập nhật trạng thái sự kiện thành công", updated));
+    }
+
+    // B3.3-T2: chỉ ADMIN/ORGANIZER xem được danh sách người đăng ký — người khác 403
+    @GetMapping("/{id}/registrations")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<BaseRes<EventRegistrationsRes>> getEventRegistrations(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        // B3.3-T1: mặc định sắp xếp theo registeredAt giảm dần (đăng ký gần nhất lên đầu)
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "registeredAt"));
+        EventRegistrationsRes result = registrationService.getRegistrationsByEvent(id, pageable);
+
+        return ResponseEntity.ok(BaseRes.success("Lấy danh sách người đăng ký thành công", result));
     }
 }

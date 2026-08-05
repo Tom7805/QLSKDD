@@ -1,6 +1,8 @@
 package com.qlskdd.service;
 
+import com.qlskdd.mapper.response.EventRegistrationsRes;
 import com.qlskdd.mapper.response.RegistrationRes;
+import org.springframework.data.domain.Pageable;
 
 public interface RegistrationService {
 
@@ -13,4 +15,8 @@ public interface RegistrationService {
     // B3.2-T1: huỷ đăng ký — đổi status sang CANCELLED, không xoá bản ghi.
     // Quyền sở hữu (chỉ chính chủ hoặc ADMIN) được chặn ở @PreAuthorize của controller.
     void cancel(Long registrationId);
+
+    // B3.3-T1/T2: danh sách người đăng ký của 1 sự kiện, phân trang + summary.
+    // Chỉ ADMIN/ORGANIZER gọi được — chặn ở @PreAuthorize của controller.
+    EventRegistrationsRes getRegistrationsByEvent(Long eventId, Pageable pageable);
 }

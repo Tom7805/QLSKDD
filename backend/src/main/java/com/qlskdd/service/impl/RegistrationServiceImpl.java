@@ -14,7 +14,12 @@ import com.qlskdd.service.RegistrationService;
 import lombok.RequiredArgsConstructor;
 import com.qlskdd.exception.DuplicateDataException;
 import com.qlskdd.exception.OverbookingException;
+import com.qlskdd.mapper.response.EventRegistrationsRes;
+import com.qlskdd.mapper.response.PageRes;
+import com.qlskdd.mapper.response.RegistrationListItemRes;
 import com.qlskdd.mapper.response.RegistrationRes;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -104,5 +109,34 @@ public class RegistrationServiceImpl implements RegistrationService {
         // Không xoá bản ghi (giữ lịch sử) — mọi truy vấn đếm chỗ đều lọc status=ACTIVE
         // (countByEventIdAndStatus, countGroupedByEventIdsAndStatus) nên availableSeats
         // tự tăng lại ngay khi đọc lại, không cần thao tác gì thêm (B3.2-T2).
+    }
+
+    @Override
+    public EventRegistrationsRes getRegistrationsByEvent(Long eventId, Pageable pageable) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sự kiện", "id", eventId));
+
+        // B3.3-T1: findByEventId đã có sẵn @EntityGraph(user) từ B3.1-T2 -> không N+1
+        Page<Registration> registrationPage = registrationRepository.findByEventId(eventId, pageable);
+
+        Page<RegistrationListItemRes> itemPage = registrationPage.map(r -> RegistrationListItemRes.builder()
+                .id(r.getId())
+                .fullName(r.getUser().getFullName())
+                .email(r.getUser().getEmail())
+                .phone(r.getUser().getPhone())
+                .registeredAt(r.getRegisteredAt())
+                .status(r.getStatus())
+                .checkedIn(false) // TODO(B4.1): chưa có tính năng điểm danh
+                .build());
+
+        long totalRegistered = registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.ACTIVE);
+
+        return EventRegistrationsRes.builder()
+                .registrations(PageRes.of(itemPage))
+                .summary(EventRegistrationsRes.Summary.builder()
+                        .totalRegistered(totalRegistered)
+                        .capacity(event.getCapacity())
+                        .build())
+                .build();
     }
 }
