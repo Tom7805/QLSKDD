@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCategories } from '../../categories/categoriesApi';
 import type { Category } from '../../categories/categoriesTypes';
 import { useToast } from '../../../components/common/Toast';
-import { createEvent } from '../eventsApi';
+import { createEvent, updateEvent } from '../eventsApi';
 import type { EventCreateRequest, EventDetail } from '../eventsTypes';
 import { ROUTES } from '../../../constants/routes';
 
@@ -43,10 +43,24 @@ function inputClass(field: keyof FormState, fieldErrors: FieldErrors) {
   }`;
 }
 
-export default function EventForm() {
+interface EventFormProps {
+  initialEvent?: EventDetail;
+  onDirtyChange?: (dirty: boolean) => void;
+}
+
+export default function EventForm({ initialEvent, onDirtyChange }: EventFormProps) {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [form, setForm] = useState<FormState>(() => initialEvent ? {
+    name: initialEvent.name,
+    description: initialEvent.description ?? '',
+    location: initialEvent.location,
+    capacity: String(initialEvent.capacity),
+    startAt: initialEvent.startAt.slice(0, 16),
+    endAt: initialEvent.endAt.slice(0, 16),
+    categoryId: String(initialEvent.categoryId),
+  } : EMPTY_FORM);
+  const [dirty, setDirty] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -82,10 +96,15 @@ export default function EventForm() {
     };
   }, []);
 
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+
   const updateField = (field: keyof FormState, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
     setError(null);
+    setDirty(true);
   };
 
   const validate = (): FieldErrors => {
@@ -159,13 +178,19 @@ export default function EventForm() {
     setError(null);
 
     try {
-      const createdEvent = await createEvent(request);
-      showToast('Tạo sự kiện thành công', 'success');
-      navigate(ROUTES.EVENT_DETAIL.replace(':id', String(createdEvent.id)), { state: createdEvent });
+      const savedEvent = initialEvent
+        ? await updateEvent(initialEvent.id, request)
+        : await createEvent(request);
+      setDirty(false);
+      onDirtyChange?.(false);
+      showToast(initialEvent ? 'Cập nhật sự kiện thành công' : 'Tạo sự kiện thành công', 'success');
+      navigate(ROUTES.EVENT_DETAIL.replace(':id', String(savedEvent.id)), { state: savedEvent });
     } catch (err) {
       const response = axios.isAxiosError<ApiErrorResponse>(err) ? err.response : undefined;
       const message = response?.data?.message;
-      const fallbackMessage = message ?? 'Không thể tạo sự kiện. Vui lòng thử lại.';
+      const fallbackMessage = message ?? (initialEvent
+        ? 'Không thể cập nhật sự kiện. Vui lòng thử lại.'
+        : 'Không thể tạo sự kiện. Vui lòng thử lại.');
 
       if (response?.status === 400 && response.data?.errors?.length) {
         const backendErrors = response.data.errors.reduce<FieldErrors>((acc, item) => {
@@ -173,6 +198,10 @@ export default function EventForm() {
           return acc;
         }, {});
         setFieldErrors((current) => ({ ...current, ...backendErrors }));
+      } else if (response?.status === 409) {
+        const conflictMessage = message ?? 'Sức chứa không thể nhỏ hơn số người đã đăng ký.';
+        setError(conflictMessage);
+        showToast(conflictMessage, 'error');
       } else {
         setError(fallbackMessage);
       }
@@ -302,7 +331,7 @@ export default function EventForm() {
           disabled={saving || loadingCategories}
           className="inline-flex min-w-[160px] items-center justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
         >
-          {saving ? 'Đang lưu...' : 'Lưu sự kiện'}
+          {saving ? 'Đang lưu...' : initialEvent ? 'Lưu thay đổi' : 'Lưu sự kiện'}
         </button>
       </div>
 
@@ -312,7 +341,7 @@ export default function EventForm() {
           disabled={saving || loadingCategories}
           className="min-w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
         >
-          {saving ? 'Đang lưu...' : 'Lưu sự kiện'}
+          {saving ? 'Đang lưu...' : initialEvent ? 'Lưu thay đổi' : 'Lưu sự kiện'}
         </button>
       </div>
     </form>
