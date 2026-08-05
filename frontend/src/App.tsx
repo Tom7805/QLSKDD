@@ -4,6 +4,9 @@ import { useAppDispatch, useAppSelector } from './stores/store';
 import { restoreSession, selectIsLoggedIn, selectUser } from './stores/slices/authSlice';
 import LoginPage from './modules/auth/pages/LoginPage';
 import ForbiddenPage from './modules/auth/pages/ForbiddenPage';
+import CategoryListPage from './modules/categories/pages/CategoryListPage';
+import EventFormPage from './modules/events/pages/EventFormPage';
+import EventDetailPage from './modules/events/pages/EventDetailPage';
 import { ROUTES } from './constants/routes';
 import PrivateRoute from './routers/PrivateRoute';
 import RoleRoute from './routers/RoleRoute';
@@ -44,8 +47,14 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path={ROUTES.HOME} element={<HomePage />} />
           <Route path={ROUTES.CHANGE_PASSWORD} element={<ChangePasswordPage />} />
+          <Route element={<RoleRoute allow={['ROLE_ADMIN', 'ROLE_ORGANIZER']} />}>
+            <Route path={ROUTES.EVENT_CREATE} element={<EventFormPage />} />
+            <Route path={ROUTES.EVENT_EDIT} element={<EventFormPage />} />
+            <Route path={ROUTES.EVENT_DETAIL} element={<EventDetailPage />} />
+          </Route>
           <Route element={<RoleRoute allow={['ROLE_ADMIN']} />}>
             <Route path={ROUTES.USERS} element={<UserListPage />} />
+            <Route path={ROUTES.CATEGORIES} element={<CategoryListPage />} />
           </Route>
         </Route>
       </Route>
