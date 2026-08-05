@@ -5,7 +5,11 @@ import com.qlskdd.entity.EventCategory;
 import com.qlskdd.entity.Registration;
 import com.qlskdd.entity.User;
 import com.qlskdd.enums.EventStatus;
+import com.qlskdd.enums.RegistrationStatus;
 import com.qlskdd.exception.BusinessException;
+import com.qlskdd.exception.DuplicateDataException;
+import com.qlskdd.exception.OverbookingException;
+import com.qlskdd.mapper.response.RegistrationRes;
 import com.qlskdd.repository.EventRepository;
 import com.qlskdd.repository.RegistrationRepository;
 import com.qlskdd.repository.UserRepository;
@@ -25,15 +29,12 @@ import org.springframework.security.core.context.SecurityContextImpl;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
- * Test case B2.4-T3 (phần chặn đăng ký theo trạng thái sự kiện).
+ * Test case B3.1-T6: 4 nhánh đăng ký.
  */
 @ExtendWith(MockitoExtension.class)
 class RegistrationServiceTest {
@@ -74,37 +75,84 @@ class RegistrationServiceTest {
         return event;
     }
 
+    private User buildUser() {
+        return User.builder().id(2L).username("user1").build();
+    }
+
     @Test
-    void testRegister_TC1_SuKienDaDong_Nem409() {
+    void testRegister_HopLe_ThanhCong() {
+        Event event = buildEvent(EventStatus.OPEN);
+        User user = buildUser();
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+        when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
+        when(registrationRepository.existsByEventIdAndUserIdAndStatus(1L, 2L, RegistrationStatus.ACTIVE)).thenReturn(false);
+        when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(50L);
+
+        Registration savedMock = Registration.builder().id(100L).code("CODE123").build();
+        when(registrationRepository.save(any(Registration.class))).thenReturn(savedMock);
+
+        RegistrationRes res = registrationService.register(1L);
+
+        assertNotNull(res);
+        assertEquals(100L, res.getRegistrationId());
+        assertEquals("CODE123", res.getCode());
+        assertEquals("Hội thảo AI", res.getEventName());
+        verify(registrationRepository).save(any(Registration.class));
+    }
+
+    @Test
+    void testRegister_HetCho_Nem409() {
+        Event event = buildEvent(EventStatus.OPEN);
+        User user = buildUser();
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+        when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
+        when(registrationRepository.existsByEventIdAndUserIdAndStatus(1L, 2L, RegistrationStatus.ACTIVE)).thenReturn(false);
+        when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(100L); // Bằng capacity
+
+        OverbookingException ex = assertThrows(OverbookingException.class, () -> registrationService.register(1L));
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        assertEquals("OVERBOOKING", ex.getErrorCode());
+        verify(registrationRepository, never()).save(any());
+    }
+
+    @Test
+    void testRegister_DangKyTrung_Nem409() {
+        Event event = buildEvent(EventStatus.OPEN);
+        User user = buildUser();
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+        when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
+        when(registrationRepository.existsByEventIdAndUserIdAndStatus(1L, 2L, RegistrationStatus.ACTIVE)).thenReturn(true);
+
+        DuplicateDataException ex = assertThrows(DuplicateDataException.class, () -> registrationService.register(1L));
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        assertEquals("DUPLICATE_REGISTRATION", ex.getErrorCode());
+        verify(registrationRepository, never()).save(any());
+    }
+
+    @Test
+    void testRegister_SuKienDaDong_Nem409() {
         when(eventRepository.findById(1L)).thenReturn(Optional.of(buildEvent(EventStatus.CLOSED)));
 
         BusinessException ex = assertThrows(BusinessException.class, () -> registrationService.register(1L));
 
         assertEquals(HttpStatus.CONFLICT, ex.getStatus());
-        assertEquals("Sự kiện đã đóng đăng ký", ex.getMessage());
+        assertEquals("EVENT_CLOSED", ex.getErrorCode());
         verify(registrationRepository, never()).save(any());
     }
 
     @Test
-    void testRegister_TC2_SuKienDaHuy_Nem409() {
-        when(eventRepository.findById(1L)).thenReturn(Optional.of(buildEvent(EventStatus.CANCELLED)));
+    void testRegister_SuKienDaDienRa_Nem409() {
+        Event event = buildEvent(EventStatus.OPEN);
+        event.setEndAt(LocalDateTime.now().minusDays(1)); // Đã kết thúc
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
 
         BusinessException ex = assertThrows(BusinessException.class, () -> registrationService.register(1L));
 
         assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        assertEquals("EVENT_ENDED", ex.getErrorCode());
         verify(registrationRepository, never()).save(any());
-    }
-
-    @Test
-    void testRegister_SuKienDangMo_DangKyThanhCong() {
-        Event event = buildEvent(EventStatus.OPEN);
-        User user = User.builder().id(2L).username("user1").build();
-        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
-        when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
-
-        registrationService.register(1L);
-
-        verify(registrationRepository).save(any(Registration.class));
     }
 
     private void setCurrentUser(String username) {

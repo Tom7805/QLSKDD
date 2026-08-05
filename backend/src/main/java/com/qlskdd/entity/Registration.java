@@ -49,6 +49,9 @@ public class Registration {
     @Column(nullable = false)
     private RegistrationStatus status;
 
+    @Column(unique = true, length = 50, nullable = false)
+    private String code;
+
     @CreationTimestamp
     @Column(name = "registered_at", updatable = false)
     private LocalDateTime registeredAt;
