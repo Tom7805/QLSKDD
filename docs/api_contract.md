@@ -856,3 +856,77 @@ FE bắt `errorCode` (không phải parse chuỗi `message`) để hiển thị 
 - `OVERBOOKING` → `"Sự kiện đã hết chỗ"`
 - `DUPLICATE_REGISTRATION` → `"Bạn đã đăng ký sự kiện này"`
 - 401 (chưa đăng nhập) → dialog gợi ý chuyển sang trang đăng nhập.
+
+## 12. Huỷ đăng ký (B3.2)
+
+* **URL:** `DELETE /api/v1/registrations/{id}`
+* **Headers:** `Authorization: Bearer {{accessToken}}`
+* **Quyền:** chỉ **chính chủ** lượt đăng ký (`{id}`) hoặc **ADMIN** được huỷ. Người dùng khác gọi nhận `403` (không phân biệt id tồn tại hay không — cùng cách xử lý với `PUT /events/{id}`, xem mục 8).
+* **Không xoá bản ghi** — chỉ đổi `status` sang `CANCELLED`, giữ lại lịch sử.
+* `{id}` ở đây là `registrationId` (trả về trong `data.registrationId` lúc đăng ký ở mục 11), **không phải** `eventId`.
+
+### Request
+
+Không có body.
+
+### Response — 200 OK (thành công)
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Đã huỷ đăng ký",
+  "timestamp": "2026-08-06T10:00:00"
+}
+```
+
+Sau khi huỷ, `availableSeats` của sự kiện đó tự tăng lại ngay ở lần gọi `GET /events/{id}` hoặc `GET /events` tiếp theo — vì mọi truy vấn đếm chỗ chỉ tính `status = ACTIVE` (không cần FE tự cộng thủ công).
+
+### Response — 404 Not Found (`id` không tồn tại)
+```json
+{
+  "success": false,
+  "status": 404,
+  "error": "Not Found",
+  "message": "Lượt đăng ký không tồn tại với id = '999'",
+  "path": "/api/v1/registrations/999",
+  "timestamp": "2026-08-06T10:00:00"
+}
+```
+
+### Response — 409 Conflict (sự kiện đã bắt đầu)
+```json
+{
+  "success": false,
+  "status": 409,
+  "error": "Conflict",
+  "message": "Sự kiện đã bắt đầu, không thể huỷ đăng ký",
+  "path": "/api/v1/registrations/15",
+  "timestamp": "2026-08-06T10:00:00"
+}
+```
+
+### Response — 409 Conflict (đã huỷ trước đó — gọi lại lần 2)
+```json
+{
+  "success": false,
+  "status": 409,
+  "error": "Conflict",
+  "message": "Lượt đăng ký này đã được huỷ trước đó",
+  "path": "/api/v1/registrations/15",
+  "timestamp": "2026-08-06T10:00:00"
+}
+```
+
+### Response — 403 Forbidden (huỷ đăng ký của người khác)
+```json
+{
+  "success": false,
+  "status": 403,
+  "error": "Forbidden",
+  "message": "Bạn không có quyền truy cập tài nguyên này",
+  "path": "/api/v1/registrations/15",
+  "timestamp": "2026-08-06T10:00:00"
+}
+```
+
+> **Lưu ý còn thiếu (chặn B4.1):** tiêu chí "chặn huỷ khi đã điểm danh" trong user story B3.2 **chưa được kiểm tra** ở bản này, vì tính năng điểm danh (B4.1 — `CheckInHistory`/`CheckInHistoryRepository`) chưa được triển khai trong code (file hiện đang rỗng). Khi B4.1 xong, cần thêm đúng 1 điều kiện vào `RegistrationServiceImpl.cancel()`: nếu `checkInHistoryRepository.existsByRegistrationId(id)` → ném `BusinessException(CONFLICT, "Lượt đăng ký đã được điểm danh, không thể huỷ")`.

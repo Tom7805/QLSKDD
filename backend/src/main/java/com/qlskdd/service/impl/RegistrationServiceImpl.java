@@ -79,4 +79,30 @@ public class RegistrationServiceImpl implements RegistrationService {
                 .eventName(event.getName())
                 .build();
     }
+
+    @Override
+    @Transactional
+    public void cancel(Long registrationId) {
+        Registration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lượt đăng ký", "id", registrationId));
+
+        if (registration.getStatus() == RegistrationStatus.CANCELLED) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Lượt đăng ký này đã được huỷ trước đó");
+        }
+
+        Event event = registration.getEvent();
+        if (event.getStartAt() != null && event.getStartAt().isBefore(LocalDateTime.now())) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Sự kiện đã bắt đầu, không thể huỷ đăng ký");
+        }
+
+        // TODO(B4.1): chặn huỷ khi lượt đăng ký đã có bản ghi điểm danh — cần
+        // CheckInHistoryRepository.existsByRegistrationId(registrationId), hiện B4.1
+        // (check-in) chưa được triển khai nên tạm thời bỏ qua điều kiện này.
+
+        registration.setStatus(RegistrationStatus.CANCELLED);
+        registrationRepository.save(registration);
+        // Không xoá bản ghi (giữ lịch sử) — mọi truy vấn đếm chỗ đều lọc status=ACTIVE
+        // (countByEventIdAndStatus, countGroupedByEventIdsAndStatus) nên availableSeats
+        // tự tăng lại ngay khi đọc lại, không cần thao tác gì thêm (B3.2-T2).
+    }
 }

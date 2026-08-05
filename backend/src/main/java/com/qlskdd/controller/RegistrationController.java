@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,5 +23,13 @@ public class RegistrationController {
         RegistrationRes response = registrationService.register(request.getEventId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseRes.of(HttpStatus.CREATED.value(), "Đăng ký thành công", response));
+    }
+
+    // B3.2-T3: chỉ chính chủ lượt đăng ký hoặc ADMIN được huỷ (B3.2-T1)
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @registrationSecurityService.isOwner(authentication.name, #id)")
+    public ResponseEntity<BaseRes<Void>> cancel(@PathVariable Long id) {
+        registrationService.cancel(id);
+        return ResponseEntity.ok(BaseRes.success("Đã huỷ đăng ký", null));
     }
 }

@@ -155,6 +155,71 @@ class RegistrationServiceTest {
         verify(registrationRepository, never()).save(any());
     }
 
+    /**
+     * Test case B3.2-T4: huỷ đăng ký.
+     * TC2 (huỷ của người khác -> 403) được chặn ở @PreAuthorize/RegistrationSecurityService
+     * của controller, không nằm trong RegistrationServiceImpl nên xem
+     * RegistrationSecurityServiceTest. TC3 (đã điểm danh -> 409) tạm chưa có test vì
+     * tính năng điểm danh (B4.1) chưa được triển khai.
+     */
+    @Test
+    void testCancel_HopLe_ChuyenSangCancelled() {
+        Event event = buildEvent(EventStatus.OPEN);
+        event.setStartAt(LocalDateTime.now().plusDays(5));
+        Registration registration = Registration.builder()
+                .id(10L)
+                .event(event)
+                .status(RegistrationStatus.ACTIVE)
+                .code("CODE123")
+                .build();
+        when(registrationRepository.findById(10L)).thenReturn(Optional.of(registration));
+
+        registrationService.cancel(10L);
+
+        assertEquals(RegistrationStatus.CANCELLED, registration.getStatus());
+        verify(registrationRepository).save(registration);
+    }
+
+    @Test
+    void testCancel_SuKienDaBatDau_Nem409() {
+        Event event = buildEvent(EventStatus.OPEN);
+        event.setStartAt(LocalDateTime.now().minusHours(1)); // Đã bắt đầu
+        Registration registration = Registration.builder()
+                .id(11L)
+                .event(event)
+                .status(RegistrationStatus.ACTIVE)
+                .build();
+        when(registrationRepository.findById(11L)).thenReturn(Optional.of(registration));
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> registrationService.cancel(11L));
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        verify(registrationRepository, never()).save(any());
+    }
+
+    @Test
+    void testCancel_DaHuyTruocDo_Nem409() {
+        Registration registration = Registration.builder()
+                .id(12L)
+                .event(buildEvent(EventStatus.OPEN))
+                .status(RegistrationStatus.CANCELLED)
+                .build();
+        when(registrationRepository.findById(12L)).thenReturn(Optional.of(registration));
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> registrationService.cancel(12L));
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        verify(registrationRepository, never()).save(any());
+    }
+
+    @Test
+    void testCancel_KhongTonTai_Nem404() {
+        when(registrationRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(com.qlskdd.exception.ResourceNotFoundException.class,
+                () -> registrationService.cancel(999L));
+    }
+
     private void setCurrentUser(String username) {
         SecurityContext context = new SecurityContextImpl();
         context.setAuthentication(new UsernamePasswordAuthenticationToken(username, null));
