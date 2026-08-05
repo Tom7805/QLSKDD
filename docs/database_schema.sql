@@ -55,3 +55,17 @@ CREATE TABLE registrations (
     FOREIGN KEY (event_id) REFERENCES events(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+-- Bảng check_in_histories (B4.1) — chỉ có bản ghi khi điểm danh THÀNH CÔNG (status luôn
+-- là SUCCESS trong DB); các nhánh bị từ chối (đã điểm danh/vé sai/sai sự kiện/đã huỷ)
+-- không lưu bản ghi, chỉ trả lỗi qua API.
+-- UNIQUE (registration_id): 1 lượt đăng ký chỉ điểm danh được đúng 1 lần, chặn ngay ở DB.
+CREATE TABLE check_in_histories (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    registration_id BIGINT NOT NULL UNIQUE,
+    checked_by BIGINT NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    checked_in_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (registration_id) REFERENCES registrations(id),
+    FOREIGN KEY (checked_by) REFERENCES users(id)
+);

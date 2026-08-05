@@ -58,3 +58,70 @@
 - API đã chạy thật, 69/69 test pass (tính cả các story trước). Response mẫu và mã lỗi đầy đủ ở `docs/api_contract.md` mục 13.
 - `checkedIn` trong mỗi dòng luôn trả `false` — chưa phản ánh đúng thực tế vì phụ thuộc B4.1 (điểm danh) chưa triển khai. FE cứ dùng field này bình thường, khi B4.1 xong giá trị sẽ tự đúng mà không đổi contract.
 - `summary.totalRegistered` chỉ đếm `status = ACTIVE` (không tính các lượt đã huỷ).
+
+---
+
+## `B3.4` — Quản lý thông tin người tham gia (CRUD)
+
+> **User story**: *Là ban tổ chức, tôi muốn quản lý thông tin người tham gia (CRUD) để giữ dữ liệu chính xác.*
+> **Tiêu chí chấp nhận**: CRUD người tham gia có phân trang; validate họ tên/email/điện thoại; chặn trùng email; chặn xoá khi còn đăng ký hiệu lực
+> **Ưu tiên**: Should · **Điểm**: 3 · **Module**: M3 · **Sprint**: Tuần 2 · **Phụ trách**: TV3 — M3 Đăng ký
+
+### 📦 Backend
+
+| Mã task | Loại | Tên công việc | Chi tiết công việc phải làm | Điểm | Trạng thái |
+|---|---|---|---|---|---|
+| `B3.4-T1` | `BE-SVC` | **Service quản lý người tham gia** | • Danh sách người tham gia = user có vai trò ROLE_USER<br>• `getParticipants(keyword, pageable)`, `getById`, `create`, `update`, `delete`<br>• Kèm `registeredEventCount` đếm bằng **một truy vấn group by** | 2 | ✅ Đã code (`ParticipantServiceImpl`, thêm `UserRepository.findByRoleNameAndKeyword` + `RegistrationRepository.countGroupedByUserIdsAndStatus`) |
+| `B3.4-T2` | `BE-VAL` | **Validation người tham gia** | • fullName `@NotBlank`, email `@Email @NotBlank`, phone `@Pattern("^0\\d{9}$")`<br>• Trùng email → 409 `"Email đã tồn tại"`<br>• Chặn xoá khi còn đăng ký ACTIVE → 409 `"Không thể xoá: người này còn N lượt đăng ký"` | 2 | ✅ Đã code (`ParticipantReq`, `ParticipantServiceImpl.delete`) — có thêm `username @NotBlank @Size(4,50)` không có trong mô tả gốc, bắt buộc vì cột `username` trong bảng `users` là NOT NULL UNIQUE |
+| `B3.4-T3` | `BE-API` | **API CRUD người tham gia** | • `GET /api/v1/participants?keyword=&page=&size=`<br>• `POST` / `PUT /{id}` / `DELETE /{id}` → chỉ ADMIN và ORGANIZER | 2 | ✅ Đã code (`ParticipantController`, `@PreAuthorize` cấp class áp dụng cho mọi endpoint kể cả `GET`) |
+| `B3.4-T4` | `BE-TEST` | **Test case người tham gia** | • TC1: tạo trùng email → 409<br>• TC2: phone sai định dạng → 400<br>• TC3: xoá người còn đăng ký → 409 | 1 | ✅ Đã viết đủ 3 TC + vài TC bổ sung (trùng username, 404, USER bị 403) — 82/82 test pass |
+
+### 🟩 Frontend
+
+| Mã task | Loại | Tên công việc | Chi tiết công việc phải làm | Điểm | Trạng thái |
+|---|---|---|---|---|---|
+| `B3.4-T5` | `FE-UI` | **Trang quản lý người tham gia** | • Bảng: họ tên, email, SĐT, số sự kiện đã đăng ký, thao tác<br>• Modal thêm/sửa dùng chung | 2 | ⬜ Chưa làm |
+| `B3.4-T6` | `FE-VAL` | **Validation & alert người tham gia** | • Kiểm tra client: bắt buộc họ tên, email đúng định dạng, SĐT 10 số<br>• Confirm trước khi xoá; hiện đúng message 409 từ backend | 1 | ⬜ Chưa làm |
+| `B3.4-T7` | `FE-RES` | **Responsive trang người tham gia** | • Mobile: card list; modal full màn hình | 1 | ⬜ Chưa làm |
+
+### Ghi chú bàn giao
+
+- API đã chạy thật, 82/82 test pass. Response mẫu và mã lỗi đầy đủ ở `docs/api_contract.md` mục 14.
+- FE cần gửi cả `username` khi tạo/sửa participant (form nên có ô này) dù mô tả gốc của story không nhắc tới — bắt buộc vì ràng buộc DB.
+- Participant dùng chung bảng `users` với tài khoản Admin/Organizer — xoá participant chỉ xoá đúng bản ghi `ROLE_USER`, không ảnh hưởng tài khoản khác.
+
+---
+
+# Epic 4 — Điểm danh
+
+## `B4.1` — Điểm danh (check-in) người tham gia
+
+> **User story**: *Là ban tổ chức, tôi muốn điểm danh (check-in) người tham gia khi họ đến để biết ai thực sự có mặt.*
+> **Tiêu chí chấp nhận**: Chỉ điểm danh lượt đăng ký ACTIVE của đúng sự kiện; lưu thời điểm và người thực hiện; không cho điểm danh trùng
+> **Ưu tiên**: Must · **Điểm**: 5 · **Module**: M4 · **Sprint**: Tuần 2 · **Phụ trách**: TV4 — M4 Điểm danh
+
+### 📦 Backend
+
+| Mã task | Loại | Tên công việc | Chi tiết công việc phải làm | Điểm | Trạng thái |
+|---|---|---|---|---|---|
+| `B4.1-T1` | `BE-DB` | **Entity CheckInHistory** | • `CheckInHistory`: id, registration (OneToOne, **unique**), checkedBy (ManyToOne User), status, checkedInAt<br>• Ràng buộc unique trên `registration_id` → chống điểm danh trùng ngay ở tầng DB<br>• `CheckInStatus`: SUCCESS, ALREADY_CHECKED_IN, INVALID_TICKET, WRONG_EVENT | 2 | ✅ Đã code (chỉ lưu bản ghi khi `SUCCESS`; các trạng thái còn lại là kết quả trả về API, không lưu DB — quyết định thiết kế, xem ghi chú bàn giao) |
+| `B4.1-T2` | `BE-REPO` | **CheckInHistoryRepository** | • `boolean existsByRegistrationId(Long)`<br>• `Optional<CheckInHistory> findByRegistrationId(Long)`<br>• `long countByRegistration_EventId(Long)` — đếm số người đã có mặt | 1 | ✅ Đã code, thêm `findCheckedInRegistrationIds(List<Long>)` (group cho cả trang, phục vụ B3.3) |
+| `B4.1-T3` | `BE-SVC` | **Logic check-in** | • `@Transactional checkIn(registrationId, eventId, currentUser)`<br>• Không tìm thấy lượt đăng ký → `INVALID_TICKET` 404<br>• Lượt đăng ký thuộc sự kiện khác → `WRONG_EVENT` 400<br>• `status != ACTIVE` → từ chối `"Lượt đăng ký đã bị huỷ"`<br>• Đã có bản ghi điểm danh → `ALREADY_CHECKED_IN` 409, nêu rõ giờ đã check-in trước đó<br>• Hợp lệ → tạo bản ghi `SUCCESS` kèm `checkedInAt=now`, `checkedBy=người đang đăng nhập` | 3 | ✅ Đã code (`CheckInServiceImpl`) |
+| `B4.1-T4` | `BE-API` | **API POST /check-in** | • `@PreAuthorize("hasAnyRole('ADMIN','ORGANIZER')")`<br>• Body `{ registrationId, eventId }`<br>• Trả `{ status, message, participantName, checkedInAt }` | 2 | ✅ Đã code (`CheckInController`) — nhánh lỗi trả theo `ErrorResponse` chung (`errorCode`), chỉ nhánh thành công dùng DTO `CheckInRes` riêng (xem ghi chú bàn giao) |
+| `B4.1-T5` | `BE-TEST` | **Test case điểm danh** | • TC1: điểm danh hợp lệ → 200, DB có đúng 1 bản ghi<br>• TC2: điểm danh lần 2 cùng lượt đăng ký → 409, **không sinh thêm bản ghi nào**<br>• TC3: người chưa đăng ký → 404 INVALID_TICKET<br>• TC4: lượt đăng ký của sự kiện khác → 400 WRONG_EVENT<br>• TC5: lượt đăng ký đã huỷ → bị từ chối | 2 | ✅ Đã viết đủ 5 TC (`CheckInServiceTest`) + test quyền hạn qua MockMvc (`CheckInControllerTest`) — 91/91 test pass |
+
+### 🟩 Frontend
+
+| Mã task | Loại | Tên công việc | Chi tiết công việc phải làm | Điểm | Trạng thái |
+|---|---|---|---|---|---|
+| `B4.1-T6` | `FE-UI` | **Màn hình điểm danh** | • `checkInApi.ts`; bảng liệt kê toàn bộ đăng ký ACTIVE của sự kiện<br>• Mỗi dòng: họ tên, email, badge trạng thái (Chưa đến / Đã đến + giờ), nút `"Điểm danh"`<br>• Nút biến mất và badge đổi sang xanh ngay sau khi check-in | 3 | ⬜ Chưa làm |
+| `B4.1-T7` | `FE-STATE` | **Cập nhật không tải lại toàn trang** | • Sau khi API trả về, cập nhật đúng phần tử trong mảng state (optimistic update)<br>• Trang giữ nguyên vị trí cuộn, **không nhảy về đầu danh sách**<br>• Gọi API thất bại → hoàn tác trạng thái dòng đó | 2 | ⬜ Chưa làm |
+| `B4.1-T8` | `FE-ALERT` | **Alert kết quả điểm danh** | • SUCCESS → toast xanh `"✅ Điểm danh thành công — <Họ tên>"`<br>• ALREADY_CHECKED_IN → toast vàng `"Người này đã điểm danh lúc HH:mm"`<br>• INVALID_TICKET / WRONG_EVENT → toast đỏ | 1 | ⬜ Chưa làm |
+| `B4.1-T9` | `FE-RES` | **Responsive màn hình điểm danh** | • Ưu tiên mobile vì thường dùng điện thoại tại cửa: mỗi người là 1 card, nút điểm danh to, cao ≥48px<br>• Ô tìm nhanh theo tên dính ở đầu màn hình | 1 | ⬜ Chưa làm |
+
+### Ghi chú bàn giao
+
+- API đã chạy thật, 91/91 test pass. Response mẫu và mã lỗi đầy đủ ở `docs/api_contract.md` mục 15.
+- **Quyết định thiết kế**: `CheckInHistory` chỉ lưu bản ghi khi điểm danh **thành công** (status trong DB luôn là `SUCCESS`). Các trạng thái `ALREADY_CHECKED_IN`/`INVALID_TICKET`/`WRONG_EVENT` chỉ là giá trị trả về qua API (ném `BusinessException` kèm `errorCode`), không tạo bản ghi — vì mục đích của ràng buộc UNIQUE trên `registration_id` là chặn điểm danh trùng, không phải để lưu lịch sử các lần thử thất bại.
+- Đã nối lại 2 chỗ đang ghi nợ TODO(B4.1) từ trước: `RegistrationServiceImpl.cancel()` (chặn huỷ khi đã điểm danh) và `getRegistrationsByEvent()` (field `checkedIn` giờ đúng dữ liệu thật). Cả 2 đã cập nhật lại trong `docs/api_contract.md` mục 12 và 13.
+- B4.5 (mã QR/check-in nhanh bằng mã) là task `Could`, chưa làm — luồng điểm danh chính hiện tại dùng `registrationId` nhập bằng nút bấm/danh sách, đúng theo định hướng "khi cần" của bản v3.0.

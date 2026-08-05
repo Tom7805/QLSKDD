@@ -35,4 +35,14 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
             + "WHERE r.status = :status AND r.event.id IN :eventIds GROUP BY r.event.id")
     List<Object[]> countGroupedByEventIdsAndStatus(@Param("eventIds") List<Long> eventIds,
                                                      @Param("status") RegistrationStatus status);
+
+    // B3.4-T1: đếm số lượt đăng ký ACTIVE của 1 người tham gia — dùng để chặn xoá
+    long countByUserIdAndStatus(Long userId, RegistrationStatus status);
+
+    // B3.4-T1: đếm số lượt đăng ký ACTIVE cho CẢ MỘT TRANG người tham gia bằng đúng 1
+    // truy vấn group by (tránh N+1), dùng cho cột "số sự kiện đã đăng ký"
+    @Query("SELECT r.user.id, COUNT(r) FROM Registration r "
+            + "WHERE r.status = :status AND r.user.id IN :userIds GROUP BY r.user.id")
+    List<Object[]> countGroupedByUserIdsAndStatus(@Param("userIds") List<Long> userIds,
+                                                    @Param("status") RegistrationStatus status);
 }

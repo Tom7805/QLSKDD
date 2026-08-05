@@ -7,6 +7,7 @@ import com.qlskdd.enums.EventStatus;
 import com.qlskdd.enums.RegistrationStatus;
 import com.qlskdd.exception.BusinessException;
 import com.qlskdd.exception.ResourceNotFoundException;
+import com.qlskdd.repository.CheckInHistoryRepository;
 import com.qlskdd.repository.EventRepository;
 import com.qlskdd.repository.RegistrationRepository;
 import com.qlskdd.repository.UserRepository;
@@ -26,6 +27,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -35,6 +39,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final EventRepository eventRepository;
     private final RegistrationRepository registrationRepository;
     private final UserRepository userRepository;
+    private final CheckInHistoryRepository checkInHistoryRepository;
 
     @Override
     @Transactional
@@ -100,9 +105,10 @@ public class RegistrationServiceImpl implements RegistrationService {
             throw new BusinessException(HttpStatus.CONFLICT, "Sự kiện đã bắt đầu, không thể huỷ đăng ký");
         }
 
-        // TODO(B4.1): chặn huỷ khi lượt đăng ký đã có bản ghi điểm danh — cần
-        // CheckInHistoryRepository.existsByRegistrationId(registrationId), hiện B4.1
-        // (check-in) chưa được triển khai nên tạm thời bỏ qua điều kiện này.
+        // B4.1: chặn huỷ khi lượt đăng ký đã có bản ghi điểm danh
+        if (checkInHistoryRepository.existsByRegistrationId(registrationId)) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Lượt đăng ký đã được điểm danh, không thể huỷ");
+        }
 
         registration.setStatus(RegistrationStatus.CANCELLED);
         registrationRepository.save(registration);
@@ -119,6 +125,13 @@ public class RegistrationServiceImpl implements RegistrationService {
         // B3.3-T1: findByEventId đã có sẵn @EntityGraph(user) từ B3.1-T2 -> không N+1
         Page<Registration> registrationPage = registrationRepository.findByEventId(eventId, pageable);
 
+        // B4.1: xác định registrationId nào đã điểm danh cho CẢ TRANG bằng 1 truy vấn,
+        // không gọi existsByRegistrationId lặp lại cho từng dòng (tránh N+1)
+        List<Long> registrationIds = registrationPage.getContent().stream().map(Registration::getId).toList();
+        Set<Long> checkedInIds = registrationIds.isEmpty()
+                ? new HashSet<>()
+                : new HashSet<>(checkInHistoryRepository.findCheckedInRegistrationIds(registrationIds));
+
         Page<RegistrationListItemRes> itemPage = registrationPage.map(r -> RegistrationListItemRes.builder()
                 .id(r.getId())
                 .fullName(r.getUser().getFullName())
@@ -126,7 +139,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                 .phone(r.getUser().getPhone())
                 .registeredAt(r.getRegisteredAt())
                 .status(r.getStatus())
-                .checkedIn(false) // TODO(B4.1): chưa có tính năng điểm danh
+                .checkedIn(checkedInIds.contains(r.getId()))
                 .build());
 
         long totalRegistered = registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.ACTIVE);

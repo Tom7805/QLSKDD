@@ -1001,3 +1001,199 @@ Không có body.
   "timestamp": "2026-08-06T00:00:00"
 }
 ```
+
+## 14. Quản lý thông tin người tham gia — CRUD (B3.4)
+
+* **Quyền:** tất cả endpoint dưới đây chỉ **ADMIN** và **ORGANIZER** gọi được (khai báo bằng `@PreAuthorize` cấp class trên `ParticipantController`) — USER gọi bất kỳ endpoint nào cũng nhận `403`.
+* **"Người tham gia"** = các bản ghi trong bảng `users` có vai trò `ROLE_USER` — dùng lại đúng bảng `users`, không có bảng participant riêng (quyết định thiết kế từ B3.1).
+* Response **tuyệt đối không chứa trường `password`**, giống `UserRes` (B1.4-T4).
+
+### `GET /api/v1/participants?keyword=&page=&size=` — Danh sách người tham gia
+
+`keyword` (tuỳ chọn) tìm theo họ tên hoặc email, không phân biệt hoa/thường.
+
+**Response — 200 OK**
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Lấy danh sách người tham gia thành công",
+  "data": {
+    "content": [
+      {
+        "id": 5,
+        "username": "user",
+        "fullName": "Người tham gia",
+        "email": "user@qlskdd.com",
+        "phone": "0912345678",
+        "registeredEventCount": 3
+      }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1,
+    "last": true
+  },
+  "timestamp": "2026-08-06T00:00:00"
+}
+```
+`registeredEventCount` chỉ đếm lượt đăng ký `status = ACTIVE`, tính bằng 1 truy vấn group-by cho cả trang (không N+1).
+
+### `GET /api/v1/participants/{id}` — Chi tiết 1 người tham gia
+
+**Response — 404 Not Found** (id không tồn tại, hoặc tồn tại nhưng không phải `ROLE_USER` — vd id của admin/organizer)
+```json
+{
+  "success": false,
+  "status": 404,
+  "error": "Not Found",
+  "message": "Người tham gia không tồn tại với id = '1'",
+  "path": "/api/v1/participants/1",
+  "timestamp": "2026-08-06T00:00:00"
+}
+```
+
+### `POST /api/v1/participants` — Tạo người tham gia
+
+**Request**
+```json
+{
+  "username": "nguoidungmoi",
+  "fullName": "Nguyễn Văn B",
+  "email": "nguoidungmoi@qlskdd.com",
+  "phone": "0912345678",
+  "password": "password123"
+}
+```
+
+| Trường | Bắt buộc | Ràng buộc |
+|---|---|---|
+| `username` | ✅ | 4–50 ký tự, không trùng |
+| `fullName` | ✅ | Không trống |
+| `email` | ✅ | Đúng định dạng email, không trùng |
+| `phone` | ❌ | Nếu có: 10 số, bắt đầu bằng `0` |
+| `password` | ✅ khi tạo mới | ≥8 ký tự |
+
+Không nhận `roleId` — vai trò luôn bị ép về `ROLE_USER`, không thể tạo participant với vai trò khác qua API này.
+
+**Response — 201 Created**: giống cấu trúc `GET /{id}` (không `password`), `registeredEventCount = 0`.
+
+**Response — 409 Conflict** (trùng email)
+```json
+{
+  "success": false,
+  "status": 409,
+  "error": "Conflict",
+  "message": "Email đã tồn tại",
+  "path": "/api/v1/participants",
+  "timestamp": "2026-08-06T00:00:00"
+}
+```
+
+**Response — 400 Bad Request** (`phone` sai định dạng)
+```json
+{
+  "success": false,
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Dữ liệu không hợp lệ",
+  "path": "/api/v1/participants",
+  "timestamp": "2026-08-06T00:00:00",
+  "errors": [
+    { "field": "phone", "message": "Số điện thoại phải có 10 số và bắt đầu bằng 0" }
+  ]
+}
+```
+
+### `PUT /api/v1/participants/{id}` — Sửa người tham gia
+
+Body giống `POST`. Để trống `password` = giữ nguyên mật khẩu cũ. Kiểm tra trùng username/email **bỏ qua chính bản ghi đang sửa**.
+
+### `DELETE /api/v1/participants/{id}` — Xoá người tham gia
+
+**Response — 200 OK**
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Xoá người tham gia thành công",
+  "timestamp": "2026-08-06T00:00:00"
+}
+```
+
+**Response — 409 Conflict** (còn lượt đăng ký ACTIVE)
+```json
+{
+  "success": false,
+  "status": 409,
+  "error": "Conflict",
+  "message": "Không thể xoá: người này còn 2 lượt đăng ký",
+  "path": "/api/v1/participants/7",
+  "timestamp": "2026-08-06T00:00:00"
+}
+```
+
+## 15. Điểm danh (check-in) người tham gia (B4.1)
+
+* **URL:** `POST /api/v1/check-in`
+* **Headers:** `Authorization: Bearer {{accessToken}}`
+* **Quyền:** chỉ **ADMIN** và **ORGANIZER**. USER gọi nhận `403`.
+* Chỉ điểm danh được lượt đăng ký `status = ACTIVE`, đúng sự kiện, và **chưa từng điểm danh**. Mỗi lượt đăng ký chỉ điểm danh được **đúng 1 lần** — chặn cả ở tầng service lẫn ràng buộc UNIQUE ở DB (`check_in_histories.registration_id`).
+
+### Request
+```json
+{
+  "registrationId": 15,
+  "eventId": 1
+}
+```
+
+| Trường | Bắt buộc | Ghi chú |
+|---|---|---|
+| `registrationId` | ✅ | Lấy từ `data.registrationId` lúc đăng ký (mục 11) hoặc từ `data.registrations.content[].id` của mục 13 |
+| `eventId` | ✅ | Phải khớp đúng sự kiện của `registrationId` — khác sự kiện sẽ bị từ chối |
+
+### Response — 200 OK (điểm danh thành công)
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Điểm danh thành công",
+  "data": {
+    "status": "SUCCESS",
+    "message": "Điểm danh thành công",
+    "participantName": "Nguyễn Văn A",
+    "checkedInAt": "2026-08-06T09:15:00"
+  },
+  "timestamp": "2026-08-06T09:15:00"
+}
+```
+
+### Các nhánh lỗi — phân biệt bằng `errorCode` (giống cách B3.1 dùng errorCode)
+
+| `errorCode` | HTTP | Khi nào xảy ra | `message` |
+|---|---|---|---|
+| `INVALID_TICKET` | 404 | `registrationId` không tồn tại | "Vé không hợp lệ" |
+| `WRONG_EVENT` | 400 | Lượt đăng ký thuộc sự kiện khác với `eventId` gửi lên | "Lượt đăng ký không thuộc sự kiện này" |
+| `ALREADY_CHECKED_IN` | 409 | Lượt đăng ký đã có bản ghi điểm danh trước đó | "Người này đã điểm danh lúc HH:mm" (giờ điểm danh lần đầu) |
+| (không có, dùng chung `BusinessException`) | 409 | Lượt đăng ký đã bị huỷ (`status = CANCELLED`) | "Lượt đăng ký đã bị huỷ" |
+
+**Mẫu response lỗi ALREADY_CHECKED_IN:**
+```json
+{
+  "success": false,
+  "status": 409,
+  "error": "Conflict",
+  "message": "Người này đã điểm danh lúc 09:15",
+  "errorCode": "ALREADY_CHECKED_IN",
+  "path": "/api/v1/check-in",
+  "timestamp": "2026-08-06T09:20:00"
+}
+```
+
+FE bắt `errorCode` để hiển thị đúng màu toast (B4.1-T8): `SUCCESS` → xanh, `ALREADY_CHECKED_IN` → vàng, `INVALID_TICKET`/`WRONG_EVENT` → đỏ.
+
+> **Cập nhật liên quan (đã nối lại các chỗ đang nợ từ B3.2/B3.3):**
+> - `DELETE /api/v1/registrations/{id}` (mục 12) giờ **chặn huỷ khi đã điểm danh** → `409` `"Lượt đăng ký đã được điểm danh, không thể huỷ"`.
+> - `GET /api/v1/events/{eventId}/registrations` (mục 13) giờ trả `checkedIn` **đúng theo dữ liệu thật** thay vì luôn `false`.

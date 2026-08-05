@@ -17,7 +17,7 @@ public class RegistrationListItemRes {
     private LocalDateTime registeredAt;
     private RegistrationStatus status;
 
-    // TODO(B4.1): tính từ CheckInHistoryRepository.existsByRegistrationId khi tính
-    // năng điểm danh được triển khai — hiện luôn trả về false.
+    // B4.1: tính từ CheckInHistoryRepository.findCheckedInRegistrationIds (1 truy vấn
+    // cho cả trang, không N+1) — xem RegistrationServiceImpl.getRegistrationsByEvent.
     private boolean checkedIn;
 }

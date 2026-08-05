@@ -54,11 +54,15 @@ class RegistrationServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private com.qlskdd.repository.CheckInHistoryRepository checkInHistoryRepository;
+
     private RegistrationServiceImpl registrationService;
 
     @BeforeEach
     void setUp() {
-        registrationService = new RegistrationServiceImpl(eventRepository, registrationRepository, userRepository);
+        registrationService = new RegistrationServiceImpl(eventRepository, registrationRepository, userRepository,
+                checkInHistoryRepository);
         setCurrentUser("user1");
     }
 
