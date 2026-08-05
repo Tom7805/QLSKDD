@@ -49,6 +49,7 @@ function App() {
           <Route path={ROUTES.CHANGE_PASSWORD} element={<ChangePasswordPage />} />
           <Route element={<RoleRoute allow={['ROLE_ADMIN', 'ROLE_ORGANIZER']} />}>
             <Route path={ROUTES.EVENT_CREATE} element={<EventFormPage />} />
+            <Route path={ROUTES.EVENT_EDIT} element={<EventFormPage />} />
             <Route path={ROUTES.EVENT_DETAIL} element={<EventDetailPage />} />
           </Route>
           <Route element={<RoleRoute allow={['ROLE_ADMIN']} />}>
