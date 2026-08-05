@@ -1,3 +1,5 @@
+import type { EventStatus } from '../../components/common/EventStatusBadge';
+
 export interface EventDetail {
   id: number;
   name: string;
@@ -6,11 +8,15 @@ export interface EventDetail {
   capacity: number;
   startAt: string;
   endAt: string;
-  status: string;
+  status: EventStatus;
   categoryId: number;
   categoryName: string | null;
   createdBy: string;
   createdAt: string;
+}
+
+export interface EventStatusRequest {
+  status: EventStatus;
 }
 
 export interface EventCreateRequest {
