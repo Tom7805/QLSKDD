@@ -1,8 +1,13 @@
 import apiClient from '../../configs/apiClient';
 import type { ApiResponse } from '../auth/authTypes';
-import type { EventCreateRequest, EventDetail, EventStatusRequest } from './eventsTypes';
+import type { EventCreateRequest, EventDetail, EventsPage, EventStatusRequest } from './eventsTypes';
 
 const EVENTS_BASE_URL = '/events';
+
+export const getEvents = (page = 0, size = 9): Promise<EventsPage> =>
+  apiClient
+    .get<ApiResponse<EventsPage>>(EVENTS_BASE_URL, { params: { page, size } })
+    .then((response) => response.data.data);
 
 export const createEvent = (request: EventCreateRequest): Promise<EventDetail> =>
   apiClient
