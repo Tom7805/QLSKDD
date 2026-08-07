@@ -46,3 +46,22 @@ export interface EventRegistrationsResponse {
     capacity: number | null;
   };
 }
+
+export interface Participant {
+  id: number;
+  username: string;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  registeredEventCount: number;
+}
+
+export interface ParticipantRequest {
+  username: string;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  password?: string;
+}
+
+export interface ParticipantPage extends PaginationResponse<Participant> {}

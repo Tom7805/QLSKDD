@@ -3,6 +3,7 @@ export const ROUTES = {
   LOGIN: '/login',
   FORBIDDEN: '/403',
   USERS: '/users',
+  PARTICIPANTS: '/participants',
   CATEGORIES: '/categories',
   EVENTS: '/events',
   MY_REGISTRATIONS: '/my-registrations',
