@@ -18,11 +18,31 @@ export interface MyRegistration {
   canCancel: boolean;
 }
 
-export interface RegistrationsPage {
-  content: MyRegistration[];
+export interface PaginationResponse<T> {
+  content: T[];
   page: number;
   size: number;
   totalElements: number;
   totalPages: number;
   last: boolean;
+}
+
+export interface RegistrationsPage extends PaginationResponse<MyRegistration> {}
+
+export interface EventRegistrationItem {
+  id: number;
+  fullName: string;
+  email: string;
+  phone: string;
+  registeredAt: string;
+  status: 'ACTIVE' | 'CANCELLED';
+  checkedIn: boolean;
+}
+
+export interface EventRegistrationsResponse {
+  registrations: PaginationResponse<EventRegistrationItem>;
+  summary: {
+    totalRegistered: number;
+    capacity: number | null;
+  };
 }

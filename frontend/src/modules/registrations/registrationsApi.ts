@@ -1,8 +1,9 @@
 import apiClient from '../../configs/apiClient';
 import type { ApiResponse } from '../auth/authTypes';
-import type { RegistrationCreateResponse, RegistrationsPage } from './registrationsTypes';
+import type { EventRegistrationsResponse, RegistrationCreateResponse, RegistrationsPage } from './registrationsTypes';
 
 const REGISTRATIONS_BASE_URL = '/registrations';
+const EVENTS_BASE_URL = '/events';
 
 export const registerForEvent = (eventId: number): Promise<RegistrationCreateResponse> =>
   apiClient
@@ -16,3 +17,8 @@ export const getMyRegistrations = (page = 0, size = 10): Promise<RegistrationsPa
 
 export const cancelRegistration = (registrationId: number): Promise<void> =>
   apiClient.delete<ApiResponse<void>>(`${REGISTRATIONS_BASE_URL}/${registrationId}`).then(() => undefined);
+
+export const getEventRegistrations = (eventId: number, page = 0, size = 10): Promise<EventRegistrationsResponse> =>
+  apiClient
+    .get<ApiResponse<EventRegistrationsResponse>>(`${EVENTS_BASE_URL}/${eventId}/registrations`, { params: { page, size } })
+    .then((response) => response.data.data);

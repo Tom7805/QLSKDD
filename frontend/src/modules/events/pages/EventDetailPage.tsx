@@ -172,7 +172,13 @@ export default function EventDetailPage() {
               {canManageEvent && <>
                 <button type="button" onClick={() => navigate(ROUTES.EVENT_EDIT.replace(':id', String(event.id)))} className="min-h-11 rounded-xl border border-blue-200 px-4 py-2 font-semibold text-blue-700 hover:bg-blue-50">Sửa sự kiện</button>
                 {event.status === 'OPEN' && <button type="button" onClick={() => setPendingStatus('CLOSED')} className="min-h-11 rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50">Đóng sự kiện</button>}
-                <button type="button" className="min-h-11 rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50">Xem người đăng ký</button>
+                <button
+                  type="button"
+                  onClick={() => navigate(ROUTES.EVENT_REGISTRATIONS.replace(':eventId', String(event.id)))}
+                  className="min-h-11 rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Xem người đăng ký
+                </button>
                 <button type="button" className="min-h-11 rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50">Điểm danh</button>
                 {event.status === 'OPEN' && <button type="button" onClick={() => setPendingStatus('CANCELLED')} className="min-h-11 rounded-xl bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700">Huỷ sự kiện</button>}
               </>}
