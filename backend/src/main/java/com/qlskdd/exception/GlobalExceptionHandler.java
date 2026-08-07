@@ -23,7 +23,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex, HttpServletRequest request) {
-        return build(ex.getStatus(), ex.getMessage(), request, null);
+        return build(ex.getStatus(), ex.getMessage(), ex.getErrorCode(), request, null);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -35,53 +35,48 @@ public class GlobalExceptionHandler {
                         .message(fe.getDefaultMessage())
                         .build())
                 .collect(Collectors.toList());
-        return build(HttpStatus.BAD_REQUEST, "Dữ liệu không hợp lệ", request, fieldErrors);
+        return build(HttpStatus.BAD_REQUEST, "Dữ liệu không hợp lệ", "VALIDATION_ERROR", request, fieldErrors);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
-        return build(HttpStatus.FORBIDDEN, "Bạn không có quyền truy cập tài nguyên này", request, null);
+        return build(HttpStatus.FORBIDDEN, "Bạn không có quyền truy cập tài nguyên này", "ACCESS_DENIED", request, null);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
-        return build(HttpStatus.UNAUTHORIZED, "Sai tên đăng nhập hoặc mật khẩu", request, null);
+        return build(HttpStatus.UNAUTHORIZED, "Sai tên đăng nhập hoặc mật khẩu", "BAD_CREDENTIALS", request, null);
     }
 
     @ExceptionHandler(DisabledException.class)
     public ResponseEntity<ErrorResponse> handleDisabled(DisabledException ex, HttpServletRequest request) {
-        return build(HttpStatus.FORBIDDEN, "Tài khoản đã bị khoá", request, null);
+        return build(HttpStatus.FORBIDDEN, "Tài khoản đã bị khoá", "ACCOUNT_DISABLED", request, null);
     }
 
-    // Xảy ra khi request tới /auth/me (permitAll) mà không có/token không hợp lệ nên
-    // SecurityContext rơi về anonymousUser, hoặc bất kỳ chỗ nào tra user theo username
-    // không thấy — phải trả 401 (chưa xác thực được), không phải 500.
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUsernameNotFound(UsernameNotFoundException ex, HttpServletRequest request) {
-        return build(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để thực hiện thao tác này", request, null);
+        return build(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để thực hiện thao tác này", "UNAUTHORIZED", request, null);
     }
 
-    // Xảy ra khi gọi đúng path nhưng sai HTTP method (ví dụ PATCH /users/5 thay vì
-    // PATCH /users/5/status, trong khi PUT /users/5 tồn tại) — Spring MVC vốn tự trả
-    // 405 đúng chuẩn, nhưng handler Exception.class ở dưới bắt luôn nên phải chặn tay.
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex,
                                                                     HttpServletRequest request) {
-        return build(HttpStatus.METHOD_NOT_ALLOWED, "Phương thức không được hỗ trợ cho địa chỉ này", request, null);
+        return build(HttpStatus.METHOD_NOT_ALLOWED, "Phương thức không được hỗ trợ cho địa chỉ này", "METHOD_NOT_ALLOWED", request, null);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, HttpServletRequest request) {
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau", request, null);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau", "INTERNAL_SERVER_ERROR", request, null);
     }
 
-    private ResponseEntity<ErrorResponse> build(HttpStatus status, String message, HttpServletRequest request,
+    private ResponseEntity<ErrorResponse> build(HttpStatus status, String message, String errorCode, HttpServletRequest request,
                                                  List<ErrorResponse.FieldErrorDetail> errors) {
         ErrorResponse body = ErrorResponse.builder()
                 .success(false)
                 .status(status.value())
                 .error(status.getReasonPhrase())
                 .message(message)
+                .errorCode(errorCode)
                 .path(request.getRequestURI())
                 .timestamp(LocalDateTime.now())
                 .errors(errors)

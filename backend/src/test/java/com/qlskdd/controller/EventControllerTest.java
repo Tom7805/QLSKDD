@@ -7,7 +7,10 @@ import com.qlskdd.security.JwtProvider;
 import com.qlskdd.security.RestAccessDeniedHandler;
 import com.qlskdd.security.RestAuthenticationEntryPoint;
 import com.qlskdd.exception.ResourceNotFoundException;
+import com.qlskdd.mapper.response.EventRegistrationsRes;
+import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.service.EventService;
+import com.qlskdd.service.RegistrationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -19,7 +22,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -47,6 +52,9 @@ class EventControllerTest {
 
     @MockBean
     private EventService eventService;
+
+    @MockBean
+    private RegistrationService registrationService;
 
     @MockBean
     private UserDetailsService userDetailsService;
@@ -235,6 +243,30 @@ class EventControllerTest {
         mockMvc.perform(get(EVENTS_URL + "/999"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Sự kiện không tồn tại với id = '999'"));
+    }
+
+    /**
+     * Test case B3.3-T3.
+     */
+    @Test
+    @WithMockUser(username = "organizer", roles = "ORGANIZER")
+    void xemDanhSachDangKy_Organizer_traVe200() throws Exception {
+        EventRegistrationsRes res = EventRegistrationsRes.builder()
+                .registrations(new PageRes<>(Collections.emptyList(), 0, 10, 0, 0, true))
+                .summary(EventRegistrationsRes.Summary.builder().totalRegistered(0).capacity(100).build())
+                .build();
+        when(registrationService.getRegistrationsByEvent(any(), any())).thenReturn(res);
+
+        mockMvc.perform(get(EVENTS_URL + "/1/registrations"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "user1", roles = "USER")
+    void xemDanhSachDangKy_User_traVe403() throws Exception {
+        mockMvc.perform(get(EVENTS_URL + "/1/registrations"))
+                .andExpect(status().isForbidden());
     }
 
     private LocalDateTime future(long days) {

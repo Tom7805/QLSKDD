@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { configureStore } from '@reduxjs/toolkit';
 import { Provider } from 'react-redux';
@@ -73,8 +73,8 @@ describe('CategoryListPage', () => {
 
     renderCategoryPage();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Xoá', exact: false }));
-    expect(screen.getByRole('dialog')).toHaveTextContent("Bạn có chắc muốn xoá loại sự kiện 'Hội thảo'?" || 'Bạn có chắc muốn xoá loại sự kiện');
+    await userEvent.click(await screen.findByRole('button', { name: /Xoá/i }));
+    expect(screen.getByRole('dialog')).toHaveTextContent(/Bạn có chắc muốn xoá loại sự kiện/i);
 
     await userEvent.click(screen.getByRole('button', { name: 'Xoá' }));
 

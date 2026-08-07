@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import { useToast } from '../../../components/common/Toast';
-import { createCategory, deleteCategory, getCategories, updateCategory } from '../categoriesApi';
+import { deleteCategory, getCategories } from '../categoriesApi';
 import CategoryFormModal from '../components/CategoryFormModal';
 import type { Category } from '../categoriesTypes';
 
