@@ -5,6 +5,7 @@ export const ROUTES = {
   USERS: '/users',
   CATEGORIES: '/categories',
   EVENTS: '/events',
+  MY_REGISTRATIONS: '/my-registrations',
   EVENT_CREATE: '/events/new',
   EVENT_EDIT: '/events/:id/edit',
   EVENT_DETAIL: '/events/:id',

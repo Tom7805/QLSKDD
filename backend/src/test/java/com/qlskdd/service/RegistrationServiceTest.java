@@ -9,7 +9,10 @@ import com.qlskdd.enums.RegistrationStatus;
 import com.qlskdd.exception.BusinessException;
 import com.qlskdd.exception.DuplicateDataException;
 import com.qlskdd.exception.OverbookingException;
+import com.qlskdd.mapper.RegistrationMapper;
 import com.qlskdd.mapper.response.EventRegistrationsRes;
+import com.qlskdd.mapper.response.MyRegistrationRes;
+import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.mapper.response.RegistrationRes;
 import com.qlskdd.repository.EventRepository;
 import com.qlskdd.repository.RegistrationRepository;
@@ -58,7 +61,8 @@ class RegistrationServiceTest {
 
     @BeforeEach
     void setUp() {
-        registrationService = new RegistrationServiceImpl(eventRepository, registrationRepository, userRepository);
+        registrationService = new RegistrationServiceImpl(eventRepository, registrationRepository, userRepository,
+                new RegistrationMapper());
         setCurrentUser("user1");
     }
 
@@ -224,6 +228,53 @@ class RegistrationServiceTest {
 
         assertThrows(com.qlskdd.exception.ResourceNotFoundException.class,
                 () -> registrationService.cancel(999L));
+    }
+
+    /**
+     * Test case B3.2-T5: GET /registrations/me — trang "Sự kiện của tôi".
+     */
+    @Test
+    void testGetMyRegistrations_TraDanhSachCuaChinhUserDangDangNhap() {
+        Event event = buildEvent(EventStatus.OPEN);
+        Registration registration = Registration.builder()
+                .id(20L)
+                .event(event)
+                .status(RegistrationStatus.ACTIVE)
+                .code("CODE20")
+                .registeredAt(LocalDateTime.now())
+                .build();
+        Pageable pageable = PageRequest.of(0, 10);
+        when(registrationRepository.findByUserUsernameOrderByRegisteredAtDesc("user1", pageable))
+                .thenReturn(new PageImpl<>(List.of(registration), pageable, 1));
+
+        PageRes<MyRegistrationRes> result = registrationService.getMyRegistrations(pageable);
+
+        assertEquals(1, result.getTotalElements());
+        MyRegistrationRes item = result.getContent().get(0);
+        assertEquals(20L, item.getRegistrationId());
+        assertEquals("Hội thảo AI", item.getEventName());
+        assertEquals(RegistrationStatus.ACTIVE, item.getRegistrationStatus());
+        assertTrue(item.isCanCancel());
+    }
+
+    @Test
+    void testGetMyRegistrations_SuKienDaBatDau_CanCancelFalse() {
+        Event event = buildEvent(EventStatus.OPEN);
+        event.setStartAt(LocalDateTime.now().minusHours(1));
+        Registration registration = Registration.builder()
+                .id(21L)
+                .event(event)
+                .status(RegistrationStatus.ACTIVE)
+                .code("CODE21")
+                .registeredAt(LocalDateTime.now())
+                .build();
+        Pageable pageable = PageRequest.of(0, 10);
+        when(registrationRepository.findByUserUsernameOrderByRegisteredAtDesc("user1", pageable))
+                .thenReturn(new PageImpl<>(List.of(registration), pageable, 1));
+
+        PageRes<MyRegistrationRes> result = registrationService.getMyRegistrations(pageable);
+
+        assertFalse(result.getContent().get(0).isCanCancel());
     }
 
     /**
