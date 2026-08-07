@@ -857,7 +857,51 @@ FE bắt `errorCode` (không phải parse chuỗi `message`) để hiển thị 
 - `DUPLICATE_REGISTRATION` → `"Bạn đã đăng ký sự kiện này"`
 - 401 (chưa đăng nhập) → dialog gợi ý chuyển sang trang đăng nhập.
 
-## 12. Huỷ đăng ký (B3.2)
+## 12. Danh sách đăng ký của tôi (B3.2-T5)
+
+* **URL:** `GET /api/v1/registrations/me?page=0&size=10`
+* **Headers:** `Authorization: Bearer {{accessToken}}` — bất kỳ ai đã đăng nhập, chỉ trả về lượt đăng ký của **chính người gọi** (lấy từ token, không nhận `userId`/`username` qua query).
+* Sắp xếp mặc định: `registeredAt` giảm dần (đăng ký gần nhất lên trước).
+* Đây là API còn thiếu khiến FE không dựng được trang **"Sự kiện của tôi"** (B3.2-T5/T6/T7) — trước đó backend mới chỉ có `POST /registrations` và `DELETE /registrations/{id}`.
+
+### Response — 200 OK
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Lấy danh sách đăng ký của tôi thành công",
+  "data": {
+    "content": [
+      {
+        "registrationId": 15,
+        "code": "3f2a9c1e-...-...",
+        "registrationStatus": "ACTIVE",
+        "registeredAt": "2026-08-05T10:00:00",
+        "eventId": 1,
+        "eventName": "Hội thảo Trí tuệ nhân tạo 2026",
+        "location": "Hội trường A",
+        "startAt": "2026-08-20T08:00:00",
+        "endAt": "2026-08-20T11:00:00",
+        "eventStatus": "OPEN",
+        "canCancel": true
+      }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1,
+    "last": true
+  },
+  "timestamp": "2026-08-07T00:00:00"
+}
+```
+
+* `registrationStatus`: `ACTIVE` | `CANCELLED`.
+* `eventStatus`: `OPEN` | `CLOSED` | `CANCELLED` (dùng để tô màu badge, giống danh sách/chi tiết sự kiện).
+* **`canCancel`**: backend tự tính sẵn theo đúng luật đang áp dụng ở `DELETE /registrations/{id}` (còn `ACTIVE` và sự kiện chưa `startAt`) — FE chỉ cần dựa vào cờ này để ẩn/hiện nút Huỷ, **không tự suy luận lại**.
+  > Lưu ý: `canCancel` **chưa** tính điều kiện "đã điểm danh" vì B4.1 (điểm danh) chưa được triển khai trong code hiện tại. Khi B4.1 xong, backend sẽ cập nhật lại giá trị này — FE không cần đổi gì thêm vì vẫn đọc cùng field `canCancel`.
+
+## 13. Huỷ đăng ký (B3.2)
 
 * **URL:** `DELETE /api/v1/registrations/{id}`
 * **Headers:** `Authorization: Bearer {{accessToken}}`

@@ -15,7 +15,9 @@ import com.qlskdd.service.RegistrationService;
 import lombok.RequiredArgsConstructor;
 import com.qlskdd.exception.DuplicateDataException;
 import com.qlskdd.exception.OverbookingException;
+import com.qlskdd.mapper.RegistrationMapper;
 import com.qlskdd.mapper.response.EventRegistrationsRes;
+import com.qlskdd.mapper.response.MyRegistrationRes;
 import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.mapper.response.RegistrationListItemRes;
 import com.qlskdd.mapper.response.RegistrationRes;
@@ -40,6 +42,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final RegistrationRepository registrationRepository;
     private final UserRepository userRepository;
     private final CheckInHistoryRepository checkInHistoryRepository;
+    private final RegistrationMapper registrationMapper;
 
     @Override
     @Transactional
@@ -115,6 +118,15 @@ public class RegistrationServiceImpl implements RegistrationService {
         // Không xoá bản ghi (giữ lịch sử) — mọi truy vấn đếm chỗ đều lọc status=ACTIVE
         // (countByEventIdAndStatus, countGroupedByEventIdsAndStatus) nên availableSeats
         // tự tăng lại ngay khi đọc lại, không cần thao tác gì thêm (B3.2-T2).
+    }
+
+    @Override
+    public PageRes<MyRegistrationRes> getMyRegistrations(Pageable pageable) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        Page<Registration> registrations = registrationRepository
+                .findByUserUsernameOrderByRegisteredAtDesc(currentUsername, pageable);
+
+        return PageRes.of(registrations.map(registrationMapper::toMyRegistrationRes));
     }
 
     @Override

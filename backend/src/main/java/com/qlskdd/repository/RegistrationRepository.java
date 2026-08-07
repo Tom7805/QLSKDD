@@ -45,4 +45,9 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
             + "WHERE r.status = :status AND r.user.id IN :userIds GROUP BY r.user.id")
     List<Object[]> countGroupedByUserIdsAndStatus(@Param("userIds") List<Long> userIds,
                                                     @Param("status") RegistrationStatus status);
+
+    // B3.2-T5 (FE "Sự kiện của tôi"): danh sách lượt đăng ký của chính người đang đăng
+    // nhập, kèm sự kiện (chống N+1) — mới nhất lên trước
+    @EntityGraph(attributePaths = {"event"})
+    Page<Registration> findByUserUsernameOrderByRegisteredAtDesc(String username, Pageable pageable);
 }
