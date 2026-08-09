@@ -1241,3 +1241,56 @@ FE bắt `errorCode` để hiển thị đúng màu toast (B4.1-T8): `SUCCESS` �
 > **Cập nhật liên quan (đã nối lại các chỗ đang nợ từ B3.2/B3.3):**
 > - `DELETE /api/v1/registrations/{id}` (mục 12) giờ **chặn huỷ khi đã điểm danh** → `409` `"Lượt đăng ký đã được điểm danh, không thể huỷ"`.
 > - `GET /api/v1/events/{eventId}/registrations` (mục 13) giờ trả `checkedIn` **đúng theo dữ liệu thật** thay vì luôn `false`.
+
+## 16. Tổng hợp có mặt / vắng theo sự kiện (B4.2)
+
+* **URL:** `GET /api/v1/events/{id}/attendance-summary`
+* **Headers:** `Authorization: Bearer {{accessToken}}`
+* **Quyền:** chỉ **ADMIN** và **ORGANIZER**. USER gọi nhận `403`.
+* Chỉ tính lượt đăng ký `status = ACTIVE` của sự kiện. `present` là nhóm đã có bản ghi điểm danh (mục 15), `absent` là nhóm chưa có. `present.length + absent.length` luôn bằng `summary.totalRegistered`.
+* `summary.attendanceRate = present / totalRegistered * 100`, làm tròn 1 chữ số thập phân; sự kiện chưa có ai đăng ký thì trả `0.0` (không lỗi chia 0).
+
+### Response — 200 OK
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Lấy tổng hợp điểm danh thành công",
+  "data": {
+    "summary": {
+      "totalRegistered": 3,
+      "present": 2,
+      "absent": 1,
+      "attendanceRate": 66.7
+    },
+    "present": [
+      {
+        "registrationId": 15,
+        "fullName": "Nguyễn Văn A",
+        "email": "a@qlskdd.com",
+        "phone": "0900000001",
+        "registeredAt": "2026-08-06T08:00:00",
+        "checkedInAt": "2026-08-06T09:15:00"
+      }
+    ],
+    "absent": [
+      {
+        "registrationId": 16,
+        "fullName": "Lê Văn C",
+        "email": "c@qlskdd.com",
+        "phone": "0900000003",
+        "registeredAt": "2026-08-06T08:05:00",
+        "checkedInAt": null
+      }
+    ]
+  },
+  "timestamp": "2026-08-09T09:00:00"
+}
+```
+
+### Lỗi
+
+| HTTP | Khi nào | `message` |
+|---|---|---|
+| `404` | `id` sự kiện không tồn tại | "Sự kiện không tồn tại với id = '{id}'" |
+| `403` | Người gọi không phải ADMIN/ORGANIZER | "Bạn không có quyền truy cập tài nguyên này" |

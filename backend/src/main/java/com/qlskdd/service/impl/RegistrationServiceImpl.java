@@ -16,6 +16,9 @@ import lombok.RequiredArgsConstructor;
 import com.qlskdd.exception.DuplicateDataException;
 import com.qlskdd.exception.OverbookingException;
 import com.qlskdd.mapper.RegistrationMapper;
+import com.qlskdd.mapper.response.AttendanceItemRes;
+import com.qlskdd.mapper.response.AttendanceSummary;
+import com.qlskdd.mapper.response.AttendanceSummaryRes;
 import com.qlskdd.mapper.response.EventRegistrationsRes;
 import com.qlskdd.mapper.response.MyRegistrationRes;
 import com.qlskdd.mapper.response.PageRes;
@@ -29,8 +32,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -162,6 +168,57 @@ public class RegistrationServiceImpl implements RegistrationService {
                         .totalRegistered(totalRegistered)
                         .capacity(event.getCapacity())
                         .build())
+                .build();
+    }
+
+    @Override
+    public AttendanceSummaryRes getAttendanceSummary(Long eventId) {
+        if (!eventRepository.existsById(eventId)) {
+            throw new ResourceNotFoundException("Sự kiện", "id", eventId);
+        }
+
+        // B4.2-T1: 1 truy vấn lấy toàn bộ ĐK ACTIVE của sự kiện (kèm sẵn user, chống N+1)
+        List<Registration> activeRegistrations = registrationRepository.findByEventIdAndStatus(eventId,
+                RegistrationStatus.ACTIVE);
+
+        // B4.2-T1: 1 truy vấn khác lấy registrationId + checkedInAt cho CẢ NHÓM trên, rồi
+        // đối chiếu trong bộ nhớ để tách 2 nhóm — tổng cộng đúng 2 truy vấn, không N+1.
+        List<Long> registrationIds = activeRegistrations.stream().map(Registration::getId).toList();
+        Map<Long, LocalDateTime> checkedInAtByRegistrationId = new HashMap<>();
+        if (!registrationIds.isEmpty()) {
+            for (Object[] row : checkInHistoryRepository.findCheckedInAtByRegistrationIds(registrationIds)) {
+                checkedInAtByRegistrationId.put((Long) row[0], (LocalDateTime) row[1]);
+            }
+        }
+
+        List<AttendanceItemRes> present = new ArrayList<>();
+        List<AttendanceItemRes> absent = new ArrayList<>();
+        for (Registration registration : activeRegistrations) {
+            LocalDateTime checkedInAt = checkedInAtByRegistrationId.get(registration.getId());
+            AttendanceItemRes item = AttendanceItemRes.builder()
+                    .registrationId(registration.getId())
+                    .fullName(registration.getUser().getFullName())
+                    .email(registration.getUser().getEmail())
+                    .phone(registration.getUser().getPhone())
+                    .registeredAt(registration.getRegisteredAt())
+                    .checkedInAt(checkedInAt)
+                    .build();
+            (checkedInAt != null ? present : absent).add(item);
+        }
+
+        // B4.2-T2: 3 số liệu tính đúng 1 lần ở đây — total/present/absent đối chiếu chéo
+        // được (present.size() + absent.size() == totalRegistered luôn đúng vì cùng nguồn).
+        long totalRegistered = activeRegistrations.size();
+        long presentCount = present.size();
+        long absentCount = absent.size();
+        double attendanceRate = totalRegistered == 0
+                ? 0.0
+                : Math.round(presentCount * 1000.0 / totalRegistered) / 10.0;
+
+        return AttendanceSummaryRes.builder()
+                .summary(new AttendanceSummary(totalRegistered, presentCount, absentCount, attendanceRate))
+                .present(present)
+                .absent(absent)
                 .build();
     }
 }

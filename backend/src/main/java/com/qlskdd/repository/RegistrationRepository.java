@@ -29,6 +29,13 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     @EntityGraph(attributePaths = {"user"})
     Page<Registration> findByEventId(Long eventId, Pageable pageable);
 
+    // B4.2-T1: toàn bộ lượt đăng ký ACTIVE của 1 sự kiện, kèm sẵn user (chống N+1) —
+    // dùng làm nguồn "tổng đăng ký", sau đó tách nhóm có mặt/vắng ở service bằng cách
+    // đối chiếu với danh sách registrationId đã điểm danh (1 truy vấn khác), thay vì
+    // chạy 2 truy vấn EXISTS/NOT EXISTS riêng cho từng nhóm.
+    @EntityGraph(attributePaths = {"user"})
+    List<Registration> findByEventIdAndStatus(Long eventId, RegistrationStatus status);
+
     // B2.5-T1: đếm số đăng ký theo trạng thái cho CẢ MỘT TRANG sự kiện bằng đúng 1 truy
     // vấn group by (tránh N+1 nếu gọi countByEventIdAndStatus lặp lại cho từng sự kiện)
     @Query("SELECT r.event.id, COUNT(r) FROM Registration r "

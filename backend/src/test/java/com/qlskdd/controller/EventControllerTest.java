@@ -7,6 +7,8 @@ import com.qlskdd.security.JwtProvider;
 import com.qlskdd.security.RestAccessDeniedHandler;
 import com.qlskdd.security.RestAuthenticationEntryPoint;
 import com.qlskdd.exception.ResourceNotFoundException;
+import com.qlskdd.mapper.response.AttendanceSummary;
+import com.qlskdd.mapper.response.AttendanceSummaryRes;
 import com.qlskdd.mapper.response.EventRegistrationsRes;
 import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.service.EventService;
@@ -266,6 +268,31 @@ class EventControllerTest {
     @WithMockUser(username = "user1", roles = "USER")
     void xemDanhSachDangKy_User_traVe403() throws Exception {
         mockMvc.perform(get(EVENTS_URL + "/1/registrations"))
+                .andExpect(status().isForbidden());
+    }
+
+    /**
+     * Test case B4.2-T4 (phần chỉ kiểm tra được qua MockMvc: @PreAuthorize).
+     */
+    @Test
+    @WithMockUser(username = "organizer", roles = "ORGANIZER")
+    void tongHopDiemDanh_Organizer_traVe200() throws Exception {
+        AttendanceSummaryRes res = AttendanceSummaryRes.builder()
+                .summary(new AttendanceSummary(0, 0, 0, 0.0))
+                .present(Collections.emptyList())
+                .absent(Collections.emptyList())
+                .build();
+        when(registrationService.getAttendanceSummary(any())).thenReturn(res);
+
+        mockMvc.perform(get(EVENTS_URL + "/1/attendance-summary"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "user1", roles = "USER")
+    void tongHopDiemDanh_User_traVe403() throws Exception {
+        mockMvc.perform(get(EVENTS_URL + "/1/attendance-summary"))
                 .andExpect(status().isForbidden());
     }
 

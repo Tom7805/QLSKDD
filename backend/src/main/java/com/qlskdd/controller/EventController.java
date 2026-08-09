@@ -2,6 +2,7 @@ package com.qlskdd.controller;
 
 import com.qlskdd.dto.request.EventReq;
 import com.qlskdd.dto.request.EventStatusReq;
+import com.qlskdd.mapper.response.AttendanceSummaryRes;
 import com.qlskdd.mapper.response.BaseRes;
 import com.qlskdd.mapper.response.EventDetailRes;
 import com.qlskdd.mapper.response.EventRegistrationsRes;
@@ -81,5 +82,13 @@ public class EventController {
         EventRegistrationsRes result = registrationService.getRegistrationsByEvent(id, pageable);
 
         return ResponseEntity.ok(BaseRes.success("Lấy danh sách người đăng ký thành công", result));
+    }
+
+    // B4.2-T3: chỉ ADMIN/ORGANIZER xem được tổng hợp điểm danh — người khác 403
+    @GetMapping("/{id}/attendance-summary")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<BaseRes<AttendanceSummaryRes>> getAttendanceSummary(@PathVariable Long id) {
+        AttendanceSummaryRes result = registrationService.getAttendanceSummary(id);
+        return ResponseEntity.ok(BaseRes.success("Lấy tổng hợp điểm danh thành công", result));
     }
 }

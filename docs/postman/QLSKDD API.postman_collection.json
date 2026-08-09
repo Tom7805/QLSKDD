@@ -223,6 +223,27 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Tổng hợp điểm danh sự kiện",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearer_token_03df}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/events/1/attendance-summary",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "events", "1", "attendance-summary"]
+            }
+          },
+          "response": []
         }
       ]
     },

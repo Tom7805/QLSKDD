@@ -24,4 +24,10 @@ public interface CheckInHistoryRepository extends JpaRepository<CheckInHistory, 
     // vấn group cho cả trang thay vì existsByRegistrationId lặp lại từng dòng (tránh N+1)
     @Query("SELECT c.registration.id FROM CheckInHistory c WHERE c.registration.id IN :registrationIds")
     List<Long> findCheckedInRegistrationIds(@Param("registrationIds") List<Long> registrationIds);
+
+    // B4.2-T1: registrationId + thời điểm điểm danh cho CẢ NHÓM registrationId truyền vào,
+    // bằng đúng 1 truy vấn (thay vì findByRegistrationId lặp lại từng dòng) — dùng để tách
+    // nhóm có mặt/vắng và hiển thị checkedInAt cho nhóm có mặt ở B4.2-T2.
+    @Query("SELECT c.registration.id, c.checkedInAt FROM CheckInHistory c WHERE c.registration.id IN :registrationIds")
+    List<Object[]> findCheckedInAtByRegistrationIds(@Param("registrationIds") List<Long> registrationIds);
 }

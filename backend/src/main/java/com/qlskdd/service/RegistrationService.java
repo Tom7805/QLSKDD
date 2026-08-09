@@ -1,5 +1,6 @@
 package com.qlskdd.service;
 
+import com.qlskdd.mapper.response.AttendanceSummaryRes;
 import com.qlskdd.mapper.response.EventRegistrationsRes;
 import com.qlskdd.mapper.response.MyRegistrationRes;
 import com.qlskdd.mapper.response.PageRes;
@@ -25,4 +26,8 @@ public interface RegistrationService {
     // B3.3-T1/T2: danh sách người đăng ký của 1 sự kiện, phân trang + summary.
     // Chỉ ADMIN/ORGANIZER gọi được — chặn ở @PreAuthorize của controller.
     EventRegistrationsRes getRegistrationsByEvent(Long eventId, Pageable pageable);
+
+    // B4.2-T2: tổng hợp có mặt/vắng của 1 sự kiện — 2 nhóm + 3 số liệu tổng đăng ký/có
+    // mặt/vắng. Chỉ ADMIN/ORGANIZER gọi được — chặn ở @PreAuthorize của controller.
+    AttendanceSummaryRes getAttendanceSummary(Long eventId);
 }
