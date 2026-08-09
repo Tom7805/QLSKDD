@@ -13,6 +13,7 @@ import com.qlskdd.mapper.response.EventDetailRes;
 import com.qlskdd.mapper.response.EventRes;
 import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.repository.CategoryRepository;
+import com.qlskdd.repository.CheckInHistoryRepository;
 import com.qlskdd.repository.EventRepository;
 import com.qlskdd.repository.RegistrationRepository;
 import com.qlskdd.service.EventService;
@@ -34,6 +35,7 @@ public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
     private final CategoryRepository categoryRepository;
+    private final CheckInHistoryRepository checkInHistoryRepository;
     private final RegistrationRepository registrationRepository;
     private final EventMapper eventMapper;
 
@@ -57,7 +59,7 @@ public class EventServiceImpl implements EventService {
         event.setCreatedAt(LocalDateTime.now());
 
         // Sự kiện vừa tạo chắc chắn chưa có ai đăng ký
-        return eventMapper.toDetailRes(eventRepository.save(event), 0L);
+        return toDetailRes(eventRepository.save(event), 0L);
     }
 
     @Override
@@ -84,7 +86,7 @@ public class EventServiceImpl implements EventService {
 
         // activeRegistrations đã tính ở trên (dùng để validate capacity) — dùng lại,
         // không query thêm lần nữa
-        return eventMapper.toDetailRes(eventRepository.save(event), activeRegistrations);
+        return toDetailRes(eventRepository.save(event), activeRegistrations);
     }
 
     @Override
@@ -105,13 +107,23 @@ public class EventServiceImpl implements EventService {
 
         event.setStatus(target);
         long totalRegistered = registrationRepository.countByEventIdAndStatus(id, RegistrationStatus.ACTIVE);
-        return eventMapper.toDetailRes(eventRepository.save(event), totalRegistered);
+        return toDetailRes(eventRepository.save(event), totalRegistered);
     }
 
     private Event findEventOrThrow(Long id) {
         return eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sự kiện", "id", id));
     }
+
+        private EventDetailRes toDetailRes(Event event, long totalRegistered) {
+        long present = event.getId() == null
+            ? 0L
+            : checkInHistoryRepository.countByRegistration_EventId(event.getId());
+        double attendanceRate = totalRegistered == 0
+            ? 0.0
+            : Math.round(present * 1000.0 / totalRegistered) / 10.0;
+        return eventMapper.toDetailRes(event, totalRegistered, attendanceRate);
+        }
 
     @Override
     public PageRes<EventRes> getAllEvents(Pageable pageable) {
@@ -153,6 +165,6 @@ public class EventServiceImpl implements EventService {
     public EventDetailRes getById(Long id) {
         Event event = findEventOrThrow(id);
         long totalRegistered = registrationRepository.countByEventIdAndStatus(id, RegistrationStatus.ACTIVE);
-        return eventMapper.toDetailRes(event, totalRegistered);
+        return toDetailRes(event, totalRegistered);
     }
 }

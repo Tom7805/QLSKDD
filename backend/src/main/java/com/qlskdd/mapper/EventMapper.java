@@ -9,7 +9,7 @@ public class EventMapper {
 
     // B2.5-T2: totalRegistered truyền vào từ service (đếm bằng RegistrationRepository)
     // vì mapper không nên tự query DB
-    public EventDetailRes toDetailRes(Event event, long totalRegistered) {
+    public EventDetailRes toDetailRes(Event event, long totalRegistered, double attendanceRate) {
         Integer capacity = event.getCapacity();
         Integer availableSeats = capacity != null ? (int) (capacity - totalRegistered) : null;
 
@@ -28,6 +28,7 @@ public class EventMapper {
                 .createdAt(event.getCreatedAt())
                 .totalRegistered(totalRegistered)
                 .availableSeats(availableSeats)
+                .attendanceRate(attendanceRate)
                 .build();
     }
 }

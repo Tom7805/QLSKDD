@@ -286,7 +286,8 @@ class EventControllerTest {
 
         mockMvc.perform(get(EVENTS_URL + "/1/attendance-summary"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.summary.attendanceRate").value(0.0));
     }
 
     @Test

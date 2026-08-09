@@ -29,4 +29,7 @@ public class EventDetailRes {
     // B2.5-T2: tổng đăng ký ACTIVE + số chỗ còn lại (null nếu event chưa có capacity)
     private Long totalRegistered;
     private Integer availableSeats;
+
+    // B4.3-T2: tỷ lệ có mặt trên tổng lượt đăng ký ACTIVE, làm tròn 1 chữ số thập phân
+    private Double attendanceRate;
 }

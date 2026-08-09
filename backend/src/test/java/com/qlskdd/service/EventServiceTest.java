@@ -12,6 +12,7 @@ import com.qlskdd.mapper.EventMapper;
 import com.qlskdd.mapper.response.EventDetailRes;
 import com.qlskdd.mapper.response.EventRes;
 import com.qlskdd.mapper.response.PageRes;
+import com.qlskdd.repository.CheckInHistoryRepository;
 import com.qlskdd.repository.CategoryRepository;
 import com.qlskdd.repository.EventRepository;
 import com.qlskdd.repository.RegistrationRepository;
@@ -63,6 +64,9 @@ class EventServiceTest {
     @Mock
     private RegistrationRepository registrationRepository;
 
+    @Mock
+    private CheckInHistoryRepository checkInHistoryRepository;
+
     private final EventMapper eventMapper = new EventMapper();
 
     private EventServiceImpl eventService;
@@ -71,7 +75,8 @@ class EventServiceTest {
 
     @BeforeEach
     void setUp() {
-        eventService = new EventServiceImpl(eventRepository, categoryRepository, registrationRepository, eventMapper);
+        eventService = new EventServiceImpl(eventRepository, categoryRepository, checkInHistoryRepository,
+            registrationRepository, eventMapper);
         category = EventCategory.builder().id(1L).name("Hội thảo").build();
         setCurrentUser("organizer");
     }
@@ -246,11 +251,13 @@ class EventServiceTest {
         // Query group by đã tự lọc status=ACTIVE ở tầng SQL nên 5 lượt CANCELLED không
         // được tính vào đây — chỉ 20 lượt ACTIVE được trả về
         when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(20L);
+        when(checkInHistoryRepository.countByRegistration_EventId(1L)).thenReturn(15L);
 
         EventDetailRes result = eventService.getById(1L);
 
         assertEquals(20L, result.getTotalRegistered());
         assertEquals(30, result.getAvailableSeats());
+        assertEquals(75.0, result.getAttendanceRate());
     }
 
     @Test
