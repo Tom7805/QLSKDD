@@ -179,7 +179,13 @@ export default function EventDetailPage() {
                 >
                   Xem người đăng ký
                 </button>
-                <button type="button" className="min-h-11 rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50">Điểm danh</button>
+                <button
+                  type="button"
+                  onClick={() => navigate(ROUTES.EVENT_CHECK_IN.replace(':eventId', String(event.id)))}
+                  className="min-h-11 rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Điểm danh
+                </button>
                 {event.status === 'OPEN' && <button type="button" onClick={() => setPendingStatus('CANCELLED')} className="min-h-11 rounded-xl bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700">Huỷ sự kiện</button>}
               </>}
             </div>
