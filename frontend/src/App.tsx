@@ -19,6 +19,7 @@ import MyRegistrationsPage from './modules/registrations/pages/MyRegistrationsPa
 import EventRegistrationsPage from './modules/events/pages/EventRegistrationsPage';
 import ParticipantListPage from './modules/registrations/pages/ParticipantListPage';
 import CheckInPage from './modules/checkin/pages/CheckInPage';
+import AttendancePage from './modules/checkin/pages/AttendancePage';
 
 function HomePage() {
   const isLoggedIn = useAppSelector(selectIsLoggedIn);
@@ -60,6 +61,7 @@ function App() {
             <Route path={ROUTES.EVENT_EDIT} element={<EventFormPage />} />
             <Route path={ROUTES.EVENT_REGISTRATIONS} element={<EventRegistrationsPage />} />
             <Route path={ROUTES.EVENT_CHECK_IN} element={<CheckInPage />} />
+            <Route path={ROUTES.EVENT_ATTENDANCE} element={<AttendancePage />} />
             <Route path={ROUTES.PARTICIPANTS} element={<ParticipantListPage />} />
           </Route>
           <Route element={<RoleRoute allow={['ROLE_ADMIN']} />}>

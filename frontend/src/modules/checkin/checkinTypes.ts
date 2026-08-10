@@ -18,3 +18,25 @@ export interface CheckInErrorResponse {
   message?: string;
   errorCode?: 'ALREADY_CHECKED_IN' | 'INVALID_TICKET' | 'WRONG_EVENT' | string;
 }
+
+export interface AttendanceItem {
+  registrationId: number;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  registeredAt: string;
+  checkedInAt: string | null;
+}
+
+export interface AttendanceSummary {
+  totalRegistered: number;
+  present: number;
+  absent: number;
+  attendanceRate: number;
+}
+
+export interface AttendanceSummaryResponse {
+  summary: AttendanceSummary;
+  present: AttendanceItem[];
+  absent: AttendanceItem[];
+}
