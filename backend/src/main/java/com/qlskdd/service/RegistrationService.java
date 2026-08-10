@@ -35,4 +35,8 @@ public interface RegistrationService {
     // B4.4-T2: danh sách điểm danh có lọc theo trạng thái (all/present/absent), phân
     // trang. Chỉ ADMIN/ORGANIZER gọi được — chặn ở @PreAuthorize của controller.
     PageRes<AttendanceItemRes> getAttendanceList(Long eventId, String status, Pageable pageable);
+
+    // B4.5-T2: ảnh QR (PNG) mã hoá Registration.code — chỉ chủ vé hoặc ADMIN/ORGANIZER
+    // xem được, chặn ở @PreAuthorize của controller (@registrationSecurityService.isOwner).
+    byte[] generateQrCode(Long registrationId);
 }

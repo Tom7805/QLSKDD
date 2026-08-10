@@ -25,6 +25,10 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     // B3.1-T2: tìm theo mã vé
     Optional<Registration> findByCode(String code);
 
+    // B4.5-T1: kiểm tra trùng mã trước khi lưu — sinh trùng thì thử lại (xem
+    // RegistrationServiceImpl.generateUniqueCode)
+    boolean existsByCode(String code);
+
     // B3.1-T2: truy vấn danh sách đăng ký của sự kiện kèm thông tin user (chống N+1)
     @EntityGraph(attributePaths = {"user"})
     Page<Registration> findByEventId(Long eventId, Pageable pageable);

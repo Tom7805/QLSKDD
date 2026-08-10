@@ -1350,3 +1350,57 @@ FE bắt `errorCode` để hiển thị đúng màu toast (B4.1-T8): `SUCCESS` �
 | `404` | `id` sự kiện không tồn tại | "Sự kiện không tồn tại với id = '{id}'" |
 | `403` | Người gọi không phải ADMIN/ORGANIZER | "Bạn không có quyền truy cập tài nguyên này" |
 | `400` | `status` khác `all`/`present`/`absent` | "Trạng thái lọc không hợp lệ, chỉ chấp nhận all/present/absent" |
+
+## 18. Mã đăng ký / QR để check-in nhanh (B4.5)
+
+### 18.1. Mã đăng ký (`code`)
+
+Từ B4.5, mỗi lượt đăng ký (`POST /api/v1/registrations`, xem mục 11) nhận **mã 8 ký tự, chữ hoa + số** (lấy từ UUID, bỏ dấu gạch ngang, cắt 8 ký tự đầu, viết hoa) thay vì UUID đầy đủ như trước — dễ đọc/nhập tay hơn khi camera hỏng. Cột `code` vẫn giữ ràng buộc `UNIQUE` ở DB; nếu trùng (xác suất rất thấp), hệ thống tự sinh lại tối đa 5 lần trước khi báo lỗi `500`.
+
+### 18.2. Ảnh QR
+
+* **URL:** `GET /api/v1/registrations/{id}/qr`
+* **Headers:** `Authorization: Bearer {{accessToken}}`
+* **Quyền:** chỉ **chủ vé** (người đã đăng ký lượt đó) hoặc **ADMIN/ORGANIZER**. Người khác nhận `403`.
+* **Response:** `200 OK`, `Content-Type: image/png` — ảnh PNG 300×300px, nội dung QR chính là `Registration.code`. Không bọc trong `BaseRes` (trả thẳng file ảnh) vì FE dùng trực tiếp làm `<img src>`.
+
+### 18.3. Điểm danh theo mã (quét QR hoặc nhập tay)
+
+* **URL:** `POST /api/v1/check-in/scan`
+* **Headers:** `Authorization: Bearer {{accessToken}}`
+* **Quyền:** chỉ **ADMIN** và **ORGANIZER** — giống hệt `POST /api/v1/check-in` (mục 15).
+* Tái sử dụng **đúng 100%** logic 5 nhánh của `POST /api/v1/check-in` (mục 15) — chỉ khác cách tìm lượt đăng ký: theo `code` (quét QR ra được, hoặc BTC gõ tay) thay vì `registrationId`. Toàn bộ mã lỗi (`INVALID_TICKET`, `WRONG_EVENT`, `ALREADY_CHECKED_IN`, "đã bị huỷ") và response thành công **giống hệt** mục 15.
+
+### Request
+```json
+{
+  "code": "A1B2C3D4",
+  "eventId": 1
+}
+```
+
+### Response — 200 OK
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Điểm danh thành công",
+  "data": {
+    "status": "SUCCESS",
+    "message": "Điểm danh thành công",
+    "participantName": "Nguyễn Văn A",
+    "checkedInAt": "2026-08-10T09:15:00"
+  },
+  "timestamp": "2026-08-10T09:15:00"
+}
+```
+
+### Lỗi
+
+| `errorCode` | HTTP | Khi nào |
+|---|---|---|
+| `INVALID_TICKET` | 404 | `code` không khớp lượt đăng ký nào |
+| `WRONG_EVENT` | 400 | Lượt đăng ký thuộc sự kiện khác `eventId` gửi lên |
+| `ALREADY_CHECKED_IN` | 409 | Đã điểm danh trước đó |
+| (không có) | 409 | Lượt đăng ký đã bị huỷ |
+| (validation) | 400 | Thiếu `code` hoặc `eventId` |

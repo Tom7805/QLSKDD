@@ -115,6 +115,47 @@ class RegistrationServiceTest {
         verify(registrationRepository).save(any(Registration.class));
     }
 
+    /**
+     * Test case B4.5-T1: mã đăng ký sinh ra đúng 8 ký tự, toàn chữ hoa/số.
+     */
+    @Test
+    void testRegister_MaDangKy_8KyTuVietHoa() {
+        Event event = buildEvent(EventStatus.OPEN);
+        User user = buildUser();
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+        when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
+        when(registrationRepository.existsByEventIdAndUserIdAndStatus(1L, 2L, RegistrationStatus.ACTIVE)).thenReturn(false);
+        when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(50L);
+        when(registrationRepository.existsByCode(any())).thenReturn(false);
+        when(registrationRepository.save(any(Registration.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RegistrationRes res = registrationService.register(1L);
+
+        assertEquals(8, res.getCode().length());
+        assertEquals(res.getCode().toUpperCase(), res.getCode());
+    }
+
+    /**
+     * Test case B4.5-T1: mã trùng ở lần thử đầu -> tự thử lại, vẫn tạo được đăng ký.
+     */
+    @Test
+    void testRegister_MaTrungLanDau_ThuLaiVaThanhCong() {
+        Event event = buildEvent(EventStatus.OPEN);
+        User user = buildUser();
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+        when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
+        when(registrationRepository.existsByEventIdAndUserIdAndStatus(1L, 2L, RegistrationStatus.ACTIVE)).thenReturn(false);
+        when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(50L);
+        // Lần kiểm tra đầu tiên coi như trùng, các lần sau thì không -> phải thử lại
+        when(registrationRepository.existsByCode(any())).thenReturn(true, false);
+        when(registrationRepository.save(any(Registration.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RegistrationRes res = registrationService.register(1L);
+
+        assertNotNull(res.getCode());
+        verify(registrationRepository, org.mockito.Mockito.times(2)).existsByCode(any());
+    }
+
     @Test
     void testRegister_HetCho_Nem409() {
         Event event = buildEvent(EventStatus.OPEN);
@@ -500,6 +541,32 @@ class RegistrationServiceTest {
 
         assertThrows(com.qlskdd.exception.ResourceNotFoundException.class,
                 () -> registrationService.getAttendanceList(999L, "all", PageRequest.of(0, 10)));
+    }
+
+    /**
+     * Test case B4.5-T2: sinh ảnh QR — trả về đúng định dạng PNG (8 byte signature đầu).
+     */
+    @Test
+    void testGenerateQrCode_HopLe_TraVeAnhPngHopLe() {
+        Registration registration = Registration.builder().id(15L).code("ABCD1234").build();
+        when(registrationRepository.findById(15L)).thenReturn(Optional.of(registration));
+
+        byte[] png = registrationService.generateQrCode(15L);
+
+        assertNotNull(png);
+        // 8 byte đầu của mọi file PNG hợp lệ: 89 50 4E 47 0D 0A 1A 0A
+        byte[] pngSignature = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+        for (int i = 0; i < pngSignature.length; i++) {
+            assertEquals(pngSignature[i], png[i]);
+        }
+    }
+
+    @Test
+    void testGenerateQrCode_KhongTonTai_Nem404() {
+        when(registrationRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(com.qlskdd.exception.ResourceNotFoundException.class,
+                () -> registrationService.generateQrCode(999L));
     }
 
     private void setCurrentUser(String username) {

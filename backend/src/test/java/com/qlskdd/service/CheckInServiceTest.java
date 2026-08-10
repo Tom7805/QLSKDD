@@ -164,6 +164,60 @@ class CheckInServiceTest {
         verify(checkInHistoryRepository, never()).save(any());
     }
 
+    /**
+     * Test case B4.5-T3: điểm danh theo mã tái sử dụng đúng logic của checkIn(registrationId).
+     */
+    @Test
+    void testCheckInByCode_HopLe_ThanhCong() {
+        Event event = buildEvent(1L);
+        Registration registration = buildRegistration(10L, event, RegistrationStatus.ACTIVE);
+        registration.setCode("ABCD1234");
+        User organizer = User.builder().id(1L).username("organizer").build();
+
+        when(registrationRepository.findByCode("ABCD1234")).thenReturn(Optional.of(registration));
+        when(checkInHistoryRepository.findByRegistrationId(10L)).thenReturn(Optional.empty());
+        when(userRepository.findByUsername("organizer")).thenReturn(Optional.of(organizer));
+        when(checkInHistoryRepository.save(any(CheckInHistory.class))).thenAnswer(inv -> {
+            CheckInHistory saved = inv.getArgument(0);
+            saved.setId(100L);
+            saved.setCheckedInAt(LocalDateTime.now());
+            return saved;
+        });
+
+        CheckInRes result = checkInService.checkInByCode("ABCD1234", 1L);
+
+        assertNotNull(result);
+        assertEquals("Nguyễn Văn A", result.getParticipantName());
+        verify(checkInHistoryRepository, org.mockito.Mockito.times(1)).save(any(CheckInHistory.class));
+    }
+
+    @Test
+    void testCheckInByCode_MaKhongTonTai_Nem404InvalidTicket() {
+        when(registrationRepository.findByCode("XXXXXXXX")).thenReturn(Optional.empty());
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> checkInService.checkInByCode("XXXXXXXX", 1L));
+
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
+        assertEquals("INVALID_TICKET", ex.getErrorCode());
+        verify(checkInHistoryRepository, never()).save(any());
+    }
+
+    @Test
+    void testCheckInByCode_SuKienKhac_Nem400WrongEvent() {
+        Event event = buildEvent(1L);
+        Registration registration = buildRegistration(10L, event, RegistrationStatus.ACTIVE);
+        registration.setCode("ABCD1234");
+        when(registrationRepository.findByCode("ABCD1234")).thenReturn(Optional.of(registration));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> checkInService.checkInByCode("ABCD1234", 999L));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertEquals("WRONG_EVENT", ex.getErrorCode());
+        verify(checkInHistoryRepository, never()).save(any());
+    }
+
     private void setCurrentUser(String username) {
         SecurityContext context = new SecurityContextImpl();
         context.setAuthentication(new UsernamePasswordAuthenticationToken(username, null));

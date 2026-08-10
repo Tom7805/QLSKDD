@@ -469,6 +469,27 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Xem ảnh QR",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearer_token_03df}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/registrations/15/qr",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "registrations", "15", "qr"]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -555,6 +576,36 @@
                 "v1",
                 "check-in"
               ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Điểm danh theo mã (quét QR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearer_token_03df}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"A1B2C3D4\",\n  \"eventId\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/check-in/scan",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "check-in", "scan"]
             }
           },
           "response": []

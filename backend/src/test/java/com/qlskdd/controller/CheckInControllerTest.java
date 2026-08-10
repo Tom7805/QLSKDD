@@ -91,4 +91,56 @@ class CheckInControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors[?(@.field == 'registrationId')]").exists());
     }
+
+    /**
+     * Test case B4.5-T3 (phần chỉ kiểm tra được qua MockMvc: @PreAuthorize + @Valid).
+     */
+    @Test
+    @WithMockUser(username = "organizer", roles = "ORGANIZER")
+    void diemDanhTheoMa_Organizer_traVe200() throws Exception {
+        when(checkInService.checkInByCode(any(), any())).thenReturn(CheckInRes.builder()
+                .status(CheckInStatus.SUCCESS)
+                .message("Điểm danh thành công")
+                .participantName("Nguyễn Văn A")
+                .build());
+
+        String body = """
+                {
+                  "code": "ABCD1234",
+                  "eventId": 1
+                }
+                """;
+
+        mockMvc.perform(post(CHECK_IN_URL + "/scan").contentType("application/json").content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "user1", roles = "USER")
+    void diemDanhTheoMa_UserThuong_traVe403() throws Exception {
+        String body = """
+                {
+                  "code": "ABCD1234",
+                  "eventId": 1
+                }
+                """;
+
+        mockMvc.perform(post(CHECK_IN_URL + "/scan").contentType("application/json").content(body))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "organizer", roles = "ORGANIZER")
+    void diemDanhTheoMa_ThieuCode_traVe400() throws Exception {
+        String body = """
+                {
+                  "eventId": 1
+                }
+                """;
+
+        mockMvc.perform(post(CHECK_IN_URL + "/scan").contentType("application/json").content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[?(@.field == 'code')]").exists());
+    }
 }

@@ -25,6 +25,7 @@ import com.qlskdd.mapper.response.MyRegistrationRes;
 import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.mapper.response.RegistrationListItemRes;
 import com.qlskdd.mapper.response.RegistrationRes;
+import com.qlskdd.util.QrCodeUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -82,7 +83,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             }
         }
 
-        String code = UUID.randomUUID().toString();
+        String code = generateUniqueCode();
 
         Registration registration = Registration.builder()
                 .event(event)
@@ -261,5 +262,29 @@ public class RegistrationServiceImpl implements RegistrationService {
         });
 
         return PageRes.of(itemPage);
+    }
+
+    @Override
+    public byte[] generateQrCode(Long registrationId) {
+        Registration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lượt đăng ký", "id", registrationId));
+
+        return QrCodeUtil.generatePng(registration.getCode());
+    }
+
+    // B4.5-T1: mã ngắn 8 ký tự viết hoa (lấy từ UUID, bỏ dấu gạch ngang) — dễ đọc/nhập tay
+    // hơn UUID đầy đủ (B4.5-T4/T5 bên FE cần người dùng gõ mã thủ công khi camera hỏng).
+    // Cột code đã có ràng buộc unique ở DB (Registration.code) — kiểm tra trước ở đây chỉ
+    // để tránh 1 vòng round-trip lưu-rồi-lỗi khi trùng, thử lại tối đa 5 lần.
+    private String generateUniqueCode() {
+        for (int attempt = 0; attempt < 5; attempt++) {
+            String candidate = UUID.randomUUID().toString().replace("-", "")
+                    .substring(0, 8).toUpperCase();
+            if (!registrationRepository.existsByCode(candidate)) {
+                return candidate;
+            }
+        }
+        throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Không thể sinh mã đăng ký, vui lòng thử lại");
     }
 }
