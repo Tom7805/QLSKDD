@@ -57,4 +57,29 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     // nhập, kèm sự kiện (chống N+1) — mới nhất lên trước
     @EntityGraph(attributePaths = {"event"})
     Page<Registration> findByUserUsernameOrderByRegisteredAtDesc(String username, Pageable pageable);
+
+    // B4.4-T1: status=all — toàn bộ ĐK ACTIVE của sự kiện, phân trang + sắp xếp theo họ
+    // tên (Sort truyền qua Pageable ở controller), kèm sẵn user (chống N+1)
+    @EntityGraph(attributePaths = {"user"})
+    Page<Registration> findByEventIdAndStatus(Long eventId, RegistrationStatus status, Pageable pageable);
+
+    // B4.4-T1: status=present — chỉ ĐK ACTIVE đã có bản ghi điểm danh
+    @EntityGraph(attributePaths = {"user"})
+    @Query(value = "SELECT r FROM Registration r WHERE r.event.id = :eventId "
+            + "AND r.status = com.qlskdd.enums.RegistrationStatus.ACTIVE "
+            + "AND EXISTS (SELECT c FROM CheckInHistory c WHERE c.registration = r)",
+            countQuery = "SELECT COUNT(r) FROM Registration r WHERE r.event.id = :eventId "
+            + "AND r.status = com.qlskdd.enums.RegistrationStatus.ACTIVE "
+            + "AND EXISTS (SELECT c FROM CheckInHistory c WHERE c.registration = r)")
+    Page<Registration> findPresentByEventId(@Param("eventId") Long eventId, Pageable pageable);
+
+    // B4.4-T1: status=absent — chỉ ĐK ACTIVE chưa có bản ghi điểm danh
+    @EntityGraph(attributePaths = {"user"})
+    @Query(value = "SELECT r FROM Registration r WHERE r.event.id = :eventId "
+            + "AND r.status = com.qlskdd.enums.RegistrationStatus.ACTIVE "
+            + "AND NOT EXISTS (SELECT c FROM CheckInHistory c WHERE c.registration = r)",
+            countQuery = "SELECT COUNT(r) FROM Registration r WHERE r.event.id = :eventId "
+            + "AND r.status = com.qlskdd.enums.RegistrationStatus.ACTIVE "
+            + "AND NOT EXISTS (SELECT c FROM CheckInHistory c WHERE c.registration = r)")
+    Page<Registration> findAbsentByEventId(@Param("eventId") Long eventId, Pageable pageable);
 }

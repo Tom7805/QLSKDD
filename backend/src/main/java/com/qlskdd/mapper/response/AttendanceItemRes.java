@@ -5,7 +5,9 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-// B4.2-T2: 1 dòng trong danh sách "có mặt" hoặc "vắng" — checkedInAt luôn null ở nhóm vắng.
+// B4.2-T2/B4.4-T2: 1 dòng trong danh sách "có mặt"/"vắng" (B4.2, tách theo 2 mảng riêng)
+// hoặc trong danh sách điểm danh có lọc (B4.4, gộp chung 1 danh sách phân trang) —
+// checkedInAt luôn null khi checkedIn = false.
 @Data
 @Builder
 public class AttendanceItemRes {
@@ -14,5 +16,6 @@ public class AttendanceItemRes {
     private String email;
     private String phone;
     private LocalDateTime registeredAt;
+    private boolean checkedIn;
     private LocalDateTime checkedInAt;
 }

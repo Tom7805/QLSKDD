@@ -1297,3 +1297,56 @@ FE bắt `errorCode` để hiển thị đúng màu toast (B4.1-T8): `SUCCESS` �
 |---|---|---|
 | `404` | `id` sự kiện không tồn tại | "Sự kiện không tồn tại với id = '{id}'" |
 | `403` | Người gọi không phải ADMIN/ORGANIZER | "Bạn không có quyền truy cập tài nguyên này" |
+
+## 17. Danh sách điểm danh có lọc — đã đến / chưa đến (B4.4)
+
+* **URL:** `GET /api/v1/events/{id}/attendance?status=all|present|absent&page=0&size=10`
+* **Headers:** `Authorization: Bearer {{accessToken}}`
+* **Quyền:** chỉ **ADMIN** và **ORGANIZER**. USER gọi nhận `403`.
+* `status` mặc định `all` nếu không truyền. Chỉ tính lượt đăng ký `status = ACTIVE`. Sắp xếp mặc định theo họ tên.
+* `totalElements(status=present) + totalElements(status=absent) = totalElements(status=all)` — luôn đối chiếu khớp vì cùng nguồn dữ liệu (B4.4-T3).
+
+### Response — 200 OK (`status=all`)
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Lấy danh sách điểm danh thành công",
+  "data": {
+    "content": [
+      {
+        "registrationId": 15,
+        "fullName": "Nguyễn Văn A",
+        "email": "a@qlskdd.com",
+        "phone": "0900000001",
+        "registeredAt": "2026-08-06T08:00:00",
+        "checkedIn": true,
+        "checkedInAt": "2026-08-06T09:15:00"
+      },
+      {
+        "registrationId": 16,
+        "fullName": "Lê Văn C",
+        "email": "c@qlskdd.com",
+        "phone": "0900000003",
+        "registeredAt": "2026-08-06T08:05:00",
+        "checkedIn": false,
+        "checkedInAt": null
+      }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 2,
+    "totalPages": 1,
+    "last": true
+  },
+  "timestamp": "2026-08-10T09:00:00"
+}
+```
+
+### Lỗi
+
+| HTTP | Khi nào | `message` |
+|---|---|---|
+| `404` | `id` sự kiện không tồn tại | "Sự kiện không tồn tại với id = '{id}'" |
+| `403` | Người gọi không phải ADMIN/ORGANIZER | "Bạn không có quyền truy cập tài nguyên này" |
+| `400` | `status` khác `all`/`present`/`absent` | "Trạng thái lọc không hợp lệ, chỉ chấp nhận all/present/absent" |

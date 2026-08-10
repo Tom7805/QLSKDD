@@ -3,6 +3,7 @@ package com.qlskdd.service.impl;
 import com.qlskdd.entity.Event;
 import com.qlskdd.entity.Registration;
 import com.qlskdd.entity.User;
+import com.qlskdd.enums.AttendanceFilter;
 import com.qlskdd.enums.EventStatus;
 import com.qlskdd.enums.RegistrationStatus;
 import com.qlskdd.exception.BusinessException;
@@ -201,6 +202,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                     .email(registration.getUser().getEmail())
                     .phone(registration.getUser().getPhone())
                     .registeredAt(registration.getRegisteredAt())
+                    .checkedIn(checkedInAt != null)
                     .checkedInAt(checkedInAt)
                     .build();
             (checkedInAt != null ? present : absent).add(item);
@@ -219,5 +221,45 @@ public class RegistrationServiceImpl implements RegistrationService {
                 .present(present)
                 .absent(absent)
                 .build();
+    }
+
+    @Override
+    public PageRes<AttendanceItemRes> getAttendanceList(Long eventId, String status, Pageable pageable) {
+        if (!eventRepository.existsById(eventId)) {
+            throw new ResourceNotFoundException("Sự kiện", "id", eventId);
+        }
+
+        // B4.4-T1: status không hợp lệ -> 400, không lặng lẽ coi là "all"
+        AttendanceFilter filter = AttendanceFilter.fromParam(status);
+
+        Page<Registration> registrationPage = switch (filter) {
+            case PRESENT -> registrationRepository.findPresentByEventId(eventId, pageable);
+            case ABSENT -> registrationRepository.findAbsentByEventId(eventId, pageable);
+            case ALL -> registrationRepository.findByEventIdAndStatus(eventId, RegistrationStatus.ACTIVE, pageable);
+        };
+
+        // status=absent chắc chắn chưa ai điểm danh -> khỏi cần truy vấn checkedInAt
+        List<Long> registrationIds = registrationPage.getContent().stream().map(Registration::getId).toList();
+        Map<Long, LocalDateTime> checkedInAtByRegistrationId = new HashMap<>();
+        if (filter != AttendanceFilter.ABSENT && !registrationIds.isEmpty()) {
+            for (Object[] row : checkInHistoryRepository.findCheckedInAtByRegistrationIds(registrationIds)) {
+                checkedInAtByRegistrationId.put((Long) row[0], (LocalDateTime) row[1]);
+            }
+        }
+
+        Page<AttendanceItemRes> itemPage = registrationPage.map(r -> {
+            LocalDateTime checkedInAt = checkedInAtByRegistrationId.get(r.getId());
+            return AttendanceItemRes.builder()
+                    .registrationId(r.getId())
+                    .fullName(r.getUser().getFullName())
+                    .email(r.getUser().getEmail())
+                    .phone(r.getUser().getPhone())
+                    .registeredAt(r.getRegisteredAt())
+                    .checkedIn(checkedInAt != null)
+                    .checkedInAt(checkedInAt)
+                    .build();
+        });
+
+        return PageRes.of(itemPage);
     }
 }

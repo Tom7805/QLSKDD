@@ -244,6 +244,32 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Danh sách điểm danh có lọc",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearer_token_03df}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/events/1/attendance?status=all&page=0&size=10",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "events", "1", "attendance"],
+              "query": [
+                { "key": "status", "value": "all" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },

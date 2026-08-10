@@ -7,6 +7,7 @@ import com.qlskdd.security.JwtProvider;
 import com.qlskdd.security.RestAccessDeniedHandler;
 import com.qlskdd.security.RestAuthenticationEntryPoint;
 import com.qlskdd.exception.ResourceNotFoundException;
+import com.qlskdd.mapper.response.AttendanceItemRes;
 import com.qlskdd.mapper.response.AttendanceSummary;
 import com.qlskdd.mapper.response.AttendanceSummaryRes;
 import com.qlskdd.mapper.response.EventRegistrationsRes;
@@ -294,6 +295,39 @@ class EventControllerTest {
     void tongHopDiemDanh_User_traVe403() throws Exception {
         mockMvc.perform(get(EVENTS_URL + "/1/attendance-summary"))
                 .andExpect(status().isForbidden());
+    }
+
+    /**
+     * Test case B4.4-T3 (phần chỉ kiểm tra được qua MockMvc: @PreAuthorize + 400 status không hợp lệ).
+     */
+    @Test
+    @WithMockUser(username = "organizer", roles = "ORGANIZER")
+    void danhSachDiemDanh_Organizer_traVe200() throws Exception {
+        PageRes<AttendanceItemRes> res = new PageRes<>(Collections.emptyList(), 0, 10, 0, 0, true);
+        when(registrationService.getAttendanceList(any(), any(), any())).thenReturn(res);
+
+        mockMvc.perform(get(EVENTS_URL + "/1/attendance"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "user1", roles = "USER")
+    void danhSachDiemDanh_User_traVe403() throws Exception {
+        mockMvc.perform(get(EVENTS_URL + "/1/attendance"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "organizer", roles = "ORGANIZER")
+    void danhSachDiemDanh_StatusKhongHopLe_traVe400() throws Exception {
+        when(registrationService.getAttendanceList(any(), any(), any()))
+                .thenThrow(new com.qlskdd.exception.BusinessException(
+                        org.springframework.http.HttpStatus.BAD_REQUEST,
+                        "Trạng thái lọc không hợp lệ, chỉ chấp nhận all/present/absent"));
+
+        mockMvc.perform(get(EVENTS_URL + "/1/attendance?status=xyz"))
+                .andExpect(status().isBadRequest());
     }
 
     private LocalDateTime future(long days) {
