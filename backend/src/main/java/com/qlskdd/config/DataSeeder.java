@@ -95,6 +95,7 @@ public class DataSeeder implements CommandLineRunner {
             e1.setStartAt(LocalDateTime.now().plusDays(5).withHour(8).withMinute(0));
             e1.setEndAt(LocalDateTime.now().plusDays(5).withHour(11).withMinute(0));
             e1.setStatus(EventStatus.OPEN);
+            e1.setCreatedBy("organizer");
 
             Event e2 = new Event();
             e2.setName("Lễ ra mắt sản phẩm mới");
@@ -102,6 +103,7 @@ public class DataSeeder implements CommandLineRunner {
             e2.setStartAt(LocalDateTime.now().plusDays(10).withHour(14).withMinute(0));
             e2.setEndAt(LocalDateTime.now().plusDays(10).withHour(16).withMinute(0));
             e2.setStatus(EventStatus.OPEN);
+            e2.setCreatedBy("organizer");
 
             Event e3 = new Event();
             e3.setName("Khóa đào tạo kỹ năng mềm");
@@ -109,6 +111,7 @@ public class DataSeeder implements CommandLineRunner {
             e3.setStartAt(LocalDateTime.now().plusDays(15).withHour(9).withMinute(0));
             e3.setEndAt(LocalDateTime.now().plusDays(15).withHour(17).withMinute(0));
             e3.setStatus(EventStatus.OPEN);
+            e3.setCreatedBy("organizer");
 
             eventRepository.saveAll(List.of(e1, e2, e3));
             System.out.println("Đã nạp dữ liệu mẫu: 3 Events");

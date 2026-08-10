@@ -1,7 +1,6 @@
 package com.qlskdd.controller;
 
 import com.qlskdd.config.SecurityConfig;
-import com.qlskdd.security.EventSecurityService;
 import com.qlskdd.security.JwtAuthFilter;
 import com.qlskdd.security.JwtProvider;
 import com.qlskdd.security.RestAccessDeniedHandler;
@@ -61,13 +60,6 @@ class EventControllerTest {
 
     @MockBean
     private UserDetailsService userDetailsService;
-
-    // EventController dùng @eventSecurityService trong SpEL của @PreAuthorize cho
-    // PUT /events/{id}. Phải đặt name="eventSecurityService" tường minh — @MockBean
-    // không tự đăng ký đúng tên bean theo tên field trong mọi trường hợp, và Spring
-    // Security SpEL resolve bean theo đúng tên chuỗi trong "@eventSecurityService".
-    @MockBean(name = "eventSecurityService")
-    private EventSecurityService eventSecurityService;
 
     @Test
     @WithMockUser(username = "organizer", roles = "ORGANIZER")
@@ -166,8 +158,6 @@ class EventControllerTest {
     @Test
     @WithMockUser(username = "organizer", roles = "ORGANIZER")
     void suaSuKien_TC3_EndAtTruocStartAt_traVe400() throws Exception {
-        when(eventSecurityService.canManageEvent("organizer", 1L)).thenReturn(true);
-
         String body = """
                 {
                   "name": "Hội thảo AI",
@@ -186,53 +176,17 @@ class EventControllerTest {
                 .andExpect(jsonPath("$.errors[?(@.field == 'endAt')]").exists());
     }
 
-    @Test
-    @WithMockUser(username = "organizer2", roles = "ORGANIZER")
-    void suaSuKien_TC4_NguoiKhongPhaiChuSuKien_traVe403() throws Exception {
-        // sự kiện id=1 do "organizer" tạo, ở đây "organizer2" cố sửa
-        when(eventSecurityService.canManageEvent("organizer2", 1L)).thenReturn(false);
-
-        String body = """
-                {
-                  "name": "Hội thảo AI",
-                  "location": "Hội trường A",
-                  "capacity": 100,
-                  "startAt": "%s",
-                  "endAt": "%s",
-                  "categoryId": 1
-                }
-                """.formatted(future(5).format(ISO), future(5).plusHours(3).format(ISO));
-
-        mockMvc.perform(put(EVENTS_URL + "/1")
-                        .contentType("application/json")
-                        .content(body))
-                .andExpect(status().isForbidden());
-    }
-
     /**
      * Test case B2.4-T3 (kiểm chứng wiring qua HTTP thật cho PATCH /events/{id}/status).
      */
     @Test
     @WithMockUser(username = "organizer", roles = "ORGANIZER")
     void doiTrangThai_ThieuStatus_traVe400() throws Exception {
-        when(eventSecurityService.canManageEvent("organizer", 1L)).thenReturn(true);
-
         mockMvc.perform(patch(EVENTS_URL + "/1/status")
                         .contentType("application/json")
                         .content("{}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors[?(@.field == 'status')]").exists());
-    }
-
-    @Test
-    @WithMockUser(username = "organizer2", roles = "ORGANIZER")
-    void doiTrangThai_NguoiKhongPhaiChuSuKien_traVe403() throws Exception {
-        when(eventSecurityService.canManageEvent("organizer2", 1L)).thenReturn(false);
-
-        mockMvc.perform(patch(EVENTS_URL + "/1/status")
-                        .contentType("application/json")
-                        .content("{\"status\": \"CLOSED\"}"))
-                .andExpect(status().isForbidden());
     }
 
     /**

@@ -50,7 +50,7 @@ export default function EventDetailPage() {
     return () => { active = false; };
   }, [eventId, reloadKey]);
 
-  const canManageEvent = event !== null && (user?.role === 'ROLE_ADMIN' || (user?.role === 'ROLE_ORGANIZER' && user.username === event.createdBy));
+  const canManageEvent = event !== null && (user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_ORGANIZER');
   const eventEnded = event !== null && new Date(event.endAt).getTime() < Date.now();
   const registrationDisabledReason = !user
     ? 'Vui lòng đăng nhập để đăng ký tham gia'

@@ -543,7 +543,7 @@ FE dùng `data` này để điều hướng thẳng sang trang chi tiết sự k
 
 * **URL:** `PUT /api/v1/events/{id}`
 * **Headers:** `Authorization: Bearer {{accessToken}}`
-* **Quyền:** ADMIN sửa được **mọi** sự kiện. ORGANIZER **chỉ sửa được sự kiện do chính mình tạo** — sửa sự kiện của người khác nhận `403`. USER nhận `403` với mọi sự kiện.
+* **Quyền:** ADMIN và ORGANIZER sửa được **mọi** sự kiện (không phân biệt người tạo). USER nhận `403` với mọi sự kiện.
 
 ### Request
 
@@ -614,7 +614,7 @@ FE hiển thị nguyên văn `message` này (đã có sẵn số lượng) làm 
 
 Cùng format với lỗi validate của `POST /events` (thiếu trường, `capacity ≤ 0`, `endAt` không sau `startAt`) — xem mục 7.
 
-### Response — 403 Forbidden (ORGANIZER sửa sự kiện không phải của mình)
+### Response — 403 Forbidden (USER gọi endpoint này)
 ```json
 {
   "success": false,
@@ -630,7 +630,7 @@ Cùng format với lỗi validate của `POST /events` (thiếu trường, `capa
 
 * **URL:** `PATCH /api/v1/events/{id}/status`
 * **Headers:** `Authorization: Bearer {{accessToken}}`
-* **Quyền:** giống hệt `PUT /events/{id}` — ADMIN đổi được trạng thái **mọi** sự kiện; ORGANIZER chỉ đổi được sự kiện do chính mình tạo (403 nếu không phải chủ).
+* **Quyền:** giống hệt `PUT /events/{id}` — ADMIN và ORGANIZER đổi được trạng thái **mọi** sự kiện (không phân biệt người tạo). USER nhận `403`.
 
 ### Request
 
