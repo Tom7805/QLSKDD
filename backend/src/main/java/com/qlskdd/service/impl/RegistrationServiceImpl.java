@@ -211,9 +211,8 @@ public class RegistrationServiceImpl implements RegistrationService {
         long totalRegistered = activeRegistrations.size();
         long presentCount = present.size();
         long absentCount = absent.size();
-        double attendanceRate = totalRegistered == 0
-                ? 0.0
-                : Math.round(presentCount * 1000.0 / totalRegistered) / 10.0;
+        // B4.3-T1: dùng chung công thức AttendanceRateUtil với chi tiết sự kiện (B4.3-T2)
+        double attendanceRate = com.qlskdd.util.AttendanceRateUtil.calculate(presentCount, totalRegistered);
 
         return AttendanceSummaryRes.builder()
                 .summary(new AttendanceSummary(totalRegistered, presentCount, absentCount, attendanceRate))

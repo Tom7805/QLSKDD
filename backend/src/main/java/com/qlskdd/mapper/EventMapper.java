@@ -7,9 +7,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class EventMapper {
 
-    // B2.5-T2: totalRegistered truyền vào từ service (đếm bằng RegistrationRepository)
-    // vì mapper không nên tự query DB
-    public EventDetailRes toDetailRes(Event event, long totalRegistered) {
+    // B2.5-T2/B4.3-T2: totalRegistered và attendanceRate truyền vào từ service (đếm/tính
+    // bằng RegistrationRepository + CheckInHistoryRepository) vì mapper không nên tự query DB
+    public EventDetailRes toDetailRes(Event event, long totalRegistered, double attendanceRate) {
         Integer capacity = event.getCapacity();
         Integer availableSeats = capacity != null ? (int) (capacity - totalRegistered) : null;
 
@@ -28,6 +28,7 @@ public class EventMapper {
                 .createdAt(event.getCreatedAt())
                 .totalRegistered(totalRegistered)
                 .availableSeats(availableSeats)
+                .attendanceRate(attendanceRate)
                 .build();
     }
 }

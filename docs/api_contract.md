@@ -767,11 +767,14 @@ Khi sự kiện **không còn `OPEN`** (đã `CLOSED` hoặc `CANCELLED`), mọi
     "createdBy": "organizer",
     "createdAt": "2026-08-02T00:00:00",
     "totalRegistered": 35,
-    "availableSeats": 65
+    "availableSeats": 65,
+    "attendanceRate": 0.0
   },
   "timestamp": "2026-08-05T00:00:00"
 }
 ```
+
+> **B4.3:** `attendanceRate` = tỷ lệ điểm danh trên tổng đăng ký ACTIVE (`present / totalRegistered * 100`, làm tròn 1 chữ số thập phân, `0.0` nếu chưa có ai đăng ký) — cùng công thức với `summary.attendanceRate` ở mục 16 (`AttendanceRateUtil`, dùng chung 1 nơi tính).
 
 **Response — 404 Not Found** (id không tồn tại)
 ```json

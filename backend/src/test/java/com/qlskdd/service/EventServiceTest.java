@@ -13,6 +13,7 @@ import com.qlskdd.mapper.response.EventDetailRes;
 import com.qlskdd.mapper.response.EventRes;
 import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.repository.CategoryRepository;
+import com.qlskdd.repository.CheckInHistoryRepository;
 import com.qlskdd.repository.EventRepository;
 import com.qlskdd.repository.RegistrationRepository;
 import com.qlskdd.service.impl.EventServiceImpl;
@@ -63,6 +64,9 @@ class EventServiceTest {
     @Mock
     private RegistrationRepository registrationRepository;
 
+    @Mock
+    private CheckInHistoryRepository checkInHistoryRepository;
+
     private final EventMapper eventMapper = new EventMapper();
 
     private EventServiceImpl eventService;
@@ -71,7 +75,8 @@ class EventServiceTest {
 
     @BeforeEach
     void setUp() {
-        eventService = new EventServiceImpl(eventRepository, categoryRepository, registrationRepository, eventMapper);
+        eventService = new EventServiceImpl(eventRepository, categoryRepository, checkInHistoryRepository,
+                registrationRepository, eventMapper);
         category = EventCategory.builder().id(1L).name("Hội thảo").build();
         setCurrentUser("organizer");
     }
@@ -246,6 +251,7 @@ class EventServiceTest {
         // Query group by đã tự lọc status=ACTIVE ở tầng SQL nên 5 lượt CANCELLED không
         // được tính vào đây — chỉ 20 lượt ACTIVE được trả về
         when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(20L);
+        when(checkInHistoryRepository.countByRegistration_EventId(1L)).thenReturn(15L);
 
         EventDetailRes result = eventService.getById(1L);
 
@@ -258,6 +264,53 @@ class EventServiceTest {
         when(eventRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> eventService.getById(999L));
+    }
+
+    /**
+     * Test case B4.3-T3: TC1 45/60 -> 75.0.
+     */
+    @Test
+    void testGetById_B43TC1_45Tren60_TyLe75Phay0() {
+        Event existing = buildExistingEvent();
+        existing.setCapacity(60);
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(60L);
+        when(checkInHistoryRepository.countByRegistration_EventId(1L)).thenReturn(45L);
+
+        EventDetailRes result = eventService.getById(1L);
+
+        assertEquals(75.0, result.getAttendanceRate());
+    }
+
+    /**
+     * Test case B4.3-T3: TC2 chưa có đăng ký nào -> 0.0, không lỗi chia 0.
+     */
+    @Test
+    void testGetById_B43TC2_ChuaCoDangKy_TyLe0Phay0KhongLoiChia0() {
+        Event existing = buildExistingEvent();
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(0L);
+
+        EventDetailRes result = eventService.getById(1L);
+
+        assertEquals(0.0, result.getAttendanceRate());
+        // totalRegistered = 0 thì không cần query present -> khỏi gọi checkInHistoryRepository
+        verify(checkInHistoryRepository, never()).countByRegistration_EventId(any());
+    }
+
+    /**
+     * Test case B4.3-T3: TC3 1/3 -> 33.3 (đúng quy tắc làm tròn 1 chữ số thập phân).
+     */
+    @Test
+    void testGetById_B43TC3_MotTrenBa_LamTron33Phay3() {
+        Event existing = buildExistingEvent();
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(3L);
+        when(checkInHistoryRepository.countByRegistration_EventId(1L)).thenReturn(1L);
+
+        EventDetailRes result = eventService.getById(1L);
+
+        assertEquals(33.3, result.getAttendanceRate());
     }
 
     private void setCurrentUser(String username) {
