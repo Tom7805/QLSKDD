@@ -21,6 +21,7 @@ export default function EventCard({ event }: EventCardProps) {
       </dl>
       <div className="mt-auto border-t border-slate-100 pt-4 text-sm font-semibold text-slate-700">
         {event.capacity !== null && event.availableSeats !== null ? `Còn ${event.availableSeats}/${event.capacity} chỗ` : 'Chưa giới hạn chỗ'}
+        {event.attendanceRate !== null && <p className="mt-1 text-xs font-medium text-emerald-700">Tỷ lệ tham dự {event.attendanceRate}%</p>}
       </div>
     </Link>
   );

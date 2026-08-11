@@ -730,7 +730,8 @@ Khi sự kiện **không còn `OPEN`** (đã `CLOSED` hoặc `CANCELLED`), mọi
         "endAt": "2026-09-01T11:00:00",
         "status": "OPEN",
         "capacity": 100,
-        "availableSeats": 65
+        "availableSeats": 65,
+        "attendanceRate": 75.0
       }
     ],
     "page": 0,
@@ -744,6 +745,8 @@ Khi sự kiện **không còn `OPEN`** (đã `CLOSED` hoặc `CANCELLED`), mọi
 ```
 
 `availableSeats = capacity - (số lượt đăng ký ACTIVE)`, tính bằng **1 truy vấn group-by duy nhất cho cả trang** (không N+1). Với sự kiện chưa có `capacity` (dữ liệu mẫu cũ), cả `capacity` và `availableSeats` trả về `null` — FE nên ẩn dòng "còn X/Y chỗ" khi gặp `null`.
+
+> **B4.3-T4:** `attendanceRate` = tỷ lệ điểm danh trên tổng đăng ký ACTIVE (`present / totalRegistered * 100`, làm tròn 1 chữ số thập phân, `0.0` nếu chưa có ai đăng ký) — hiển thị ngay ở danh sách sự kiện, cùng công thức và tính bằng **1 truy vấn group-by duy nhất cho cả trang** (không N+1), giống hệt cách tính ở mục 16 và ở chi tiết sự kiện bên dưới.
 
 ### `GET /api/v1/events/{id}` — Chi tiết 1 sự kiện
 

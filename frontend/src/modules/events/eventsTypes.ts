@@ -15,6 +15,7 @@ export interface EventDetail {
   createdAt: string;
   totalRegistered: number | null;
   availableSeats: number | null;
+  attendanceRate: number | null;
 }
 
 export interface EventSummary {
@@ -26,6 +27,7 @@ export interface EventSummary {
   status: EventStatus;
   capacity: number | null;
   availableSeats: number | null;
+  attendanceRate: number | null;
 }
 
 export interface EventsPage {
