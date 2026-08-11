@@ -12,6 +12,7 @@ interface NavItem {
 // TODO: bổ sung thêm mục khi các trang tương ứng (sự kiện, đăng ký, điểm danh...)
 // được triển khai ở các task khác.
 const NAV_ITEMS: NavItem[] = [
+  { label: 'Dashboard', to: ROUTES.DASHBOARD, allow: ['ROLE_ADMIN', 'ROLE_ORGANIZER'] },
   { label: 'Quản lý người tham gia', to: ROUTES.PARTICIPANTS, allow: ['ROLE_ADMIN', 'ROLE_ORGANIZER'] },
   { label: 'Danh sách sự kiện', to: ROUTES.EVENTS },
   { label: 'Sự kiện của tôi', to: ROUTES.MY_REGISTRATIONS },

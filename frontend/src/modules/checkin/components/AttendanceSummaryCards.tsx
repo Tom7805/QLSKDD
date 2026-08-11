@@ -1,3 +1,4 @@
+import AttendanceRateBar from '../../../components/common/AttendanceRateBar';
 import type { AttendanceSummary } from '../checkinTypes';
 
 const CARDS = [
@@ -13,7 +14,7 @@ export default function AttendanceSummaryCards({ summary }: { summary: Attendanc
         <article key={card.key} className={`rounded-2xl border p-5 shadow-sm ${card.color}`}>
           <p className="text-sm font-semibold">{card.label}</p>
           <p className="mt-2 text-3xl font-bold text-slate-900">{summary[card.key]}</p>
-          {card.key === 'present' && <p className="mt-1 text-xs font-medium">Tỷ lệ tham dự {summary.attendanceRate}%</p>}
+          {card.key === 'present' && <div className="mt-3"><AttendanceRateBar rate={summary.attendanceRate} /></div>}
         </article>
       ))}
     </div>
