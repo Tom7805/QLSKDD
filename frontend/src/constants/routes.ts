@@ -1,5 +1,6 @@
 export const ROUTES = {
   HOME: '/',
+  DASHBOARD: '/dashboard',
   LOGIN: '/login',
   FORBIDDEN: '/403',
   USERS: '/users',

@@ -30,4 +30,10 @@ public interface CheckInHistoryRepository extends JpaRepository<CheckInHistory, 
     // nhóm có mặt/vắng và hiển thị checkedInAt cho nhóm có mặt ở B4.2-T2.
     @Query("SELECT c.registration.id, c.checkedInAt FROM CheckInHistory c WHERE c.registration.id IN :registrationIds")
     List<Object[]> findCheckedInAtByRegistrationIds(@Param("registrationIds") List<Long> registrationIds);
+
+    // B4.3-T4: đếm số đã điểm danh (present) cho CẢ MỘT TRANG sự kiện bằng đúng 1 truy
+    // vấn group by (tránh N+1) — dùng để tính attendanceRate ở danh sách sự kiện.
+    @Query("SELECT c.registration.event.id, COUNT(c) FROM CheckInHistory c "
+            + "WHERE c.registration.event.id IN :eventIds GROUP BY c.registration.event.id")
+    List<Object[]> countGroupedByEventIds(@Param("eventIds") List<Long> eventIds);
 }

@@ -25,7 +25,19 @@ export interface AttendanceItem {
   email: string;
   phone: string | null;
   registeredAt: string;
+  checkedIn: boolean;
   checkedInAt: string | null;
+}
+
+export type AttendanceFilter = 'all' | 'present' | 'absent';
+
+export interface AttendancePageResponse {
+  content: AttendanceItem[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
 }
 
 export interface AttendanceSummary {

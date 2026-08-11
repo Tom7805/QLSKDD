@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import AttendanceRateBar from '../../../components/common/AttendanceRateBar';
 import EventStatusBadge from '../../../components/common/EventStatusBadge';
 import { ROUTES } from '../../../constants/routes';
 import type { EventSummary } from '../eventsTypes';
@@ -21,6 +22,7 @@ export default function EventCard({ event }: EventCardProps) {
       </dl>
       <div className="mt-auto border-t border-slate-100 pt-4 text-sm font-semibold text-slate-700">
         {event.capacity !== null && event.availableSeats !== null ? `Còn ${event.availableSeats}/${event.capacity} chỗ` : 'Chưa giới hạn chỗ'}
+        {event.attendanceRate !== null && <div className="mt-2"><AttendanceRateBar rate={event.attendanceRate} /></div>}
       </div>
     </Link>
   );
