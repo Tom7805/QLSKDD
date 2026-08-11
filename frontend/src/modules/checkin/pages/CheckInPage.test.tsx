@@ -3,11 +3,11 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '../../../components/common/Toast';
 import { getEventRegistrations } from '../../registrations/registrationsApi';
-import { checkInParticipant } from '../checkinApi';
+import { checkInByCode, checkInParticipant } from '../checkinApi';
 import CheckInPage from './CheckInPage';
 
 vi.mock('../../registrations/registrationsApi', () => ({ getEventRegistrations: vi.fn() }));
-vi.mock('../checkinApi', () => ({ checkInParticipant: vi.fn() }));
+vi.mock('../checkinApi', () => ({ checkInParticipant: vi.fn(), checkInByCode: vi.fn() }));
 
 const participant = {
   id: 11,
@@ -58,5 +58,15 @@ describe('CheckInPage', () => {
     fireEvent.click((await screen.findAllByRole('button', { name: 'Điểm danh' }))[0]);
     expect(await screen.findByText('Sai sự kiện')).toBeInTheDocument();
     await waitFor(() => expect(screen.getAllByRole('button', { name: 'Điểm danh' })).toHaveLength(2));
+  });
+
+  it('gửi mã bằng Enter và tự xoá ô sau khi điểm danh', async () => {
+    vi.mocked(checkInByCode).mockResolvedValue({ status: 'SUCCESS', message: 'OK', participantName: participant.fullName, checkedInAt: '2026-08-10T09:00:00' });
+    renderPage();
+    const input = await screen.findByLabelText('Mã đăng ký');
+    fireEvent.change(input, { target: { value: 'abc12345' } });
+    fireEvent.submit(input.closest('form')!);
+    await waitFor(() => expect(checkInByCode).toHaveBeenCalledWith({ code: 'ABC12345', eventId: 7 }));
+    await waitFor(() => expect(input).toHaveValue(''));
   });
 });

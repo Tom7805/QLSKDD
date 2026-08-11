@@ -5,12 +5,18 @@ import type {
   AttendancePageResponse,
   AttendanceSummaryResponse,
   CheckInRequest,
+  CheckInByCodeRequest,
   CheckInResponse,
 } from './checkinTypes';
 
 export const checkInParticipant = (request: CheckInRequest): Promise<CheckInResponse> =>
   apiClient
     .post<ApiResponse<CheckInResponse>>('/check-in', request)
+    .then((response) => response.data.data);
+
+export const checkInByCode = (request: CheckInByCodeRequest): Promise<CheckInResponse> =>
+  apiClient
+    .post<ApiResponse<CheckInResponse>>('/check-in/scan', request)
     .then((response) => response.data.data);
 
 export const getAttendanceSummary = (eventId: number): Promise<AttendanceSummaryResponse> =>

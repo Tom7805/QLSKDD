@@ -6,6 +6,7 @@ import Pagination from '../../../components/common/Pagination';
 import { useToast } from '../../../components/common/Toast';
 import { cancelRegistration, getMyRegistrations } from '../registrationsApi';
 import type { MyRegistration, RegistrationsPage } from '../registrationsTypes';
+import QrTicketModal from '../components/QrTicketModal';
 
 const PAGE_SIZE = 10;
 const EMPTY_PAGE: RegistrationsPage = { content: [], page: 0, size: PAGE_SIZE, totalElements: 0, totalPages: 0, last: true };
@@ -30,6 +31,7 @@ export default function MyRegistrationsPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [pendingRegistration, setPendingRegistration] = useState<MyRegistration | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [ticket, setTicket] = useState<MyRegistration | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -135,7 +137,17 @@ export default function MyRegistrationsPage() {
                       <p className="mt-3 text-sm text-slate-500">Đăng ký lúc: {formatDateTime(item.registeredAt)}</p>
                     </div>
 
-                    <div className="flex flex-col gap-2 sm:min-w-[12rem]">
+                    <div className="flex flex-col gap-2 sm:min-w-[13rem]">
+                      {item.registrationStatus === 'ACTIVE' && (
+                        <button
+                          type="button"
+                          onClick={() => setTicket(item)}
+                          className="group flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md"
+                        >
+                          <span className="grid grid-cols-2 gap-0.5" aria-hidden="true">{Array.from({ length: 4 }, (_, index) => <i key={index} className="h-1.5 w-1.5 rounded-[1px] bg-white" />)}</span>
+                          Xem vé QR
+                        </button>
+                      )}
                       {item.canCancel ? (
                         <button
                           type="button"
@@ -171,6 +183,13 @@ export default function MyRegistrationsPage() {
         onConfirm={handleCancel}
         onCancel={() => setPendingRegistration(null)}
         loading={cancelling}
+      />
+      <QrTicketModal
+        open={ticket !== null}
+        registrationId={ticket?.registrationId ?? null}
+        code={ticket?.code ?? ''}
+        eventName={ticket?.eventName ?? ''}
+        onClose={() => setTicket(null)}
       />
     </div>
   );

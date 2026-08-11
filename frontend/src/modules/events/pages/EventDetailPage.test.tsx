@@ -10,6 +10,7 @@ import EventDetailPage from './EventDetailPage';
 const mocks = vi.hoisted(() => ({
   getEventByIdMock: vi.fn(),
   registerForEventMock: vi.fn(),
+  getRegistrationQrMock: vi.fn(),
 }));
 
 vi.mock('../eventsApi', () => ({
@@ -19,6 +20,7 @@ vi.mock('../eventsApi', () => ({
 
 vi.mock('../../registrations/registrationsApi', () => ({
   registerForEvent: mocks.registerForEventMock,
+  getRegistrationQr: mocks.getRegistrationQrMock,
 }));
 
 describe('EventDetailPage registration', () => {
@@ -26,6 +28,8 @@ describe('EventDetailPage registration', () => {
     store.dispatch(clearCredentials());
     mocks.getEventByIdMock.mockReset();
     mocks.registerForEventMock.mockReset();
+    mocks.getRegistrationQrMock.mockReset();
+    mocks.getRegistrationQrMock.mockResolvedValue(new Blob(['qr'], { type: 'image/png' }));
   });
 
   it('registers successfully and updates the button label', async () => {
@@ -84,6 +88,7 @@ describe('EventDetailPage registration', () => {
 
     await waitFor(() => expect(mocks.registerForEventMock).toHaveBeenCalledWith(1));
     expect(await screen.findByText('Đã đăng ký')).toBeInTheDocument();
-    expect(screen.getByText(/Đăng ký thành công/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Đăng ký thành công/).length).toBeGreaterThan(0);
+    expect(screen.getByRole('dialog', { name: 'Vé tham dự của bạn' })).toBeInTheDocument();
   });
 });

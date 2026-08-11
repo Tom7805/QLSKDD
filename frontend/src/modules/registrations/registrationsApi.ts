@@ -19,6 +19,11 @@ export const getMyRegistrations = (page = 0, size = 10): Promise<RegistrationsPa
 export const cancelRegistration = (registrationId: number): Promise<void> =>
   apiClient.delete<ApiResponse<void>>(`${REGISTRATIONS_BASE_URL}/${registrationId}`).then(() => undefined);
 
+export const getRegistrationQr = (registrationId: number): Promise<Blob> =>
+  apiClient
+    .get(`${REGISTRATIONS_BASE_URL}/${registrationId}/qr`, { responseType: 'blob' })
+    .then((response) => response.data as Blob);
+
 export const getEventRegistrations = (eventId: number, page = 0, size = 10): Promise<EventRegistrationsResponse> =>
   apiClient
     .get<ApiResponse<EventRegistrationsResponse>>(`${EVENTS_BASE_URL}/${eventId}/registrations`, { params: { page, size } })

@@ -7,6 +7,11 @@ export interface CheckInRequest {
   eventId: number;
 }
 
+export interface CheckInByCodeRequest {
+  code: string;
+  eventId: number;
+}
+
 export interface CheckInResponse {
   status: 'SUCCESS';
   message: string;

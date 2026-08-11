@@ -11,6 +11,8 @@ import { useAppSelector } from '../../../stores/store';
 import { registerForEvent } from '../../registrations/registrationsApi';
 import { changeEventStatus, getEventById } from '../eventsApi';
 import type { EventDetail } from '../eventsTypes';
+import QrTicketModal from '../../registrations/components/QrTicketModal';
+import type { RegistrationCreateResponse } from '../../registrations/registrationsTypes';
 
 const formatDateTime = (value: string) =>
   new Intl.DateTimeFormat('vi-VN', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(value));
@@ -30,6 +32,7 @@ export default function EventDetailPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
+  const [newTicket, setNewTicket] = useState<RegistrationCreateResponse | null>(null);
 
   useEffect(() => {
     if (!Number.isInteger(eventId) || eventId <= 0) {
@@ -103,6 +106,7 @@ export default function EventDetailPage() {
     try {
       const data = await registerForEvent(event.id);
       setIsRegistered(true);
+      setNewTicket(data);
       showToast(`Đăng ký thành công! Mã vé của bạn: ${data.code}`, 'success');
       setReloadKey((key) => key + 1);
     } catch (requestError) {
@@ -206,6 +210,13 @@ export default function EventDetailPage() {
           navigate(ROUTES.LOGIN);
         }}
         onCancel={() => setLoginPromptOpen(false)}
+      />
+      <QrTicketModal
+        open={newTicket !== null}
+        registrationId={newTicket?.registrationId ?? null}
+        code={newTicket?.code ?? ''}
+        eventName={newTicket?.eventName ?? event.name}
+        onClose={() => setNewTicket(null)}
       />
     </div>
   );
