@@ -1,6 +1,12 @@
 import apiClient from '../../configs/apiClient';
 import type { ApiResponse } from '../auth/authTypes';
-import type { AttendanceSummaryResponse, CheckInRequest, CheckInResponse } from './checkinTypes';
+import type {
+  AttendanceFilter,
+  AttendancePageResponse,
+  AttendanceSummaryResponse,
+  CheckInRequest,
+  CheckInResponse,
+} from './checkinTypes';
 
 export const checkInParticipant = (request: CheckInRequest): Promise<CheckInResponse> =>
   apiClient
@@ -10,4 +16,17 @@ export const checkInParticipant = (request: CheckInRequest): Promise<CheckInResp
 export const getAttendanceSummary = (eventId: number): Promise<AttendanceSummaryResponse> =>
   apiClient
     .get<ApiResponse<AttendanceSummaryResponse>>(`/events/${eventId}/attendance-summary`)
+    .then((response) => response.data.data);
+
+// B4.4-T4: danh sách điểm danh phân trang, lọc trực tiếp bằng API thật.
+export const getAttendanceList = (
+  eventId: number,
+  status: AttendanceFilter = 'all',
+  page = 0,
+  size = 10,
+): Promise<AttendancePageResponse> =>
+  apiClient
+    .get<ApiResponse<AttendancePageResponse>>(`/events/${eventId}/attendance`, {
+      params: { status, page, size },
+    })
     .then((response) => response.data.data);
