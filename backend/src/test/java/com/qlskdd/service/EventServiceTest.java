@@ -235,12 +235,48 @@ class EventServiceTest {
         when(eventRepository.findAll(pageable)).thenReturn(page);
         when(registrationRepository.countGroupedByEventIdsAndStatus(any(), eq(RegistrationStatus.ACTIVE)))
                 .thenReturn(Collections.emptyList());
+        when(checkInHistoryRepository.countGroupedByEventIds(any())).thenReturn(Collections.emptyList());
 
         PageRes<EventRes> result = eventService.getAllEvents(pageable);
 
         assertEquals(3, result.getTotalPages());
         assertEquals(10, result.getContent().size());
         assertEquals(25, result.getTotalElements());
+    }
+
+    /**
+     * Test case B4.3-T4: attendanceRate ở danh sách sự kiện — cùng công thức với chi
+     * tiết sự kiện (75/60 đăng ký -> 45 đã điểm danh -> 75.0%; sự kiện chưa ai đăng ký
+     * -> 0.0, không lỗi chia 0).
+     */
+    @Test
+    void testGetAllEvents_B43T4_TinhAttendanceRateChoTungSuKienTrongTrang() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
+        Event e1 = new Event();
+        e1.setId(1L);
+        e1.setName("Sự kiện 1");
+        e1.setLocation("Địa điểm 1");
+        e1.setStartAt(LocalDateTime.now().plusDays(1));
+        e1.setEndAt(LocalDateTime.now().plusDays(1).plusHours(2));
+        e1.setStatus(EventStatus.OPEN);
+        Event e2 = new Event();
+        e2.setId(2L);
+        e2.setName("Sự kiện 2");
+        e2.setLocation("Địa điểm 2");
+        e2.setStartAt(LocalDateTime.now().plusDays(2));
+        e2.setEndAt(LocalDateTime.now().plusDays(2).plusHours(2));
+        e2.setStatus(EventStatus.OPEN);
+        Page<Event> page = new PageImpl<>(List.of(e1, e2), pageable, 2);
+        when(eventRepository.findAll(pageable)).thenReturn(page);
+        when(registrationRepository.countGroupedByEventIdsAndStatus(any(), eq(RegistrationStatus.ACTIVE)))
+                .thenReturn(List.<Object[]>of(new Object[]{1L, 60L}));
+        when(checkInHistoryRepository.countGroupedByEventIds(any()))
+                .thenReturn(List.<Object[]>of(new Object[]{1L, 45L}));
+
+        PageRes<EventRes> result = eventService.getAllEvents(pageable);
+
+        assertEquals(75.0, result.getContent().get(0).getAttendanceRate());
+        assertEquals(0.0, result.getContent().get(1).getAttendanceRate());
     }
 
     @Test

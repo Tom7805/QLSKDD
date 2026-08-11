@@ -137,10 +137,16 @@ public class EventServiceImpl implements EventService {
         // không gọi countByEventIdAndStatus lặp lại cho từng sự kiện (tránh N+1)
         List<Long> eventIds = eventPage.getContent().stream().map(Event::getId).toList();
         Map<Long, Long> activeCountByEventId = new HashMap<>();
+        // B4.3-T4: tương tự, đếm số đã điểm danh (present) cho cả trang bằng 1 truy vấn
+        // group by để tính attendanceRate — không query riêng cho từng sự kiện.
+        Map<Long, Long> presentCountByEventId = new HashMap<>();
         if (!eventIds.isEmpty()) {
             for (Object[] row : registrationRepository
                     .countGroupedByEventIdsAndStatus(eventIds, RegistrationStatus.ACTIVE)) {
                 activeCountByEventId.put((Long) row[0], (Long) row[1]);
+            }
+            for (Object[] row : checkInHistoryRepository.countGroupedByEventIds(eventIds)) {
+                presentCountByEventId.put((Long) row[0], (Long) row[1]);
             }
         }
 
@@ -155,10 +161,13 @@ public class EventServiceImpl implements EventService {
             res.setCapacity(event.getCapacity());
 
             Integer capacity = event.getCapacity();
+            long activeCount = activeCountByEventId.getOrDefault(event.getId(), 0L);
             if (capacity != null) {
-                long activeCount = activeCountByEventId.getOrDefault(event.getId(), 0L);
                 res.setAvailableSeats((int) (capacity - activeCount));
             }
+
+            long presentCount = presentCountByEventId.getOrDefault(event.getId(), 0L);
+            res.setAttendanceRate(AttendanceRateUtil.calculate(presentCount, activeCount));
             return res;
         });
 
