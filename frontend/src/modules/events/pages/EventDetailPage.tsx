@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import AttendanceRateBar from '../../../components/common/AttendanceRateBar';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import EventStatusBadge, { type EventStatus } from '../../../components/common/EventStatusBadge';
 import { useToast } from '../../../components/common/Toast';
@@ -149,7 +150,7 @@ export default function EventDetailPage() {
               <div className="flex justify-between text-sm"><span className="font-semibold text-slate-700">Số chỗ đã đăng ký</span><span className="text-slate-600">{registered}/{event.capacity}</span></div>
               <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuenow={usagePercent} aria-valuemin={0} aria-valuemax={100}><div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${usagePercent}%` }} /></div>
               <p className="mt-2 text-xs text-slate-500">Còn {event.availableSeats ?? Math.max(0, event.capacity - registered)} chỗ</p>
-              {event.attendanceRate !== null && <p className="mt-3 border-t border-slate-100 pt-3 text-sm font-semibold text-emerald-700">Tỷ lệ tham dự {event.attendanceRate}%</p>}
+              {event.attendanceRate !== null && <div className="mt-3 border-t border-slate-100 pt-3"><AttendanceRateBar rate={event.attendanceRate} /></div>}
             </section>
           </main>
 

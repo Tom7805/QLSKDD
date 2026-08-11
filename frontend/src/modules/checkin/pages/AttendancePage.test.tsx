@@ -27,7 +27,8 @@ describe('AttendancePage', () => {
     expect(screen.getByText('Vắng (1)')).toBeInTheDocument();
     expect(screen.getByText('Nguyễn Văn An')).toBeInTheDocument();
     expect(screen.getByText('Trần Thị Bình')).toBeInTheDocument();
-    expect(screen.getByText('Tỷ lệ tham dự 50%')).toBeInTheDocument();
+    expect(screen.getByText('Tỷ lệ tham dự')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: 'Tỷ lệ tham dự' })).toHaveAttribute('aria-valuenow', '50');
     expect(getAttendanceSummary).toHaveBeenCalledWith(7);
   });
 
