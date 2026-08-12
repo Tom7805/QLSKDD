@@ -2,7 +2,6 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Pagination from '../../../components/common/Pagination';
-import AttendanceSummaryCards from '../components/AttendanceSummaryCards';
 import { getAttendanceList, getAttendanceSummary } from '../checkinApi';
 import type {
   AttendanceFilter,
@@ -156,9 +155,7 @@ export default function AttendancePage() {
           </div>
         ) : (
           <>
-            <AttendanceSummaryCards summary={summary.summary} />
-
-            <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-blue-600">Bộ lọc danh sách</p>

@@ -113,7 +113,7 @@ export default function CheckInPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-6xl">
         <button type="button" onClick={() => navigate(`/events/${numericEventId}/registrations`)} className="mb-4 text-sm font-semibold text-blue-700">← Danh sách đăng ký</button>
-        <header className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm font-semibold text-blue-600">Điểm danh sự kiện</p><h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">Danh sách người tham gia</h1><p className="mt-2 text-sm text-slate-500">{participants.filter((item) => item.checkedIn).length}/{participants.length} người đã đến</p></div><button type="button" onClick={() => navigate(`/events/${numericEventId}/attendance`)} className="min-h-12 rounded-xl border border-blue-200 bg-white px-5 font-semibold text-blue-700 hover:bg-blue-50">Xem tổng hợp có mặt / vắng</button></header>
+        <header className="mb-5"><p className="text-sm font-semibold text-blue-600">Điểm danh sự kiện</p><h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">Danh sách người tham gia</h1><p className="mt-2 text-sm text-slate-500">{participants.filter((item) => item.checkedIn).length}/{participants.length} người đã đến</p></header>
         <section className="mb-6 overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-lg shadow-blue-900/5">
           <div className="border-b border-slate-100 bg-gradient-to-r from-slate-950 via-blue-950 to-blue-800 px-5 py-5 text-white sm:px-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

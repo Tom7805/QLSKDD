@@ -35,8 +35,8 @@ describe('AttendancePage', () => {
 
     expect((await screen.findAllByText('Nguyễn Văn An')).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Trần Thị Bình').length).toBeGreaterThan(0);
-    expect(screen.getByText('Tỷ lệ tham dự')).toBeInTheDocument();
-    expect(screen.getByRole('progressbar', { name: 'Tỷ lệ tham dự' })).toHaveAttribute('aria-valuenow', '50');
+    expect(screen.getByText('Tỷ lệ có mặt')).toBeInTheDocument();
+    expect(screen.getByText('50.0%')).toBeInTheDocument();
     expect(getAttendanceSummary).toHaveBeenCalledWith(7);
     expect(getAttendanceList).toHaveBeenCalledWith(7, 'all', 0, 10);
   });

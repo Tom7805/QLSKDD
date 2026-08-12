@@ -29,7 +29,10 @@ const readPage = (value: string | null) => {
 
 const formatDateTime = (value?: string | null) => {
   if (!value) return '—';
-  return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(value));
+  const date = new Date(value);
+  const time = new Intl.DateTimeFormat('vi-VN', { timeStyle: 'short' }).format(date);
+  const day = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'long' }).format(date);
+  return `${time} ${day}`;
 };
 
 export default function EventRegistrationsPage() {

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import AttendanceBarChart from '../../../components/common/AttendanceBarChart';
 import AttendanceRateBar from '../../../components/common/AttendanceRateBar';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import EventStatusBadge, { type EventStatus } from '../../../components/common/EventStatusBadge';
@@ -8,14 +9,20 @@ import { useToast } from '../../../components/common/Toast';
 import { ROUTES } from '../../../constants/routes';
 import { selectUser } from '../../../stores/slices/authSlice';
 import { useAppSelector } from '../../../stores/store';
+import { getAttendanceSummary } from '../../checkin/checkinApi';
+import type { AttendanceSummary } from '../../checkin/checkinTypes';
 import { registerForEvent } from '../../registrations/registrationsApi';
 import { changeEventStatus, getEventById } from '../eventsApi';
 import type { EventDetail } from '../eventsTypes';
 import QrTicketModal from '../../registrations/components/QrTicketModal';
 import type { RegistrationCreateResponse } from '../../registrations/registrationsTypes';
 
-const formatDateTime = (value: string) =>
-  new Intl.DateTimeFormat('vi-VN', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(value));
+const formatDateTime = (value: string) => {
+  const date = new Date(value);
+  const time = new Intl.DateTimeFormat('vi-VN', { timeStyle: 'short' }).format(date);
+  const day = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'long' }).format(date);
+  return `${time} ${day}`;
+};
 
 export default function EventDetailPage() {
   const { id } = useParams();
@@ -33,6 +40,7 @@ export default function EventDetailPage() {
   const [isRegistered, setIsRegistered] = useState(false);
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
   const [newTicket, setNewTicket] = useState<RegistrationCreateResponse | null>(null);
+  const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummary | null>(null);
 
   useEffect(() => {
     if (!Number.isInteger(eventId) || eventId <= 0) {
@@ -55,6 +63,16 @@ export default function EventDetailPage() {
   }, [eventId, reloadKey]);
 
   const canManageEvent = event !== null && (user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_ORGANIZER');
+
+  useEffect(() => {
+    if (!canManageEvent || !Number.isInteger(eventId) || eventId <= 0) return;
+    let active = true;
+    getAttendanceSummary(eventId)
+      .then((data) => active && setAttendanceSummary(data.summary))
+      .catch(() => { /* Biểu đồ chỉ là thông tin bổ sung, không chặn trang chi tiết khi lỗi. */ });
+    return () => { active = false; };
+  }, [canManageEvent, eventId, reloadKey]);
+
   const eventEnded = event !== null && new Date(event.endAt).getTime() < Date.now();
   const registrationDisabledReason = !user
     ? 'Vui lòng đăng nhập để đăng ký tham gia'
@@ -144,23 +162,32 @@ export default function EventDetailPage() {
               <div><p className="text-sm font-semibold text-blue-600">{event.categoryName || 'Sự kiện'}</p><h1 className="mt-1 text-3xl font-bold text-slate-900">{event.name}</h1></div>
               <EventStatusBadge status={event.status} />
             </div>
-            <dl className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <dl className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="rounded-xl bg-slate-50 p-4"><dt className="text-xs font-semibold uppercase text-slate-400">Bắt đầu</dt><dd className="mt-1 font-medium text-slate-800">{formatDateTime(event.startAt)}</dd></div>
               <div className="rounded-xl bg-slate-50 p-4"><dt className="text-xs font-semibold uppercase text-slate-400">Kết thúc</dt><dd className="mt-1 font-medium text-slate-800">{formatDateTime(event.endAt)}</dd></div>
-              <div className="rounded-xl bg-slate-50 p-4 sm:col-span-2"><dt className="text-xs font-semibold uppercase text-slate-400">Địa điểm</dt><dd className="mt-1 font-medium text-slate-800">{event.location}</dd></div>
+              <div className="rounded-xl bg-slate-50 p-4"><dt className="text-xs font-semibold uppercase text-slate-400">Địa điểm</dt><dd className="mt-1 font-medium text-slate-800">{event.location}</dd></div>
             </dl>
             <section className="mt-6"><h2 className="font-semibold text-slate-900">Mô tả</h2><p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">{event.description || 'Chưa có mô tả cho sự kiện này.'}</p></section>
-            <section className="mt-7 rounded-xl border border-slate-200 p-4">
-              <div className="flex justify-between text-sm"><span className="font-semibold text-slate-700">Số chỗ đã đăng ký</span><span className="text-slate-600">{registered}/{event.capacity}</span></div>
-              <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuenow={usagePercent} aria-valuemin={0} aria-valuemax={100}><div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${usagePercent}%` }} /></div>
-              <p className="mt-2 text-xs text-slate-500">Còn {event.availableSeats ?? Math.max(0, event.capacity - registered)} chỗ</p>
-              {event.attendanceRate !== null && <div className="mt-3 border-t border-slate-100 pt-3"><AttendanceRateBar rate={event.attendanceRate} /></div>}
+            <section className="mt-7 rounded-xl border border-slate-200 p-4 sm:p-5">
+              <h2 className="font-semibold text-slate-900">Thống kê tham dự</h2>
+              <div className={`mt-4 grid grid-cols-1 gap-6 ${canManageEvent && attendanceSummary ? 'lg:grid-cols-2' : ''}`}>
+                <div>
+                  <div className="flex justify-between text-sm"><span className="font-semibold text-slate-700">Số người đăng ký</span><span className="text-slate-600">{registered}/{event.capacity}</span></div>
+                  <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuenow={usagePercent} aria-valuemin={0} aria-valuemax={100}><div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${usagePercent}%` }} /></div>
+                  {event.attendanceRate !== null && <div className="mt-4 border-t border-slate-100 pt-4"><AttendanceRateBar rate={event.attendanceRate} /></div>}
+                </div>
+                {canManageEvent && attendanceSummary && (
+                  <div className="border-t border-slate-100 pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+                    <div className="flex items-center justify-between"><h3 className="text-sm font-semibold text-slate-700">Tổng hợp có mặt / vắng</h3><span className="text-xs font-semibold text-slate-500">{attendanceSummary.totalRegistered} đăng ký</span></div>
+                    <AttendanceBarChart present={attendanceSummary.present} absent={attendanceSummary.absent} />
+                  </div>
+                )}
+              </div>
             </section>
           </main>
 
           <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-6">
             <h2 className="text-lg font-bold text-slate-900">Thao tác</h2>
-            <p className="mt-1 text-sm text-slate-500">Người tổ chức: {event.createdBy}</p>
             <div className="mt-5 flex flex-col gap-3">
               {user?.role === 'ROLE_USER' && (
                 <>
