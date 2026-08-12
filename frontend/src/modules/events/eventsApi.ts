@@ -4,9 +4,11 @@ import type { EventCreateRequest, EventDetail, EventsPage, EventStatusRequest } 
 
 const EVENTS_BASE_URL = '/events';
 
-export const getEvents = (page = 0, size = 9): Promise<EventsPage> =>
+export const getEvents = (page = 0, size = 9, keyword?: string): Promise<EventsPage> =>
   apiClient
-    .get<ApiResponse<EventsPage>>(EVENTS_BASE_URL, { params: { page, size } })
+    .get<ApiResponse<EventsPage>>(EVENTS_BASE_URL, {
+      params: { page, size, ...(keyword?.trim() ? { keyword: keyword.trim() } : {}) },
+    })
     .then((response) => response.data.data);
 
 export const createEvent = (request: EventCreateRequest): Promise<EventDetail> =>
