@@ -237,7 +237,7 @@ class EventServiceTest {
                 .thenReturn(Collections.emptyList());
         when(checkInHistoryRepository.countGroupedByEventIds(any())).thenReturn(Collections.emptyList());
 
-        PageRes<EventRes> result = eventService.getAllEvents(pageable);
+        PageRes<EventRes> result = eventService.getAllEvents(null, pageable);
 
         assertEquals(3, result.getTotalPages());
         assertEquals(10, result.getContent().size());
@@ -273,10 +273,99 @@ class EventServiceTest {
         when(checkInHistoryRepository.countGroupedByEventIds(any()))
                 .thenReturn(List.<Object[]>of(new Object[]{1L, 45L}));
 
-        PageRes<EventRes> result = eventService.getAllEvents(pageable);
+        PageRes<EventRes> result = eventService.getAllEvents(null, pageable);
 
         assertEquals(75.0, result.getContent().get(0).getAttendanceRate());
         assertEquals(0.0, result.getContent().get(1).getAttendanceRate());
+    }
+
+    /**
+     * Test case B5.1-T3, TC1: tìm "hội thảo" -> chỉ trả sự kiện khớp (tên hoặc địa điểm
+     * chứa từ khoá), không trả các sự kiện khác trong hệ thống.
+     */
+    @Test
+    void testGetAllEvents_B51TC1_TimHoiThao_ChiTraSuKienKhop() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
+        Event matched = new Event();
+        matched.setId(1L);
+        matched.setName("Hội thảo AI 2026");
+        matched.setLocation("Hội trường A");
+        matched.setStartAt(LocalDateTime.now().plusDays(1));
+        matched.setEndAt(LocalDateTime.now().plusDays(1).plusHours(2));
+        matched.setStatus(EventStatus.OPEN);
+        Page<Event> page = new PageImpl<>(List.of(matched), pageable, 1);
+        when(eventRepository.findByNameContainingIgnoreCaseOrLocationContainingIgnoreCase(
+                "hội thảo", "hội thảo", pageable)).thenReturn(page);
+        when(registrationRepository.countGroupedByEventIdsAndStatus(any(), eq(RegistrationStatus.ACTIVE)))
+                .thenReturn(Collections.emptyList());
+        when(checkInHistoryRepository.countGroupedByEventIds(any())).thenReturn(Collections.emptyList());
+
+        PageRes<EventRes> result = eventService.getAllEvents("hội thảo", pageable);
+
+        assertEquals(1, result.getContent().size());
+        assertEquals("Hội thảo AI 2026", result.getContent().get(0).getName());
+        verify(eventRepository, never()).findAll(pageable);
+    }
+
+    /**
+     * Test case B5.1-T3, TC2: tìm chữ HOA "HỘI THẢO" vẫn ra kết quả (LIKE không phân
+     * biệt hoa thường) — kiểm chứng service truyền nguyên keyword xuống repository, việc
+     * ignore-case do chính truy vấn IgnoreCase đảm nhiệm.
+     */
+    @Test
+    void testGetAllEvents_B51TC2_TimChuHoa_VanRaKetQua() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
+        Event matched = new Event();
+        matched.setId(1L);
+        matched.setName("Hội thảo AI 2026");
+        matched.setLocation("Hội trường A");
+        matched.setStartAt(LocalDateTime.now().plusDays(1));
+        matched.setEndAt(LocalDateTime.now().plusDays(1).plusHours(2));
+        matched.setStatus(EventStatus.OPEN);
+        Page<Event> page = new PageImpl<>(List.of(matched), pageable, 1);
+        when(eventRepository.findByNameContainingIgnoreCaseOrLocationContainingIgnoreCase(
+                "HỘI THẢO", "HỘI THẢO", pageable)).thenReturn(page);
+        when(registrationRepository.countGroupedByEventIdsAndStatus(any(), eq(RegistrationStatus.ACTIVE)))
+                .thenReturn(Collections.emptyList());
+        when(checkInHistoryRepository.countGroupedByEventIds(any())).thenReturn(Collections.emptyList());
+
+        PageRes<EventRes> result = eventService.getAllEvents("HỘI THẢO", pageable);
+
+        assertEquals(1, result.getContent().size());
+    }
+
+    /**
+     * Test case B5.1-T3, TC3: từ khoá không khớp gì -> content rỗng, totalElements=0,
+     * không ném lỗi.
+     */
+    @Test
+    void testGetAllEvents_B51TC3_TuKhoaKhongKhop_ContentRongTotalElements0() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
+        Page<Event> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+        when(eventRepository.findByNameContainingIgnoreCaseOrLocationContainingIgnoreCase(
+                "khong-ton-tai", "khong-ton-tai", pageable)).thenReturn(emptyPage);
+
+        PageRes<EventRes> result = eventService.getAllEvents("khong-ton-tai", pageable);
+
+        assertEquals(0, result.getContent().size());
+        assertEquals(0, result.getTotalElements());
+    }
+
+    /**
+     * Test case B5.1-T1: keyword rỗng/null (đã trim ở controller) -> trả toàn bộ, dùng
+     * lại đúng findAll (không gọi truy vấn LIKE).
+     */
+    @Test
+    void testGetAllEvents_B51_KeywordRong_TraToanBoKhongLoi() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
+        Page<Event> page = new PageImpl<>(Collections.emptyList(), pageable, 0);
+        when(eventRepository.findAll(pageable)).thenReturn(page);
+
+        eventService.getAllEvents("", pageable);
+        eventService.getAllEvents(null, pageable);
+
+        verify(eventRepository, never()).findByNameContainingIgnoreCaseOrLocationContainingIgnoreCase(
+                any(), any(), any());
     }
 
     @Test
