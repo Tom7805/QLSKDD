@@ -32,11 +32,53 @@ public class EventController {
     @GetMapping
     public ResponseEntity<BaseRes<PageRes<EventRes>>> getEvents(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(required = false) String sort) {
 
-        // B2.5-T2: mặc định sort theo startAt tăng dần (sự kiện sắp diễn ra lên trước)
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "startAt"));
-        PageRes<EventRes> result = eventService.getAllEvents(pageable);
+        // parse sort param if provided (format: field,dir), default: startAt,asc
+        Sort sortObj = Sort.by(Sort.Direction.ASC, "startAt");
+        if (sort != null && sort.contains(",")) {
+            String[] parts = sort.split(",");
+            try {
+                Sort.Direction dir = Sort.Direction.fromString(parts[1]);
+                sortObj = Sort.by(dir, parts[0]);
+            } catch (Exception ignored) {
+            }
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+
+        java.time.LocalDate fromDate = null;
+        java.time.LocalDate toDate = null;
+        try {
+            if (from != null && !from.isBlank()) fromDate = java.time.LocalDate.parse(from);
+            if (to != null && !to.isBlank()) toDate = java.time.LocalDate.parse(to);
+        } catch (java.time.format.DateTimeParseException ex) {
+            throw new com.qlskdd.exception.BusinessException(org.springframework.http.HttpStatus.BAD_REQUEST,
+                    "Định dạng from/to phải là yyyy-MM-dd");
+        }
+
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            throw new com.qlskdd.exception.BusinessException(org.springframework.http.HttpStatus.BAD_REQUEST,
+                    "Tham số from phải nhỏ hơn hoặc bằng to");
+        }
+
+        // validate status value
+        if (status != null && !status.isBlank()) {
+            try {
+                com.qlskdd.enums.EventStatus.valueOf(status.trim().toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                throw new com.qlskdd.exception.BusinessException(org.springframework.http.HttpStatus.BAD_REQUEST,
+                        "Trạng thái không hợp lệ");
+            }
+        }
+
+        PageRes<EventRes> result = eventService.searchEvents(keyword, categoryId, status, fromDate, toDate, pageable);
 
         return ResponseEntity.ok(BaseRes.success("Lấy danh sách sự kiện thành công", result));
     }

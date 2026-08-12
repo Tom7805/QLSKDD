@@ -26,6 +26,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import com.qlskdd.specification.EventSpecification;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -139,6 +141,50 @@ public class EventServiceImpl implements EventService {
         Map<Long, Long> activeCountByEventId = new HashMap<>();
         // B4.3-T4: tương tự, đếm số đã điểm danh (present) cho cả trang bằng 1 truy vấn
         // group by để tính attendanceRate — không query riêng cho từng sự kiện.
+        Map<Long, Long> presentCountByEventId = new HashMap<>();
+        if (!eventIds.isEmpty()) {
+            for (Object[] row : registrationRepository
+                    .countGroupedByEventIdsAndStatus(eventIds, RegistrationStatus.ACTIVE)) {
+                activeCountByEventId.put((Long) row[0], (Long) row[1]);
+            }
+            for (Object[] row : checkInHistoryRepository.countGroupedByEventIds(eventIds)) {
+                presentCountByEventId.put((Long) row[0], (Long) row[1]);
+            }
+        }
+
+        Page<EventRes> dtoPage = eventPage.map(event -> {
+            EventRes res = new EventRes();
+            res.setId(event.getId());
+            res.setName(event.getName());
+            res.setLocation(event.getLocation());
+            res.setStartAt(event.getStartAt());
+            res.setEndAt(event.getEndAt());
+            res.setStatus(event.getStatus());
+            res.setCapacity(event.getCapacity());
+
+            Integer capacity = event.getCapacity();
+            long activeCount = activeCountByEventId.getOrDefault(event.getId(), 0L);
+            if (capacity != null) {
+                res.setAvailableSeats((int) (capacity - activeCount));
+            }
+
+            long presentCount = presentCountByEventId.getOrDefault(event.getId(), 0L);
+            res.setAttendanceRate(AttendanceRateUtil.calculate(presentCount, activeCount));
+            return res;
+        });
+
+        return PageRes.of(dtoPage);
+    }
+
+    @Override
+    public PageRes<EventRes> searchEvents(String keyword, Long categoryId, String status, LocalDate from, LocalDate to, Pageable pageable) {
+        // build specification
+        var spec = EventSpecification.filter(keyword, categoryId, status, from, to);
+
+        Page<Event> eventPage = eventRepository.findAll(spec, pageable);
+
+        List<Long> eventIds = eventPage.getContent().stream().map(Event::getId).toList();
+        Map<Long, Long> activeCountByEventId = new HashMap<>();
         Map<Long, Long> presentCountByEventId = new HashMap<>();
         if (!eventIds.isEmpty()) {
             for (Object[] row : registrationRepository

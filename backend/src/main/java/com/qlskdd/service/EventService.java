@@ -12,6 +12,8 @@ public interface EventService {
     // B2.5-T1/T2: sort mặc định startAt,asc áp dụng ở tầng controller khi build Pageable
     PageRes<EventRes> getAllEvents(Pageable pageable);
 
+    PageRes<EventRes> searchEvents(String keyword, Long categoryId, String status, java.time.LocalDate from, java.time.LocalDate to, Pageable pageable);
+
     // B2.5-T2: chi tiết 1 sự kiện, gồm loại, người tạo, tổng đăng ký, số chỗ còn lại
     EventDetailRes getById(Long id);
 
