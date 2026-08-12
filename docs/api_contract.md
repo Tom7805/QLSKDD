@@ -712,9 +712,17 @@ Khi sự kiện **không còn `OPEN`** (đã `CLOSED` hoặc `CANCELLED`), mọi
 
 ### `GET /api/v1/events` — Danh sách sự kiện có phân trang
 
-**Query params:** `keyword` (tuỳ chọn), `page` (mặc định `0`), `size` (mặc định `10`). Mặc định sắp xếp theo `startAt` tăng dần (sự kiện sắp diễn ra lên đầu) — không cần truyền tham số `sort`.
+**Query params:** `keyword`, `categoryId`, `status`, `from`, `to`, `sort` (tất cả tuỳ chọn), `page` (mặc định `0`), `size` (mặc định `10`). Mặc định sắp xếp theo `startAt` tăng dần (sự kiện sắp diễn ra lên đầu). Tham số nào không truyền (hoặc rỗng) thì bỏ qua điều kiện lọc tương ứng; các điều kiện được truyền kết hợp với nhau bằng AND.
 
-> **B5.1 (Tìm kiếm sự kiện theo tên / địa điểm):** `keyword` tìm theo `name` HOẶC `location`, `LIKE %keyword%`, không phân biệt hoa thường. Được trim khoảng trắng đầu/cuối ở tầng controller trước khi tìm. `keyword` rỗng hoặc không truyền → trả toàn bộ danh sách (không lỗi). Không khớp gì → `content` rỗng, `totalElements = 0` (không lỗi). Ví dụ: `GET /api/v1/events?keyword=hội thảo&page=0&size=10`.
+> **B5.1 (Tìm kiếm theo tên / địa điểm):** `keyword` tìm theo `name`, `location` HOẶC `description`, `LIKE %keyword%`, không phân biệt hoa thường. Được trim khoảng trắng đầu/cuối ở tầng service trước khi tìm. `keyword` rỗng hoặc không truyền → không lọc theo keyword (không lỗi).
+>
+> **B5.2 (Lọc theo loại / thời gian / trạng thái):**
+> - `categoryId`: lọc đúng loại sự kiện.
+> - `status`: một trong `OPEN` / `CLOSED` / `CANCELLED` (không phân biệt hoa thường) — giá trị khác → `400 Bad Request` `"Trạng thái không hợp lệ"`.
+> - `from`, `to`: định dạng `yyyy-MM-dd`, lọc theo `startAt` nằm trong khoảng `[from 00:00:00, to 23:59:59]`. Sai định dạng → `400` `"Định dạng from/to phải là yyyy-MM-dd"`. `from` sau `to` → `400` `"Tham số from phải nhỏ hơn hoặc bằng to"`.
+> - `sort`: định dạng `field,dir` (vd. `startAt,desc`) — sai định dạng thì bỏ qua, giữ mặc định `startAt,asc`.
+>
+> Không khớp bộ lọc nào → `content` rỗng, `totalElements = 0` (không lỗi). Ví dụ: `GET /api/v1/events?keyword=hội thảo&categoryId=1&status=OPEN&from=2026-01-01&to=2026-12-31&page=0&size=10`.
 
 **Response — 200 OK**
 ```json

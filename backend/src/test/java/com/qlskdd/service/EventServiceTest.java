@@ -29,6 +29,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -215,10 +216,12 @@ class EventServiceTest {
     }
 
     /**
-     * Test case B2.5-T3: danh sách & chi tiết sự kiện.
+     * Test case B2.5-T3: danh sách & chi tiết sự kiện. Từ B5.2, GET /events đi qua
+     * searchEvents (Specification) thay vì findAll(pageable) trực tiếp — mock
+     * eventRepository.findAll(Specification, Pageable) thay cho findAll(Pageable).
      */
     @Test
-    void testGetAllEvents_TC1_25SuKien_Size10_TongPages3TrangDauCo10PhanTu() {
+    void testSearchEvents_TC1_25SuKien_Size10_TongPages3TrangDauCo10PhanTu() {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
         List<Event> tenEvents = new ArrayList<>();
         for (long i = 1; i <= 10; i++) {
@@ -232,12 +235,12 @@ class EventServiceTest {
             tenEvents.add(e);
         }
         Page<Event> page = new PageImpl<>(tenEvents, pageable, 25);
-        when(eventRepository.findAll(pageable)).thenReturn(page);
+        when(eventRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
         when(registrationRepository.countGroupedByEventIdsAndStatus(any(), eq(RegistrationStatus.ACTIVE)))
                 .thenReturn(Collections.emptyList());
         when(checkInHistoryRepository.countGroupedByEventIds(any())).thenReturn(Collections.emptyList());
 
-        PageRes<EventRes> result = eventService.getAllEvents(null, pageable);
+        PageRes<EventRes> result = eventService.searchEvents(null, null, null, null, null, pageable);
 
         assertEquals(3, result.getTotalPages());
         assertEquals(10, result.getContent().size());
@@ -250,7 +253,7 @@ class EventServiceTest {
      * -> 0.0, không lỗi chia 0).
      */
     @Test
-    void testGetAllEvents_B43T4_TinhAttendanceRateChoTungSuKienTrongTrang() {
+    void testSearchEvents_B43T4_TinhAttendanceRateChoTungSuKienTrongTrang() {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
         Event e1 = new Event();
         e1.setId(1L);
@@ -267,24 +270,26 @@ class EventServiceTest {
         e2.setEndAt(LocalDateTime.now().plusDays(2).plusHours(2));
         e2.setStatus(EventStatus.OPEN);
         Page<Event> page = new PageImpl<>(List.of(e1, e2), pageable, 2);
-        when(eventRepository.findAll(pageable)).thenReturn(page);
+        when(eventRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
         when(registrationRepository.countGroupedByEventIdsAndStatus(any(), eq(RegistrationStatus.ACTIVE)))
                 .thenReturn(List.<Object[]>of(new Object[]{1L, 60L}));
         when(checkInHistoryRepository.countGroupedByEventIds(any()))
                 .thenReturn(List.<Object[]>of(new Object[]{1L, 45L}));
 
-        PageRes<EventRes> result = eventService.getAllEvents(null, pageable);
+        PageRes<EventRes> result = eventService.searchEvents(null, null, null, null, null, pageable);
 
         assertEquals(75.0, result.getContent().get(0).getAttendanceRate());
         assertEquals(0.0, result.getContent().get(1).getAttendanceRate());
     }
 
     /**
-     * Test case B5.1-T3, TC1: tìm "hội thảo" -> chỉ trả sự kiện khớp (tên hoặc địa điểm
-     * chứa từ khoá), không trả các sự kiện khác trong hệ thống.
+     * Test case B5.1-T3 (giữ lại ở tầng service như bài kiểm tra "wiring"): có keyword
+     * thì kết quả từ repository được map đúng sang EventRes. Việc LIKE keyword có thật
+     * sự lọc đúng name/location/description hay không được kiểm chứng bằng dữ liệu thật
+     * ở EventSpecificationTest (repository/EventSpecificationTest.java, @DataJpaTest).
      */
     @Test
-    void testGetAllEvents_B51TC1_TimHoiThao_ChiTraSuKienKhop() {
+    void testSearchEvents_B51_CoKeyword_MapDungKetQuaTuRepository() {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
         Event matched = new Event();
         matched.setId(1L);
@@ -294,78 +299,144 @@ class EventServiceTest {
         matched.setEndAt(LocalDateTime.now().plusDays(1).plusHours(2));
         matched.setStatus(EventStatus.OPEN);
         Page<Event> page = new PageImpl<>(List.of(matched), pageable, 1);
-        when(eventRepository.findByNameContainingIgnoreCaseOrLocationContainingIgnoreCase(
-                "hội thảo", "hội thảo", pageable)).thenReturn(page);
+        when(eventRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
         when(registrationRepository.countGroupedByEventIdsAndStatus(any(), eq(RegistrationStatus.ACTIVE)))
                 .thenReturn(Collections.emptyList());
         when(checkInHistoryRepository.countGroupedByEventIds(any())).thenReturn(Collections.emptyList());
 
-        PageRes<EventRes> result = eventService.getAllEvents("hội thảo", pageable);
+        PageRes<EventRes> result = eventService.searchEvents("hội thảo", null, null, null, null, pageable);
 
         assertEquals(1, result.getContent().size());
         assertEquals("Hội thảo AI 2026", result.getContent().get(0).getName());
-        verify(eventRepository, never()).findAll(pageable);
     }
 
     /**
-     * Test case B5.1-T3, TC2: tìm chữ HOA "HỘI THẢO" vẫn ra kết quả (LIKE không phân
-     * biệt hoa thường) — kiểm chứng service truyền nguyên keyword xuống repository, việc
-     * ignore-case do chính truy vấn IgnoreCase đảm nhiệm.
+     * Test case B5.1-T3, TC3 / B5.2-T3: từ khoá (hoặc bộ lọc) không khớp gì -> content
+     * rỗng, totalElements=0, không ném lỗi.
      */
     @Test
-    void testGetAllEvents_B51TC2_TimChuHoa_VanRaKetQua() {
-        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
-        Event matched = new Event();
-        matched.setId(1L);
-        matched.setName("Hội thảo AI 2026");
-        matched.setLocation("Hội trường A");
-        matched.setStartAt(LocalDateTime.now().plusDays(1));
-        matched.setEndAt(LocalDateTime.now().plusDays(1).plusHours(2));
-        matched.setStatus(EventStatus.OPEN);
-        Page<Event> page = new PageImpl<>(List.of(matched), pageable, 1);
-        when(eventRepository.findByNameContainingIgnoreCaseOrLocationContainingIgnoreCase(
-                "HỘI THẢO", "HỘI THẢO", pageable)).thenReturn(page);
-        when(registrationRepository.countGroupedByEventIdsAndStatus(any(), eq(RegistrationStatus.ACTIVE)))
-                .thenReturn(Collections.emptyList());
-        when(checkInHistoryRepository.countGroupedByEventIds(any())).thenReturn(Collections.emptyList());
-
-        PageRes<EventRes> result = eventService.getAllEvents("HỘI THẢO", pageable);
-
-        assertEquals(1, result.getContent().size());
-    }
-
-    /**
-     * Test case B5.1-T3, TC3: từ khoá không khớp gì -> content rỗng, totalElements=0,
-     * không ném lỗi.
-     */
-    @Test
-    void testGetAllEvents_B51TC3_TuKhoaKhongKhop_ContentRongTotalElements0() {
+    void testSearchEvents_TC_KhongKhopBoLocNao_ContentRongTotalElements0() {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
         Page<Event> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
-        when(eventRepository.findByNameContainingIgnoreCaseOrLocationContainingIgnoreCase(
-                "khong-ton-tai", "khong-ton-tai", pageable)).thenReturn(emptyPage);
+        when(eventRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(emptyPage);
 
-        PageRes<EventRes> result = eventService.getAllEvents("khong-ton-tai", pageable);
+        PageRes<EventRes> result = eventService.searchEvents("khong-ton-tai", null, null, null, null, pageable);
 
         assertEquals(0, result.getContent().size());
         assertEquals(0, result.getTotalElements());
     }
 
     /**
-     * Test case B5.1-T1: keyword rỗng/null (đã trim ở controller) -> trả toàn bộ, dùng
-     * lại đúng findAll (không gọi truy vấn LIKE).
+     * Test case B5.2-T3, TC1: lọc theo categoryId — chỉ cần kiểm chứng service truyền
+     * đúng kết quả repository trả về (repository đã được mock trả về đúng 1 sự kiện thuộc
+     * category lọc); việc Specification tạo đúng predicate categoryId được kiểm chứng
+     * bằng dữ liệu thật ở EventSpecificationTest.
      */
     @Test
-    void testGetAllEvents_B51_KeywordRong_TraToanBoKhongLoi() {
+    void testSearchEvents_B52TC1_LocTheoCategoryId_ChiRaSuKienDungLoai() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
+        Event matched = new Event();
+        matched.setId(1L);
+        matched.setName("Hội thảo AI 2026");
+        matched.setLocation("Hội trường A");
+        matched.setCategory(category);
+        matched.setStartAt(LocalDateTime.now().plusDays(1));
+        matched.setEndAt(LocalDateTime.now().plusDays(1).plusHours(2));
+        matched.setStatus(EventStatus.OPEN);
+        Page<Event> page = new PageImpl<>(List.of(matched), pageable, 1);
+        when(eventRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
+        when(registrationRepository.countGroupedByEventIdsAndStatus(any(), eq(RegistrationStatus.ACTIVE)))
+                .thenReturn(Collections.emptyList());
+        when(checkInHistoryRepository.countGroupedByEventIds(any())).thenReturn(Collections.emptyList());
+
+        PageRes<EventRes> result = eventService.searchEvents(null, 1L, null, null, null, pageable);
+
+        assertEquals(1, result.getContent().size());
+    }
+
+    /**
+     * Test case B5.2-T3, TC2: lọc khoảng thời gian from/to hợp lệ -> không ném lỗi, gọi
+     * repository đúng 1 lần.
+     */
+    @Test
+    void testSearchEvents_B52TC2_LocKhoangThoiGianHopLe_KhongLoi() {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
         Page<Event> page = new PageImpl<>(Collections.emptyList(), pageable, 0);
-        when(eventRepository.findAll(pageable)).thenReturn(page);
+        when(eventRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
 
-        eventService.getAllEvents("", pageable);
-        eventService.getAllEvents(null, pageable);
+        eventService.searchEvents(null, null, null, "2026-01-01", "2026-12-31", pageable);
 
-        verify(eventRepository, never()).findByNameContainingIgnoreCaseOrLocationContainingIgnoreCase(
-                any(), any(), any());
+        verify(eventRepository).findAll(any(Specification.class), eq(pageable));
+    }
+
+    /**
+     * Test case B5.2-T3, TC3: kết hợp keyword + categoryId + status -> không ném lỗi,
+     * kết quả từ repository được map đúng (thoả cả 3 điều kiện do repository trả về).
+     */
+    @Test
+    void testSearchEvents_B52TC3_KetHopKeywordCategoryStatus_KetQuaThoaCa3() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
+        Event matched = new Event();
+        matched.setId(1L);
+        matched.setName("Hội thảo AI 2026");
+        matched.setLocation("Hội trường A");
+        matched.setCategory(category);
+        matched.setStatus(EventStatus.OPEN);
+        matched.setStartAt(LocalDateTime.now().plusDays(1));
+        matched.setEndAt(LocalDateTime.now().plusDays(1).plusHours(2));
+        Page<Event> page = new PageImpl<>(List.of(matched), pageable, 1);
+        when(eventRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
+        when(registrationRepository.countGroupedByEventIdsAndStatus(any(), eq(RegistrationStatus.ACTIVE)))
+                .thenReturn(Collections.emptyList());
+        when(checkInHistoryRepository.countGroupedByEventIds(any())).thenReturn(Collections.emptyList());
+
+        PageRes<EventRes> result = eventService.searchEvents("hội thảo", 1L, "OPEN", null, null, pageable);
+
+        assertEquals(1, result.getContent().size());
+        assertEquals(EventStatus.OPEN, result.getContent().get(0).getStatus());
+    }
+
+    /**
+     * Test case B5.2-T3, TC4: from sau to -> 400, không gọi repository.
+     */
+    @Test
+    void testSearchEvents_B52TC4_FromSauTo_Nem400() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> eventService.searchEvents(null, null, null, "2026-06-10", "2026-06-01", pageable));
+
+        assertEquals(org.springframework.http.HttpStatus.BAD_REQUEST, ex.getStatus());
+        verify(eventRepository, never()).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    /**
+     * B5.2-T2: định dạng from/to sai (không phải yyyy-MM-dd) -> 400, không gọi repository.
+     */
+    @Test
+    void testSearchEvents_DinhDangFromSai_Nem400() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> eventService.searchEvents(null, null, null, "10-06-2026", null, pageable));
+
+        assertEquals(org.springframework.http.HttpStatus.BAD_REQUEST, ex.getStatus());
+        verify(eventRepository, never()).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    /**
+     * B5.2-T2: status không hợp lệ (không phải OPEN/CLOSED/CANCELLED) -> 400, không gọi
+     * repository — validate ở service, không lặng lẽ bỏ qua điều kiện lọc.
+     */
+    @Test
+    void testSearchEvents_StatusKhongHopLe_Nem400() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "startAt"));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> eventService.searchEvents(null, null, "khong-ton-tai", null, null, pageable));
+
+        assertEquals(org.springframework.http.HttpStatus.BAD_REQUEST, ex.getStatus());
+        verify(eventRepository, never()).findAll(any(Specification.class), any(Pageable.class));
     }
 
     @Test
