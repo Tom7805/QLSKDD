@@ -25,9 +25,20 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     // B3.1-T2: tìm theo mã vé
     Optional<Registration> findByCode(String code);
 
+    // B4.5-T1: kiểm tra trùng mã trước khi lưu — sinh trùng thì thử lại (xem
+    // RegistrationServiceImpl.generateUniqueCode)
+    boolean existsByCode(String code);
+
     // B3.1-T2: truy vấn danh sách đăng ký của sự kiện kèm thông tin user (chống N+1)
     @EntityGraph(attributePaths = {"user"})
     Page<Registration> findByEventId(Long eventId, Pageable pageable);
+
+    // B4.2-T1: toàn bộ lượt đăng ký ACTIVE của 1 sự kiện, kèm sẵn user (chống N+1) —
+    // dùng làm nguồn "tổng đăng ký", sau đó tách nhóm có mặt/vắng ở service bằng cách
+    // đối chiếu với danh sách registrationId đã điểm danh (1 truy vấn khác), thay vì
+    // chạy 2 truy vấn EXISTS/NOT EXISTS riêng cho từng nhóm.
+    @EntityGraph(attributePaths = {"user"})
+    List<Registration> findByEventIdAndStatus(Long eventId, RegistrationStatus status);
 
     // B2.5-T1: đếm số đăng ký theo trạng thái cho CẢ MỘT TRANG sự kiện bằng đúng 1 truy
     // vấn group by (tránh N+1 nếu gọi countByEventIdAndStatus lặp lại cho từng sự kiện)
@@ -50,4 +61,29 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     // nhập, kèm sự kiện (chống N+1) — mới nhất lên trước
     @EntityGraph(attributePaths = {"event"})
     Page<Registration> findByUserUsernameOrderByRegisteredAtDesc(String username, Pageable pageable);
+
+    // B4.4-T1: status=all — toàn bộ ĐK ACTIVE của sự kiện, phân trang + sắp xếp theo họ
+    // tên (Sort truyền qua Pageable ở controller), kèm sẵn user (chống N+1)
+    @EntityGraph(attributePaths = {"user"})
+    Page<Registration> findByEventIdAndStatus(Long eventId, RegistrationStatus status, Pageable pageable);
+
+    // B4.4-T1: status=present — chỉ ĐK ACTIVE đã có bản ghi điểm danh
+    @EntityGraph(attributePaths = {"user"})
+    @Query(value = "SELECT r FROM Registration r WHERE r.event.id = :eventId "
+            + "AND r.status = com.qlskdd.enums.RegistrationStatus.ACTIVE "
+            + "AND EXISTS (SELECT c FROM CheckInHistory c WHERE c.registration = r)",
+            countQuery = "SELECT COUNT(r) FROM Registration r WHERE r.event.id = :eventId "
+            + "AND r.status = com.qlskdd.enums.RegistrationStatus.ACTIVE "
+            + "AND EXISTS (SELECT c FROM CheckInHistory c WHERE c.registration = r)")
+    Page<Registration> findPresentByEventId(@Param("eventId") Long eventId, Pageable pageable);
+
+    // B4.4-T1: status=absent — chỉ ĐK ACTIVE chưa có bản ghi điểm danh
+    @EntityGraph(attributePaths = {"user"})
+    @Query(value = "SELECT r FROM Registration r WHERE r.event.id = :eventId "
+            + "AND r.status = com.qlskdd.enums.RegistrationStatus.ACTIVE "
+            + "AND NOT EXISTS (SELECT c FROM CheckInHistory c WHERE c.registration = r)",
+            countQuery = "SELECT COUNT(r) FROM Registration r WHERE r.event.id = :eventId "
+            + "AND r.status = com.qlskdd.enums.RegistrationStatus.ACTIVE "
+            + "AND NOT EXISTS (SELECT c FROM CheckInHistory c WHERE c.registration = r)")
+    Page<Registration> findAbsentByEventId(@Param("eventId") Long eventId, Pageable pageable);
 }

@@ -10,6 +10,8 @@ import com.qlskdd.exception.BusinessException;
 import com.qlskdd.exception.DuplicateDataException;
 import com.qlskdd.exception.OverbookingException;
 import com.qlskdd.mapper.RegistrationMapper;
+import com.qlskdd.mapper.response.AttendanceItemRes;
+import com.qlskdd.mapper.response.AttendanceSummaryRes;
 import com.qlskdd.mapper.response.EventRegistrationsRes;
 import com.qlskdd.mapper.response.MyRegistrationRes;
 import com.qlskdd.mapper.response.PageRes;
@@ -111,6 +113,47 @@ class RegistrationServiceTest {
         assertEquals("CODE123", res.getCode());
         assertEquals("Hội thảo AI", res.getEventName());
         verify(registrationRepository).save(any(Registration.class));
+    }
+
+    /**
+     * Test case B4.5-T1: mã đăng ký sinh ra đúng 8 ký tự, toàn chữ hoa/số.
+     */
+    @Test
+    void testRegister_MaDangKy_8KyTuVietHoa() {
+        Event event = buildEvent(EventStatus.OPEN);
+        User user = buildUser();
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+        when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
+        when(registrationRepository.existsByEventIdAndUserIdAndStatus(1L, 2L, RegistrationStatus.ACTIVE)).thenReturn(false);
+        when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(50L);
+        when(registrationRepository.existsByCode(any())).thenReturn(false);
+        when(registrationRepository.save(any(Registration.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RegistrationRes res = registrationService.register(1L);
+
+        assertEquals(8, res.getCode().length());
+        assertEquals(res.getCode().toUpperCase(), res.getCode());
+    }
+
+    /**
+     * Test case B4.5-T1: mã trùng ở lần thử đầu -> tự thử lại, vẫn tạo được đăng ký.
+     */
+    @Test
+    void testRegister_MaTrungLanDau_ThuLaiVaThanhCong() {
+        Event event = buildEvent(EventStatus.OPEN);
+        User user = buildUser();
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+        when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
+        when(registrationRepository.existsByEventIdAndUserIdAndStatus(1L, 2L, RegistrationStatus.ACTIVE)).thenReturn(false);
+        when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(50L);
+        // Lần kiểm tra đầu tiên coi như trùng, các lần sau thì không -> phải thử lại
+        when(registrationRepository.existsByCode(any())).thenReturn(true, false);
+        when(registrationRepository.save(any(Registration.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RegistrationRes res = registrationService.register(1L);
+
+        assertNotNull(res.getCode());
+        verify(registrationRepository, org.mockito.Mockito.times(2)).existsByCode(any());
     }
 
     @Test
@@ -318,6 +361,212 @@ class RegistrationServiceTest {
 
         assertThrows(com.qlskdd.exception.ResourceNotFoundException.class,
                 () -> registrationService.getRegistrationsByEvent(999L, PageRequest.of(0, 10)));
+    }
+
+    /**
+     * Test case B4.2-T4: đối chiếu số liệu tổng hợp có mặt/vắng.
+     * TC1/TC2 (ORGANIZER 200 / USER 403) chỉ chạy qua MockMvc, xem
+     * EventControllerTest.tongHopDiemDanh_Organizer_traVe200 / _User_traVe403.
+     */
+    @Test
+    void testGetAttendanceSummary_TronLan_SoLieuKhopNhau() {
+        when(eventRepository.existsById(1L)).thenReturn(true);
+
+        User userA = User.builder().id(1L).fullName("Nguyễn Văn A").email("a@qlskdd.com").phone("0900000001").build();
+        User userB = User.builder().id(2L).fullName("Trần Thị B").email("b@qlskdd.com").phone("0900000002").build();
+        User userC = User.builder().id(3L).fullName("Lê Văn C").email("c@qlskdd.com").phone("0900000003").build();
+        Registration r1 = Registration.builder().id(1L).user(userA).status(RegistrationStatus.ACTIVE)
+                .registeredAt(LocalDateTime.now()).build();
+        Registration r2 = Registration.builder().id(2L).user(userB).status(RegistrationStatus.ACTIVE)
+                .registeredAt(LocalDateTime.now()).build();
+        Registration r3 = Registration.builder().id(3L).user(userC).status(RegistrationStatus.ACTIVE)
+                .registeredAt(LocalDateTime.now()).build();
+        when(registrationRepository.findByEventIdAndStatus(1L, RegistrationStatus.ACTIVE))
+                .thenReturn(List.of(r1, r2, r3));
+
+        LocalDateTime checkedInAt = LocalDateTime.now();
+        when(checkInHistoryRepository.findCheckedInAtByRegistrationIds(List.of(1L, 2L, 3L)))
+                .thenReturn(List.of(new Object[]{1L, checkedInAt}, new Object[]{2L, checkedInAt}));
+
+        AttendanceSummaryRes res = registrationService.getAttendanceSummary(1L);
+
+        assertEquals(3L, res.getSummary().totalRegistered());
+        assertEquals(2L, res.getSummary().present());
+        assertEquals(1L, res.getSummary().absent());
+        assertEquals(66.7, res.getSummary().attendanceRate());
+        assertEquals(2, res.getPresent().size());
+        assertEquals(1, res.getAbsent().size());
+        // Đối chiếu chéo: present + absent luôn khớp totalRegistered
+        assertEquals(res.getSummary().totalRegistered(), res.getPresent().size() + res.getAbsent().size());
+        assertEquals("Lê Văn C", res.getAbsent().get(0).getFullName());
+        assertNull(res.getAbsent().get(0).getCheckedInAt());
+    }
+
+    @Test
+    void testGetAttendanceSummary_ChuaCoDangKy_TatCaBang0KhongLoiChia0() {
+        when(eventRepository.existsById(1L)).thenReturn(true);
+        when(registrationRepository.findByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(List.of());
+
+        AttendanceSummaryRes res = registrationService.getAttendanceSummary(1L);
+
+        assertEquals(0L, res.getSummary().totalRegistered());
+        assertEquals(0L, res.getSummary().present());
+        assertEquals(0L, res.getSummary().absent());
+        assertEquals(0.0, res.getSummary().attendanceRate());
+        verify(checkInHistoryRepository, never()).findCheckedInAtByRegistrationIds(any());
+    }
+
+    @Test
+    void testGetAttendanceSummary_LamTron1ChuSoThapPhan() {
+        when(eventRepository.existsById(1L)).thenReturn(true);
+
+        User user = User.builder().id(1L).fullName("Nguyễn Văn A").build();
+        Registration r1 = Registration.builder().id(1L).user(user).status(RegistrationStatus.ACTIVE)
+                .registeredAt(LocalDateTime.now()).build();
+        Registration r2 = Registration.builder().id(2L).user(user).status(RegistrationStatus.ACTIVE)
+                .registeredAt(LocalDateTime.now()).build();
+        Registration r3 = Registration.builder().id(3L).user(user).status(RegistrationStatus.ACTIVE)
+                .registeredAt(LocalDateTime.now()).build();
+        when(registrationRepository.findByEventIdAndStatus(1L, RegistrationStatus.ACTIVE))
+                .thenReturn(List.of(r1, r2, r3));
+        when(checkInHistoryRepository.findCheckedInAtByRegistrationIds(List.of(1L, 2L, 3L)))
+                .thenReturn(List.<Object[]>of(new Object[]{1L, LocalDateTime.now()}));
+
+        AttendanceSummaryRes res = registrationService.getAttendanceSummary(1L);
+
+        // 1/3 * 100 = 33.333... -> làm tròn 1 chữ số thập phân = 33.3
+        assertEquals(33.3, res.getSummary().attendanceRate());
+    }
+
+    @Test
+    void testGetAttendanceSummary_SuKienKhongTonTai_Nem404() {
+        when(eventRepository.existsById(999L)).thenReturn(false);
+
+        assertThrows(com.qlskdd.exception.ResourceNotFoundException.class,
+                () -> registrationService.getAttendanceSummary(999L));
+    }
+
+    /**
+     * Test case B4.4-T3: totalElements(present) + totalElements(absent) == totalElements(all).
+     */
+    @Test
+    void testGetAttendanceList_TongSoDong_AllBangPresentCongAbsent() {
+        when(eventRepository.existsById(1L)).thenReturn(true);
+        // size=2 (không phải 10) để PageImpl không tự "sửa" total: nếu offset+size > total
+        // và content khác rỗng, Spring coi total truyền vào là sai và ghi đè bằng
+        // offset + content.size() — cố ý giữ offset+size <= total để total giữ nguyên
+        Pageable pageable = PageRequest.of(0, 2);
+
+        User userA = User.builder().id(1L).fullName("Nguyễn Văn A").email("a@qlskdd.com").phone("0900000001").build();
+        User userB = User.builder().id(2L).fullName("Trần Thị B").email("b@qlskdd.com").phone("0900000002").build();
+        Registration r1 = Registration.builder().id(1L).user(userA).status(RegistrationStatus.ACTIVE)
+                .registeredAt(LocalDateTime.now()).build();
+        Registration r2 = Registration.builder().id(2L).user(userB).status(RegistrationStatus.ACTIVE)
+                .registeredAt(LocalDateTime.now()).build();
+
+        when(registrationRepository.findByEventIdAndStatus(1L, RegistrationStatus.ACTIVE, pageable))
+                .thenReturn(new PageImpl<>(List.of(r1, r2), pageable, 8));
+        when(registrationRepository.findPresentByEventId(1L, pageable))
+                .thenReturn(new PageImpl<>(List.of(r1), pageable, 5));
+        when(registrationRepository.findAbsentByEventId(1L, pageable))
+                .thenReturn(new PageImpl<>(List.of(r2), pageable, 3));
+        when(checkInHistoryRepository.findCheckedInAtByRegistrationIds(any()))
+                .thenReturn(List.<Object[]>of(new Object[]{1L, LocalDateTime.now()}));
+
+        PageRes<AttendanceItemRes> all = registrationService.getAttendanceList(1L, "all", pageable);
+        PageRes<AttendanceItemRes> present = registrationService.getAttendanceList(1L, "present", pageable);
+        PageRes<AttendanceItemRes> absent = registrationService.getAttendanceList(1L, "absent", pageable);
+
+        assertEquals(8L, all.getTotalElements());
+        assertEquals(5L, present.getTotalElements());
+        assertEquals(3L, absent.getTotalElements());
+        assertEquals(all.getTotalElements(), present.getTotalElements() + absent.getTotalElements());
+    }
+
+    @Test
+    void testGetAttendanceList_StatusPresent_CoCheckedInAt() {
+        when(eventRepository.existsById(1L)).thenReturn(true);
+        Pageable pageable = PageRequest.of(0, 10);
+        User user = User.builder().id(1L).fullName("Nguyễn Văn A").build();
+        Registration r1 = Registration.builder().id(1L).user(user).status(RegistrationStatus.ACTIVE)
+                .registeredAt(LocalDateTime.now()).build();
+        LocalDateTime checkedInAt = LocalDateTime.now();
+
+        when(registrationRepository.findPresentByEventId(1L, pageable))
+                .thenReturn(new PageImpl<>(List.of(r1), pageable, 1));
+        when(checkInHistoryRepository.findCheckedInAtByRegistrationIds(List.of(1L)))
+                .thenReturn(List.<Object[]>of(new Object[]{1L, checkedInAt}));
+
+        PageRes<AttendanceItemRes> result = registrationService.getAttendanceList(1L, "present", pageable);
+
+        AttendanceItemRes item = result.getContent().get(0);
+        assertTrue(item.isCheckedIn());
+        assertEquals(checkedInAt, item.getCheckedInAt());
+    }
+
+    @Test
+    void testGetAttendanceList_StatusAbsent_KhongCheckedInVaKhongGoiTruyVanThua() {
+        when(eventRepository.existsById(1L)).thenReturn(true);
+        Pageable pageable = PageRequest.of(0, 10);
+        User user = User.builder().id(2L).fullName("Trần Thị B").build();
+        Registration r2 = Registration.builder().id(2L).user(user).status(RegistrationStatus.ACTIVE)
+                .registeredAt(LocalDateTime.now()).build();
+
+        when(registrationRepository.findAbsentByEventId(1L, pageable))
+                .thenReturn(new PageImpl<>(List.of(r2), pageable, 1));
+
+        PageRes<AttendanceItemRes> result = registrationService.getAttendanceList(1L, "absent", pageable);
+
+        AttendanceItemRes item = result.getContent().get(0);
+        assertFalse(item.isCheckedIn());
+        assertNull(item.getCheckedInAt());
+        // status=absent chắc chắn chưa ai điểm danh -> khỏi cần gọi truy vấn checkedInAt
+        verify(checkInHistoryRepository, never()).findCheckedInAtByRegistrationIds(any());
+    }
+
+    @Test
+    void testGetAttendanceList_StatusKhongHopLe_Nem400() {
+        when(eventRepository.existsById(1L)).thenReturn(true);
+        Pageable pageable = PageRequest.of(0, 10);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> registrationService.getAttendanceList(1L, "xyz", pageable));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+    }
+
+    @Test
+    void testGetAttendanceList_SuKienKhongTonTai_Nem404() {
+        when(eventRepository.existsById(999L)).thenReturn(false);
+
+        assertThrows(com.qlskdd.exception.ResourceNotFoundException.class,
+                () -> registrationService.getAttendanceList(999L, "all", PageRequest.of(0, 10)));
+    }
+
+    /**
+     * Test case B4.5-T2: sinh ảnh QR — trả về đúng định dạng PNG (8 byte signature đầu).
+     */
+    @Test
+    void testGenerateQrCode_HopLe_TraVeAnhPngHopLe() {
+        Registration registration = Registration.builder().id(15L).code("ABCD1234").build();
+        when(registrationRepository.findById(15L)).thenReturn(Optional.of(registration));
+
+        byte[] png = registrationService.generateQrCode(15L);
+
+        assertNotNull(png);
+        // 8 byte đầu của mọi file PNG hợp lệ: 89 50 4E 47 0D 0A 1A 0A
+        byte[] pngSignature = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+        for (int i = 0; i < pngSignature.length; i++) {
+            assertEquals(pngSignature[i], png[i]);
+        }
+    }
+
+    @Test
+    void testGenerateQrCode_KhongTonTai_Nem404() {
+        when(registrationRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(com.qlskdd.exception.ResourceNotFoundException.class,
+                () -> registrationService.generateQrCode(999L));
     }
 
     private void setCurrentUser(String username) {

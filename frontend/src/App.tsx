@@ -18,6 +18,9 @@ import ChangePasswordPage from './modules/auth/pages/ChangePasswordPage';
 import MyRegistrationsPage from './modules/registrations/pages/MyRegistrationsPage';
 import EventRegistrationsPage from './modules/events/pages/EventRegistrationsPage';
 import ParticipantListPage from './modules/registrations/pages/ParticipantListPage';
+import CheckInPage from './modules/checkin/pages/CheckInPage';
+import AttendancePage from './modules/checkin/pages/AttendancePage';
+import DashboardPage from './modules/dashboard/pages/DashboardPage';
 
 function HomePage() {
   const isLoggedIn = useAppSelector(selectIsLoggedIn);
@@ -55,9 +58,12 @@ function App() {
           <Route path={ROUTES.MY_REGISTRATIONS} element={<MyRegistrationsPage />} />
           <Route path={ROUTES.EVENT_DETAIL} element={<EventDetailPage />} />
           <Route element={<RoleRoute allow={['ROLE_ADMIN', 'ROLE_ORGANIZER']} />}>
+            <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
             <Route path={ROUTES.EVENT_CREATE} element={<EventFormPage />} />
             <Route path={ROUTES.EVENT_EDIT} element={<EventFormPage />} />
             <Route path={ROUTES.EVENT_REGISTRATIONS} element={<EventRegistrationsPage />} />
+            <Route path={ROUTES.EVENT_CHECK_IN} element={<CheckInPage />} />
+            <Route path={ROUTES.EVENT_ATTENDANCE} element={<AttendancePage />} />
             <Route path={ROUTES.PARTICIPANTS} element={<ParticipantListPage />} />
           </Route>
           <Route element={<RoleRoute allow={['ROLE_ADMIN']} />}>

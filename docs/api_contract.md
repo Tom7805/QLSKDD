@@ -543,7 +543,7 @@ FE dùng `data` này để điều hướng thẳng sang trang chi tiết sự k
 
 * **URL:** `PUT /api/v1/events/{id}`
 * **Headers:** `Authorization: Bearer {{accessToken}}`
-* **Quyền:** ADMIN sửa được **mọi** sự kiện. ORGANIZER **chỉ sửa được sự kiện do chính mình tạo** — sửa sự kiện của người khác nhận `403`. USER nhận `403` với mọi sự kiện.
+* **Quyền:** ADMIN và ORGANIZER sửa được **mọi** sự kiện (không phân biệt người tạo). USER nhận `403` với mọi sự kiện.
 
 ### Request
 
@@ -614,7 +614,7 @@ FE hiển thị nguyên văn `message` này (đã có sẵn số lượng) làm 
 
 Cùng format với lỗi validate của `POST /events` (thiếu trường, `capacity ≤ 0`, `endAt` không sau `startAt`) — xem mục 7.
 
-### Response — 403 Forbidden (ORGANIZER sửa sự kiện không phải của mình)
+### Response — 403 Forbidden (USER gọi endpoint này)
 ```json
 {
   "success": false,
@@ -630,7 +630,7 @@ Cùng format với lỗi validate của `POST /events` (thiếu trường, `capa
 
 * **URL:** `PATCH /api/v1/events/{id}/status`
 * **Headers:** `Authorization: Bearer {{accessToken}}`
-* **Quyền:** giống hệt `PUT /events/{id}` — ADMIN đổi được trạng thái **mọi** sự kiện; ORGANIZER chỉ đổi được sự kiện do chính mình tạo (403 nếu không phải chủ).
+* **Quyền:** giống hệt `PUT /events/{id}` — ADMIN và ORGANIZER đổi được trạng thái **mọi** sự kiện (không phân biệt người tạo). USER nhận `403`.
 
 ### Request
 
@@ -730,7 +730,8 @@ Khi sự kiện **không còn `OPEN`** (đã `CLOSED` hoặc `CANCELLED`), mọi
         "endAt": "2026-09-01T11:00:00",
         "status": "OPEN",
         "capacity": 100,
-        "availableSeats": 65
+        "availableSeats": 65,
+        "attendanceRate": 75.0
       }
     ],
     "page": 0,
@@ -744,6 +745,8 @@ Khi sự kiện **không còn `OPEN`** (đã `CLOSED` hoặc `CANCELLED`), mọi
 ```
 
 `availableSeats = capacity - (số lượt đăng ký ACTIVE)`, tính bằng **1 truy vấn group-by duy nhất cho cả trang** (không N+1). Với sự kiện chưa có `capacity` (dữ liệu mẫu cũ), cả `capacity` và `availableSeats` trả về `null` — FE nên ẩn dòng "còn X/Y chỗ" khi gặp `null`.
+
+> **B4.3-T4:** `attendanceRate` = tỷ lệ điểm danh trên tổng đăng ký ACTIVE (`present / totalRegistered * 100`, làm tròn 1 chữ số thập phân, `0.0` nếu chưa có ai đăng ký) — hiển thị ngay ở danh sách sự kiện, cùng công thức và tính bằng **1 truy vấn group-by duy nhất cho cả trang** (không N+1), giống hệt cách tính ở mục 16 và ở chi tiết sự kiện bên dưới.
 
 ### `GET /api/v1/events/{id}` — Chi tiết 1 sự kiện
 
@@ -767,11 +770,14 @@ Khi sự kiện **không còn `OPEN`** (đã `CLOSED` hoặc `CANCELLED`), mọi
     "createdBy": "organizer",
     "createdAt": "2026-08-02T00:00:00",
     "totalRegistered": 35,
-    "availableSeats": 65
+    "availableSeats": 65,
+    "attendanceRate": 0.0
   },
   "timestamp": "2026-08-05T00:00:00"
 }
 ```
+
+> **B4.3:** `attendanceRate` = tỷ lệ điểm danh trên tổng đăng ký ACTIVE (`present / totalRegistered * 100`, làm tròn 1 chữ số thập phân, `0.0` nếu chưa có ai đăng ký) — cùng công thức với `summary.attendanceRate` ở mục 16 (`AttendanceRateUtil`, dùng chung 1 nơi tính).
 
 **Response — 404 Not Found** (id không tồn tại)
 ```json
@@ -1241,3 +1247,163 @@ FE bắt `errorCode` để hiển thị đúng màu toast (B4.1-T8): `SUCCESS` �
 > **Cập nhật liên quan (đã nối lại các chỗ đang nợ từ B3.2/B3.3):**
 > - `DELETE /api/v1/registrations/{id}` (mục 12) giờ **chặn huỷ khi đã điểm danh** → `409` `"Lượt đăng ký đã được điểm danh, không thể huỷ"`.
 > - `GET /api/v1/events/{eventId}/registrations` (mục 13) giờ trả `checkedIn` **đúng theo dữ liệu thật** thay vì luôn `false`.
+
+## 16. Tổng hợp có mặt / vắng theo sự kiện (B4.2)
+
+* **URL:** `GET /api/v1/events/{id}/attendance-summary`
+* **Headers:** `Authorization: Bearer {{accessToken}}`
+* **Quyền:** chỉ **ADMIN** và **ORGANIZER**. USER gọi nhận `403`.
+* Chỉ tính lượt đăng ký `status = ACTIVE` của sự kiện. `present` là nhóm đã có bản ghi điểm danh (mục 15), `absent` là nhóm chưa có. `present.length + absent.length` luôn bằng `summary.totalRegistered`.
+* `summary.attendanceRate = present / totalRegistered * 100`, làm tròn 1 chữ số thập phân; sự kiện chưa có ai đăng ký thì trả `0.0` (không lỗi chia 0).
+
+### Response — 200 OK
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Lấy tổng hợp điểm danh thành công",
+  "data": {
+    "summary": {
+      "totalRegistered": 3,
+      "present": 2,
+      "absent": 1,
+      "attendanceRate": 66.7
+    },
+    "present": [
+      {
+        "registrationId": 15,
+        "fullName": "Nguyễn Văn A",
+        "email": "a@qlskdd.com",
+        "phone": "0900000001",
+        "registeredAt": "2026-08-06T08:00:00",
+        "checkedInAt": "2026-08-06T09:15:00"
+      }
+    ],
+    "absent": [
+      {
+        "registrationId": 16,
+        "fullName": "Lê Văn C",
+        "email": "c@qlskdd.com",
+        "phone": "0900000003",
+        "registeredAt": "2026-08-06T08:05:00",
+        "checkedInAt": null
+      }
+    ]
+  },
+  "timestamp": "2026-08-09T09:00:00"
+}
+```
+
+### Lỗi
+
+| HTTP | Khi nào | `message` |
+|---|---|---|
+| `404` | `id` sự kiện không tồn tại | "Sự kiện không tồn tại với id = '{id}'" |
+| `403` | Người gọi không phải ADMIN/ORGANIZER | "Bạn không có quyền truy cập tài nguyên này" |
+
+## 17. Danh sách điểm danh có lọc — đã đến / chưa đến (B4.4)
+
+* **URL:** `GET /api/v1/events/{id}/attendance?status=all|present|absent&page=0&size=10`
+* **Headers:** `Authorization: Bearer {{accessToken}}`
+* **Quyền:** chỉ **ADMIN** và **ORGANIZER**. USER gọi nhận `403`.
+* `status` mặc định `all` nếu không truyền. Chỉ tính lượt đăng ký `status = ACTIVE`. Sắp xếp mặc định theo họ tên.
+* `totalElements(status=present) + totalElements(status=absent) = totalElements(status=all)` — luôn đối chiếu khớp vì cùng nguồn dữ liệu (B4.4-T3).
+
+### Response — 200 OK (`status=all`)
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Lấy danh sách điểm danh thành công",
+  "data": {
+    "content": [
+      {
+        "registrationId": 15,
+        "fullName": "Nguyễn Văn A",
+        "email": "a@qlskdd.com",
+        "phone": "0900000001",
+        "registeredAt": "2026-08-06T08:00:00",
+        "checkedIn": true,
+        "checkedInAt": "2026-08-06T09:15:00"
+      },
+      {
+        "registrationId": 16,
+        "fullName": "Lê Văn C",
+        "email": "c@qlskdd.com",
+        "phone": "0900000003",
+        "registeredAt": "2026-08-06T08:05:00",
+        "checkedIn": false,
+        "checkedInAt": null
+      }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 2,
+    "totalPages": 1,
+    "last": true
+  },
+  "timestamp": "2026-08-10T09:00:00"
+}
+```
+
+### Lỗi
+
+| HTTP | Khi nào | `message` |
+|---|---|---|
+| `404` | `id` sự kiện không tồn tại | "Sự kiện không tồn tại với id = '{id}'" |
+| `403` | Người gọi không phải ADMIN/ORGANIZER | "Bạn không có quyền truy cập tài nguyên này" |
+| `400` | `status` khác `all`/`present`/`absent` | "Trạng thái lọc không hợp lệ, chỉ chấp nhận all/present/absent" |
+
+## 18. Mã đăng ký / QR để check-in nhanh (B4.5)
+
+### 18.1. Mã đăng ký (`code`)
+
+Từ B4.5, mỗi lượt đăng ký (`POST /api/v1/registrations`, xem mục 11) nhận **mã 8 ký tự, chữ hoa + số** (lấy từ UUID, bỏ dấu gạch ngang, cắt 8 ký tự đầu, viết hoa) thay vì UUID đầy đủ như trước — dễ đọc/nhập tay hơn khi camera hỏng. Cột `code` vẫn giữ ràng buộc `UNIQUE` ở DB; nếu trùng (xác suất rất thấp), hệ thống tự sinh lại tối đa 5 lần trước khi báo lỗi `500`.
+
+### 18.2. Ảnh QR
+
+* **URL:** `GET /api/v1/registrations/{id}/qr`
+* **Headers:** `Authorization: Bearer {{accessToken}}`
+* **Quyền:** chỉ **chủ vé** (người đã đăng ký lượt đó) hoặc **ADMIN/ORGANIZER**. Người khác nhận `403`.
+* **Response:** `200 OK`, `Content-Type: image/png` — ảnh PNG 300×300px, nội dung QR chính là `Registration.code`. Không bọc trong `BaseRes` (trả thẳng file ảnh) vì FE dùng trực tiếp làm `<img src>`.
+
+### 18.3. Điểm danh theo mã (quét QR hoặc nhập tay)
+
+* **URL:** `POST /api/v1/check-in/scan`
+* **Headers:** `Authorization: Bearer {{accessToken}}`
+* **Quyền:** chỉ **ADMIN** và **ORGANIZER** — giống hệt `POST /api/v1/check-in` (mục 15).
+* Tái sử dụng **đúng 100%** logic 5 nhánh của `POST /api/v1/check-in` (mục 15) — chỉ khác cách tìm lượt đăng ký: theo `code` (quét QR ra được, hoặc BTC gõ tay) thay vì `registrationId`. Toàn bộ mã lỗi (`INVALID_TICKET`, `WRONG_EVENT`, `ALREADY_CHECKED_IN`, "đã bị huỷ") và response thành công **giống hệt** mục 15.
+
+### Request
+```json
+{
+  "code": "A1B2C3D4",
+  "eventId": 1
+}
+```
+
+### Response — 200 OK
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Điểm danh thành công",
+  "data": {
+    "status": "SUCCESS",
+    "message": "Điểm danh thành công",
+    "participantName": "Nguyễn Văn A",
+    "checkedInAt": "2026-08-10T09:15:00"
+  },
+  "timestamp": "2026-08-10T09:15:00"
+}
+```
+
+### Lỗi
+
+| `errorCode` | HTTP | Khi nào |
+|---|---|---|
+| `INVALID_TICKET` | 404 | `code` không khớp lượt đăng ký nào |
+| `WRONG_EVENT` | 400 | Lượt đăng ký thuộc sự kiện khác `eventId` gửi lên |
+| `ALREADY_CHECKED_IN` | 409 | Đã điểm danh trước đó |
+| (không có) | 409 | Lượt đăng ký đã bị huỷ |
+| (validation) | 400 | Thiếu `code` hoặc `eventId` |

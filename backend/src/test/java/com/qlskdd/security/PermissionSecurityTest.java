@@ -1,8 +1,6 @@
 package com.qlskdd.security;
 
 import com.qlskdd.config.SecurityConfig;
-import com.qlskdd.entity.Event;
-import com.qlskdd.repository.EventRepository;
 import com.qlskdd.service.EventService;
 import com.qlskdd.service.RegistrationService;
 import org.junit.jupiter.api.Test;
@@ -16,16 +14,20 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
 
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * B2.2/B2.3: quyền hạn theo role trên EventController. Ghi chú: trước đây PUT
+ * /events/{id} còn kiểm tra thêm quyền sở hữu (ORGANIZER chỉ sửa được sự kiện do
+ * chính mình tạo) qua EventSecurityService — rule này đã bỏ theo quyết định mới:
+ * ADMIN và ORGANIZER đều quản lý được mọi sự kiện, không phân biệt người tạo.
+ */
 @WebMvcTest(controllers = com.qlskdd.controller.EventController.class)
 @Import({SecurityConfig.class, JwtAuthFilter.class, RestAuthenticationEntryPoint.class, RestAccessDeniedHandler.class,
-        JwtProvider.class, EventSecurityService.class})
+        JwtProvider.class})
 class PermissionSecurityTest {
 
     private static final String EVENT_URL = "/api/v1/events";
@@ -56,9 +58,6 @@ class PermissionSecurityTest {
     private EventService eventService;
 
     @MockBean
-    private EventRepository eventRepository;
-
-    @MockBean
     private RegistrationService registrationService;
 
     @MockBean
@@ -80,25 +79,9 @@ class PermissionSecurityTest {
 
     @Test
     @WithMockUser(username = "organizer", roles = "ORGANIZER")
-    void organizer_suaSuKienCuaNguoiKhac_traVe403() throws Exception {
-        Event eventCuaNguoiKhac = new Event();
-        eventCuaNguoiKhac.setId(999L);
-        eventCuaNguoiKhac.setCreatedBy("another-organizer");
-        when(eventRepository.findById(999L)).thenReturn(Optional.of(eventCuaNguoiKhac));
-
+    void organizer_suaSuKienCuaNguoiKhac_traVe200() throws Exception {
+        // Không còn kiểm tra quyền sở hữu — ORGANIZER sửa được sự kiện của bất kỳ ai.
         mockMvc.perform(put(EVENT_URL + "/999").contentType("application/json").content(validEventBody()))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(username = "organizer", roles = "ORGANIZER")
-    void organizer_suaSuKienCuaChinhMinh_traVe200() throws Exception {
-        Event eventCuaMinh = new Event();
-        eventCuaMinh.setId(1000L);
-        eventCuaMinh.setCreatedBy("organizer");
-        when(eventRepository.findById(1000L)).thenReturn(Optional.of(eventCuaMinh));
-
-        mockMvc.perform(put(EVENT_URL + "/1000").contentType("application/json").content(validEventBody()))
                 .andExpect(status().isOk());
     }
 
@@ -108,7 +91,6 @@ class PermissionSecurityTest {
         mockMvc.perform(post(EVENT_URL).contentType("application/json").content(validEventBody()))
                 .andExpect(status().isCreated());
 
-        // ADMIN không cần qua kiểm tra quyền sở hữu — sửa được sự kiện của bất kỳ ai
         mockMvc.perform(put(EVENT_URL + "/999").contentType("application/json").content(validEventBody()))
                 .andExpect(status().isOk());
     }

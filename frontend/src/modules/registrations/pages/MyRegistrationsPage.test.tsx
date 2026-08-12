@@ -9,6 +9,7 @@ import * as registrationsApi from '../registrationsApi';
 vi.mock('../registrationsApi', () => ({
   getMyRegistrations: vi.fn(),
   cancelRegistration: vi.fn(),
+  getRegistrationQr: vi.fn(),
 }));
 
 const mockedGetMyRegistrations = vi.mocked(registrationsApi.getMyRegistrations);

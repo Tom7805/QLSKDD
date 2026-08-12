@@ -119,24 +119,31 @@ export default function CategoryListPage() {
           ) : (
             <>
               <div className="hidden overflow-x-auto md:block">
-                <table className="min-w-full divide-y divide-slate-200">
+                <table className="w-full table-fixed divide-y divide-slate-200">
+                  <colgroup>
+                    <col className="w-[8%]" />
+                    <col className="w-[20%]" />
+                    <col className="w-[32%]" />
+                    <col className="w-[18%]" />
+                    <col className="w-[22%]" />
+                  </colgroup>
                   <thead className="bg-slate-50">
                     <tr>
-                      <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">STT</th>
-                      <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Tên loại</th>
-                      <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Mô tả</th>
-                      <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Số sự kiện</th>
-                      <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Thao tác</th>
+                      <th className="whitespace-nowrap px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">STT</th>
+                      <th className="whitespace-nowrap px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Tên loại</th>
+                      <th className="whitespace-nowrap px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Mô tả</th>
+                      <th className="whitespace-nowrap px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Số sự kiện</th>
+                      <th className="whitespace-nowrap px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {categories.map((category, index) => (
                       <tr key={category.id} className="hover:bg-slate-50/80">
-                        <td className="px-4 py-4 text-sm text-slate-500">{index + 1}</td>
-                        <td className="px-4 py-4 text-sm font-semibold text-slate-900">{category.name}</td>
-                        <td className="px-4 py-4 text-sm text-slate-600">{category.description || '—'}</td>
-                        <td className="px-4 py-4 text-sm text-slate-700">{category.eventCount}</td>
-                        <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-600">
+                        <td className="truncate px-6 py-4 text-sm text-slate-500">{index + 1}</td>
+                        <td className="truncate px-6 py-4 text-sm font-semibold text-slate-900">{category.name}</td>
+                        <td className="truncate px-6 py-4 text-sm text-slate-600">{category.description || '—'}</td>
+                        <td className="truncate px-6 py-4 text-center text-sm text-slate-700">{category.eventCount}</td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
                           <button type="button" onClick={() => openEditForm(category)} className="font-semibold text-blue-600 hover:text-blue-800">Sửa</button>
                           <span className="mx-2 text-slate-300">|</span>
                           <button type="button" onClick={() => setDeleteTarget(category)} className="font-semibold text-red-600 hover:text-red-800">Xoá</button>

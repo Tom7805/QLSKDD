@@ -1,5 +1,6 @@
 package com.qlskdd.controller;
 
+import com.qlskdd.dto.request.CheckInByCodeReq;
 import com.qlskdd.dto.request.CheckInReq;
 import com.qlskdd.mapper.response.BaseRes;
 import com.qlskdd.mapper.response.CheckInRes;
@@ -25,6 +26,14 @@ public class CheckInController {
     @PostMapping
     public ResponseEntity<BaseRes<CheckInRes>> checkIn(@Valid @RequestBody CheckInReq req) {
         CheckInRes result = checkInService.checkIn(req.getRegistrationId(), req.getEventId());
+        return ResponseEntity.ok(BaseRes.success("Điểm danh thành công", result));
+    }
+
+    // B4.5-T3: điểm danh bằng mã — quét QR (B4.5-T2 sinh QR chứa đúng code này) hoặc
+    // nhập tay khi camera hỏng, tái sử dụng đúng logic của POST /check-in ở trên.
+    @PostMapping("/scan")
+    public ResponseEntity<BaseRes<CheckInRes>> checkInByCode(@Valid @RequestBody CheckInByCodeReq req) {
+        CheckInRes result = checkInService.checkInByCode(req.getCode(), req.getEventId());
         return ResponseEntity.ok(BaseRes.success("Điểm danh thành công", result));
     }
 }

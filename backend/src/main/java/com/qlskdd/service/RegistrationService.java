@@ -1,5 +1,7 @@
 package com.qlskdd.service;
 
+import com.qlskdd.mapper.response.AttendanceItemRes;
+import com.qlskdd.mapper.response.AttendanceSummaryRes;
 import com.qlskdd.mapper.response.EventRegistrationsRes;
 import com.qlskdd.mapper.response.MyRegistrationRes;
 import com.qlskdd.mapper.response.PageRes;
@@ -25,4 +27,16 @@ public interface RegistrationService {
     // B3.3-T1/T2: danh sách người đăng ký của 1 sự kiện, phân trang + summary.
     // Chỉ ADMIN/ORGANIZER gọi được — chặn ở @PreAuthorize của controller.
     EventRegistrationsRes getRegistrationsByEvent(Long eventId, Pageable pageable);
+
+    // B4.2-T2: tổng hợp có mặt/vắng của 1 sự kiện — 2 nhóm + 3 số liệu tổng đăng ký/có
+    // mặt/vắng. Chỉ ADMIN/ORGANIZER gọi được — chặn ở @PreAuthorize của controller.
+    AttendanceSummaryRes getAttendanceSummary(Long eventId);
+
+    // B4.4-T2: danh sách điểm danh có lọc theo trạng thái (all/present/absent), phân
+    // trang. Chỉ ADMIN/ORGANIZER gọi được — chặn ở @PreAuthorize của controller.
+    PageRes<AttendanceItemRes> getAttendanceList(Long eventId, String status, Pageable pageable);
+
+    // B4.5-T2: ảnh QR (PNG) mã hoá Registration.code — chỉ chủ vé hoặc ADMIN/ORGANIZER
+    // xem được, chặn ở @PreAuthorize của controller (@registrationSecurityService.isOwner).
+    byte[] generateQrCode(Long registrationId);
 }

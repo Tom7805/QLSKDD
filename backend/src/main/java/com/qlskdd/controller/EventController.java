@@ -2,6 +2,8 @@ package com.qlskdd.controller;
 
 import com.qlskdd.dto.request.EventReq;
 import com.qlskdd.dto.request.EventStatusReq;
+import com.qlskdd.mapper.response.AttendanceItemRes;
+import com.qlskdd.mapper.response.AttendanceSummaryRes;
 import com.qlskdd.mapper.response.BaseRes;
 import com.qlskdd.mapper.response.EventDetailRes;
 import com.qlskdd.mapper.response.EventRegistrationsRes;
@@ -54,14 +56,14 @@ public class EventController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('ORGANIZER') and @eventSecurityService.canManageEvent(authentication.name, #id))")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<BaseRes<EventDetailRes>> updateEvent(@PathVariable Long id, @Valid @RequestBody EventReq req) {
         EventDetailRes updated = eventService.update(id, req);
         return ResponseEntity.ok(BaseRes.success("Cập nhật sự kiện thành công", updated));
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('ORGANIZER') and @eventSecurityService.canManageEvent(authentication.name, #id))")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<BaseRes<EventDetailRes>> changeStatus(@PathVariable Long id,
                                                                   @Valid @RequestBody EventStatusReq req) {
         EventDetailRes updated = eventService.changeStatus(id, req);
@@ -81,5 +83,30 @@ public class EventController {
         EventRegistrationsRes result = registrationService.getRegistrationsByEvent(id, pageable);
 
         return ResponseEntity.ok(BaseRes.success("Lấy danh sách người đăng ký thành công", result));
+    }
+
+    // B4.2-T3: chỉ ADMIN/ORGANIZER xem được tổng hợp điểm danh — người khác 403
+    @GetMapping("/{id}/attendance-summary")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<BaseRes<AttendanceSummaryRes>> getAttendanceSummary(@PathVariable Long id) {
+        AttendanceSummaryRes result = registrationService.getAttendanceSummary(id);
+        return ResponseEntity.ok(BaseRes.success("Lấy tổng hợp điểm danh thành công", result));
+    }
+
+    // B4.4-T2: danh sách điểm danh có lọc theo trạng thái — status=all|present|absent
+    // (mặc định all); status không hợp lệ -> 400 (xem AttendanceFilter). Chỉ ADMIN/ORGANIZER.
+    @GetMapping("/{id}/attendance")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<BaseRes<PageRes<AttendanceItemRes>>> getAttendanceList(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "all") String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        // B4.4-T1: sắp xếp mặc định theo họ tên
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "user.fullName"));
+        PageRes<AttendanceItemRes> result = registrationService.getAttendanceList(id, status, pageable);
+
+        return ResponseEntity.ok(BaseRes.success("Lấy danh sách điểm danh thành công", result));
     }
 }

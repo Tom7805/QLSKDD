@@ -3,6 +3,7 @@ package com.qlskdd.service.impl;
 import com.qlskdd.entity.Event;
 import com.qlskdd.entity.Registration;
 import com.qlskdd.entity.User;
+import com.qlskdd.enums.AttendanceFilter;
 import com.qlskdd.enums.EventStatus;
 import com.qlskdd.enums.RegistrationStatus;
 import com.qlskdd.exception.BusinessException;
@@ -16,11 +17,15 @@ import lombok.RequiredArgsConstructor;
 import com.qlskdd.exception.DuplicateDataException;
 import com.qlskdd.exception.OverbookingException;
 import com.qlskdd.mapper.RegistrationMapper;
+import com.qlskdd.mapper.response.AttendanceItemRes;
+import com.qlskdd.mapper.response.AttendanceSummary;
+import com.qlskdd.mapper.response.AttendanceSummaryRes;
 import com.qlskdd.mapper.response.EventRegistrationsRes;
 import com.qlskdd.mapper.response.MyRegistrationRes;
 import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.mapper.response.RegistrationListItemRes;
 import com.qlskdd.mapper.response.RegistrationRes;
+import com.qlskdd.util.QrCodeUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -29,8 +34,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -75,7 +83,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             }
         }
 
-        String code = UUID.randomUUID().toString();
+        String code = generateUniqueCode();
 
         Registration registration = Registration.builder()
                 .event(event)
@@ -163,5 +171,120 @@ public class RegistrationServiceImpl implements RegistrationService {
                         .capacity(event.getCapacity())
                         .build())
                 .build();
+    }
+
+    @Override
+    public AttendanceSummaryRes getAttendanceSummary(Long eventId) {
+        if (!eventRepository.existsById(eventId)) {
+            throw new ResourceNotFoundException("Sự kiện", "id", eventId);
+        }
+
+        // B4.2-T1: 1 truy vấn lấy toàn bộ ĐK ACTIVE của sự kiện (kèm sẵn user, chống N+1)
+        List<Registration> activeRegistrations = registrationRepository.findByEventIdAndStatus(eventId,
+                RegistrationStatus.ACTIVE);
+
+        // B4.2-T1: 1 truy vấn khác lấy registrationId + checkedInAt cho CẢ NHÓM trên, rồi
+        // đối chiếu trong bộ nhớ để tách 2 nhóm — tổng cộng đúng 2 truy vấn, không N+1.
+        List<Long> registrationIds = activeRegistrations.stream().map(Registration::getId).toList();
+        Map<Long, LocalDateTime> checkedInAtByRegistrationId = new HashMap<>();
+        if (!registrationIds.isEmpty()) {
+            for (Object[] row : checkInHistoryRepository.findCheckedInAtByRegistrationIds(registrationIds)) {
+                checkedInAtByRegistrationId.put((Long) row[0], (LocalDateTime) row[1]);
+            }
+        }
+
+        List<AttendanceItemRes> present = new ArrayList<>();
+        List<AttendanceItemRes> absent = new ArrayList<>();
+        for (Registration registration : activeRegistrations) {
+            LocalDateTime checkedInAt = checkedInAtByRegistrationId.get(registration.getId());
+            AttendanceItemRes item = AttendanceItemRes.builder()
+                    .registrationId(registration.getId())
+                    .fullName(registration.getUser().getFullName())
+                    .email(registration.getUser().getEmail())
+                    .phone(registration.getUser().getPhone())
+                    .registeredAt(registration.getRegisteredAt())
+                    .checkedIn(checkedInAt != null)
+                    .checkedInAt(checkedInAt)
+                    .build();
+            (checkedInAt != null ? present : absent).add(item);
+        }
+
+        // B4.2-T2: 3 số liệu tính đúng 1 lần ở đây — total/present/absent đối chiếu chéo
+        // được (present.size() + absent.size() == totalRegistered luôn đúng vì cùng nguồn).
+        long totalRegistered = activeRegistrations.size();
+        long presentCount = present.size();
+        long absentCount = absent.size();
+        // B4.3-T1: dùng chung công thức AttendanceRateUtil với chi tiết sự kiện (B4.3-T2)
+        double attendanceRate = com.qlskdd.util.AttendanceRateUtil.calculate(presentCount, totalRegistered);
+
+        return AttendanceSummaryRes.builder()
+                .summary(new AttendanceSummary(totalRegistered, presentCount, absentCount, attendanceRate))
+                .present(present)
+                .absent(absent)
+                .build();
+    }
+
+    @Override
+    public PageRes<AttendanceItemRes> getAttendanceList(Long eventId, String status, Pageable pageable) {
+        if (!eventRepository.existsById(eventId)) {
+            throw new ResourceNotFoundException("Sự kiện", "id", eventId);
+        }
+
+        // B4.4-T1: status không hợp lệ -> 400, không lặng lẽ coi là "all"
+        AttendanceFilter filter = AttendanceFilter.fromParam(status);
+
+        Page<Registration> registrationPage = switch (filter) {
+            case PRESENT -> registrationRepository.findPresentByEventId(eventId, pageable);
+            case ABSENT -> registrationRepository.findAbsentByEventId(eventId, pageable);
+            case ALL -> registrationRepository.findByEventIdAndStatus(eventId, RegistrationStatus.ACTIVE, pageable);
+        };
+
+        // status=absent chắc chắn chưa ai điểm danh -> khỏi cần truy vấn checkedInAt
+        List<Long> registrationIds = registrationPage.getContent().stream().map(Registration::getId).toList();
+        Map<Long, LocalDateTime> checkedInAtByRegistrationId = new HashMap<>();
+        if (filter != AttendanceFilter.ABSENT && !registrationIds.isEmpty()) {
+            for (Object[] row : checkInHistoryRepository.findCheckedInAtByRegistrationIds(registrationIds)) {
+                checkedInAtByRegistrationId.put((Long) row[0], (LocalDateTime) row[1]);
+            }
+        }
+
+        Page<AttendanceItemRes> itemPage = registrationPage.map(r -> {
+            LocalDateTime checkedInAt = checkedInAtByRegistrationId.get(r.getId());
+            return AttendanceItemRes.builder()
+                    .registrationId(r.getId())
+                    .fullName(r.getUser().getFullName())
+                    .email(r.getUser().getEmail())
+                    .phone(r.getUser().getPhone())
+                    .registeredAt(r.getRegisteredAt())
+                    .checkedIn(checkedInAt != null)
+                    .checkedInAt(checkedInAt)
+                    .build();
+        });
+
+        return PageRes.of(itemPage);
+    }
+
+    @Override
+    public byte[] generateQrCode(Long registrationId) {
+        Registration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lượt đăng ký", "id", registrationId));
+
+        return QrCodeUtil.generatePng(registration.getCode());
+    }
+
+    // B4.5-T1: mã ngắn 8 ký tự viết hoa (lấy từ UUID, bỏ dấu gạch ngang) — dễ đọc/nhập tay
+    // hơn UUID đầy đủ (B4.5-T4/T5 bên FE cần người dùng gõ mã thủ công khi camera hỏng).
+    // Cột code đã có ràng buộc unique ở DB (Registration.code) — kiểm tra trước ở đây chỉ
+    // để tránh 1 vòng round-trip lưu-rồi-lỗi khi trùng, thử lại tối đa 5 lần.
+    private String generateUniqueCode() {
+        for (int attempt = 0; attempt < 5; attempt++) {
+            String candidate = UUID.randomUUID().toString().replace("-", "")
+                    .substring(0, 8).toUpperCase();
+            if (!registrationRepository.existsByCode(candidate)) {
+                return candidate;
+            }
+        }
+        throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Không thể sinh mã đăng ký, vui lòng thử lại");
     }
 }

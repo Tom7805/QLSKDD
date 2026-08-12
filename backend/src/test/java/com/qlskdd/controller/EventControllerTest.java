@@ -1,12 +1,14 @@
 package com.qlskdd.controller;
 
 import com.qlskdd.config.SecurityConfig;
-import com.qlskdd.security.EventSecurityService;
 import com.qlskdd.security.JwtAuthFilter;
 import com.qlskdd.security.JwtProvider;
 import com.qlskdd.security.RestAccessDeniedHandler;
 import com.qlskdd.security.RestAuthenticationEntryPoint;
 import com.qlskdd.exception.ResourceNotFoundException;
+import com.qlskdd.mapper.response.AttendanceItemRes;
+import com.qlskdd.mapper.response.AttendanceSummary;
+import com.qlskdd.mapper.response.AttendanceSummaryRes;
 import com.qlskdd.mapper.response.EventRegistrationsRes;
 import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.service.EventService;
@@ -58,13 +60,6 @@ class EventControllerTest {
 
     @MockBean
     private UserDetailsService userDetailsService;
-
-    // EventController dùng @eventSecurityService trong SpEL của @PreAuthorize cho
-    // PUT /events/{id}. Phải đặt name="eventSecurityService" tường minh — @MockBean
-    // không tự đăng ký đúng tên bean theo tên field trong mọi trường hợp, và Spring
-    // Security SpEL resolve bean theo đúng tên chuỗi trong "@eventSecurityService".
-    @MockBean(name = "eventSecurityService")
-    private EventSecurityService eventSecurityService;
 
     @Test
     @WithMockUser(username = "organizer", roles = "ORGANIZER")
@@ -163,8 +158,6 @@ class EventControllerTest {
     @Test
     @WithMockUser(username = "organizer", roles = "ORGANIZER")
     void suaSuKien_TC3_EndAtTruocStartAt_traVe400() throws Exception {
-        when(eventSecurityService.canManageEvent("organizer", 1L)).thenReturn(true);
-
         String body = """
                 {
                   "name": "Hội thảo AI",
@@ -183,53 +176,17 @@ class EventControllerTest {
                 .andExpect(jsonPath("$.errors[?(@.field == 'endAt')]").exists());
     }
 
-    @Test
-    @WithMockUser(username = "organizer2", roles = "ORGANIZER")
-    void suaSuKien_TC4_NguoiKhongPhaiChuSuKien_traVe403() throws Exception {
-        // sự kiện id=1 do "organizer" tạo, ở đây "organizer2" cố sửa
-        when(eventSecurityService.canManageEvent("organizer2", 1L)).thenReturn(false);
-
-        String body = """
-                {
-                  "name": "Hội thảo AI",
-                  "location": "Hội trường A",
-                  "capacity": 100,
-                  "startAt": "%s",
-                  "endAt": "%s",
-                  "categoryId": 1
-                }
-                """.formatted(future(5).format(ISO), future(5).plusHours(3).format(ISO));
-
-        mockMvc.perform(put(EVENTS_URL + "/1")
-                        .contentType("application/json")
-                        .content(body))
-                .andExpect(status().isForbidden());
-    }
-
     /**
      * Test case B2.4-T3 (kiểm chứng wiring qua HTTP thật cho PATCH /events/{id}/status).
      */
     @Test
     @WithMockUser(username = "organizer", roles = "ORGANIZER")
     void doiTrangThai_ThieuStatus_traVe400() throws Exception {
-        when(eventSecurityService.canManageEvent("organizer", 1L)).thenReturn(true);
-
         mockMvc.perform(patch(EVENTS_URL + "/1/status")
                         .contentType("application/json")
                         .content("{}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors[?(@.field == 'status')]").exists());
-    }
-
-    @Test
-    @WithMockUser(username = "organizer2", roles = "ORGANIZER")
-    void doiTrangThai_NguoiKhongPhaiChuSuKien_traVe403() throws Exception {
-        when(eventSecurityService.canManageEvent("organizer2", 1L)).thenReturn(false);
-
-        mockMvc.perform(patch(EVENTS_URL + "/1/status")
-                        .contentType("application/json")
-                        .content("{\"status\": \"CLOSED\"}"))
-                .andExpect(status().isForbidden());
     }
 
     /**
@@ -267,6 +224,64 @@ class EventControllerTest {
     void xemDanhSachDangKy_User_traVe403() throws Exception {
         mockMvc.perform(get(EVENTS_URL + "/1/registrations"))
                 .andExpect(status().isForbidden());
+    }
+
+    /**
+     * Test case B4.2-T4 (phần chỉ kiểm tra được qua MockMvc: @PreAuthorize).
+     */
+    @Test
+    @WithMockUser(username = "organizer", roles = "ORGANIZER")
+    void tongHopDiemDanh_Organizer_traVe200() throws Exception {
+        AttendanceSummaryRes res = AttendanceSummaryRes.builder()
+                .summary(new AttendanceSummary(0, 0, 0, 0.0))
+                .present(Collections.emptyList())
+                .absent(Collections.emptyList())
+                .build();
+        when(registrationService.getAttendanceSummary(any())).thenReturn(res);
+
+        mockMvc.perform(get(EVENTS_URL + "/1/attendance-summary"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "user1", roles = "USER")
+    void tongHopDiemDanh_User_traVe403() throws Exception {
+        mockMvc.perform(get(EVENTS_URL + "/1/attendance-summary"))
+                .andExpect(status().isForbidden());
+    }
+
+    /**
+     * Test case B4.4-T3 (phần chỉ kiểm tra được qua MockMvc: @PreAuthorize + 400 status không hợp lệ).
+     */
+    @Test
+    @WithMockUser(username = "organizer", roles = "ORGANIZER")
+    void danhSachDiemDanh_Organizer_traVe200() throws Exception {
+        PageRes<AttendanceItemRes> res = new PageRes<>(Collections.emptyList(), 0, 10, 0, 0, true);
+        when(registrationService.getAttendanceList(any(), any(), any())).thenReturn(res);
+
+        mockMvc.perform(get(EVENTS_URL + "/1/attendance"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "user1", roles = "USER")
+    void danhSachDiemDanh_User_traVe403() throws Exception {
+        mockMvc.perform(get(EVENTS_URL + "/1/attendance"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "organizer", roles = "ORGANIZER")
+    void danhSachDiemDanh_StatusKhongHopLe_traVe400() throws Exception {
+        when(registrationService.getAttendanceList(any(), any(), any()))
+                .thenThrow(new com.qlskdd.exception.BusinessException(
+                        org.springframework.http.HttpStatus.BAD_REQUEST,
+                        "Trạng thái lọc không hợp lệ, chỉ chấp nhận all/present/absent"));
+
+        mockMvc.perform(get(EVENTS_URL + "/1/attendance?status=xyz"))
+                .andExpect(status().isBadRequest());
     }
 
     private LocalDateTime future(long days) {

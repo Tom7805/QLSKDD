@@ -16,4 +16,8 @@ public class EventRes {
     // B2.5-T1: null nếu sự kiện chưa có capacity (dữ liệu mẫu cũ từ B0.4)
     private Integer capacity;
     private Integer availableSeats;
+
+    // B4.3-T4: tỷ lệ tham dự hiển thị ngay ở danh sách sự kiện — cùng công thức và
+    // cùng nguồn tính (AttendanceRateUtil) với chi tiết sự kiện và attendance-summary.
+    private Double attendanceRate;
 }

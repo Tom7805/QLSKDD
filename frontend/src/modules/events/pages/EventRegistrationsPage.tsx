@@ -29,7 +29,10 @@ const readPage = (value: string | null) => {
 
 const formatDateTime = (value?: string | null) => {
   if (!value) return '—';
-  return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(value));
+  const date = new Date(value);
+  const time = new Intl.DateTimeFormat('vi-VN', { timeStyle: 'short' }).format(date);
+  const day = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'long' }).format(date);
+  return `${time} ${day}`;
 };
 
 export default function EventRegistrationsPage() {
@@ -99,6 +102,14 @@ export default function EventRegistrationsPage() {
             <h1 className="mt-1 text-3xl font-bold text-slate-900">Danh sách người đăng ký</h1>
             <p className="mt-2 text-sm text-slate-500">Theo dõi danh sách đăng ký và sức chứa của sự kiện.</p>
           </div>
+          <div className="flex flex-col gap-3 sm:items-end">
+            <button
+              type="button"
+              onClick={() => navigate(`/events/${eventIdNumber}/check-in`)}
+              className="min-h-12 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
+            >
+              Mở màn hình điểm danh
+            </button>
           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
             <p className="text-sm font-medium text-slate-500">Đã đăng ký: {response.summary.totalRegistered} / {response.summary.capacity ?? 0}</p>
             <div className="mt-2 h-2.5 w-48 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={usagePercent}>
@@ -107,6 +118,7 @@ export default function EventRegistrationsPage() {
                 style={{ width: `${usagePercent}%` }}
               />
             </div>
+          </div>
           </div>
         </header>
 

@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 interface ToastItem {
   id: number;
   message: string;
-  type: 'success' | 'error';
+  type: 'success' | 'warning' | 'error';
 }
 
 interface ToastContextValue {
@@ -42,6 +42,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             className={`rounded-lg border px-4 py-3 text-sm shadow-lg ${
               toast.type === 'success'
                 ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                : toast.type === 'warning'
+                  ? 'border-amber-200 bg-amber-50 text-amber-800'
                 : 'border-red-200 bg-red-50 text-red-700'
             }`}
           >

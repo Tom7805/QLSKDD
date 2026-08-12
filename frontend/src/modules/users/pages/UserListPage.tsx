@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Pagination from '../../../components/common/Pagination';
 import SearchInput from '../../../components/common/SearchInput';
-import StatusBadge from '../../../components/common/StatusBadge';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import { useToast } from '../../../components/common/Toast';
 import { useDebounce } from '../../../hooks/useDebounce';
@@ -116,19 +115,26 @@ export default function UserListPage() {
           ) : (
             <>
             <div className="hidden overflow-x-auto md:block">
-              <table className="min-w-full divide-y divide-slate-200">
+              <table className="w-full table-fixed divide-y divide-slate-200">
+                <colgroup>
+                  <col className="w-[6%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[26%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[20%]" />
+                </colgroup>
                 <thead className="bg-slate-50">
-                  <tr>{['STT', 'Tên đăng nhập', 'Họ tên', 'Email', 'Vai trò', 'Trạng thái', 'Thao tác'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{heading}</th>)}</tr>
+                  <tr>{['STT', 'Tên đăng nhập', 'Họ tên', 'Email', 'Vai trò', 'Thao tác'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{heading}</th>)}</tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {result.content.map((user, index) => (
                     <tr key={user.id} className="hover:bg-slate-50/80">
-                      <td className="px-4 py-4 text-sm text-slate-500">{page * PAGE_SIZE + index + 1}</td>
-                      <td className="whitespace-nowrap px-4 py-4 text-sm font-semibold text-slate-900">{user.username}</td>
-                      <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-700">{user.fullName}</td>
-                      <td className="px-4 py-4 text-sm text-slate-600">{user.email}</td>
-                      <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-600">{roleLabel(user.role)}</td>
-                      <td className="whitespace-nowrap px-4 py-4"><StatusBadge active={user.enabled} /></td>
+                      <td className="truncate px-4 py-4 text-sm text-slate-500">{page * PAGE_SIZE + index + 1}</td>
+                      <td className="truncate px-4 py-4 text-sm font-semibold text-slate-900">{user.username}</td>
+                      <td className="truncate px-4 py-4 text-sm text-slate-700">{user.fullName}</td>
+                      <td className="truncate px-4 py-4 text-sm text-slate-600">{user.email}</td>
+                      <td className="truncate px-4 py-4 text-sm text-slate-600">{roleLabel(user.role)}</td>
                       <td className="whitespace-nowrap px-4 py-4 text-sm">
                         <button type="button" onClick={() => openEditForm(user)} className="font-semibold text-blue-600 hover:text-blue-800">Sửa</button>
                         <span className="mx-2 text-slate-300">|</span>
@@ -148,7 +154,6 @@ export default function UserListPage() {
                       <h2 className="mt-1 truncate font-semibold text-slate-900">{user.fullName}</h2>
                       <p className="truncate text-sm text-slate-500">@{user.username}</p>
                     </div>
-                    <StatusBadge active={user.enabled} />
                   </div>
                   <dl className="mt-4 grid gap-3 text-sm">
                     <div><dt className="text-xs text-slate-400">Email</dt><dd className="mt-0.5 break-all text-slate-700">{user.email}</dd></div>

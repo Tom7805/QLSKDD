@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -49,5 +50,13 @@ public class RegistrationController {
     public ResponseEntity<BaseRes<Void>> cancel(@PathVariable Long id) {
         registrationService.cancel(id);
         return ResponseEntity.ok(BaseRes.success("Đã huỷ đăng ký", null));
+    }
+
+    // B4.5-T2: chỉ chủ vé hoặc ADMIN/ORGANIZER xem được ảnh QR của 1 lượt đăng ký
+    @GetMapping("/{id}/qr")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER') or @registrationSecurityService.isOwner(authentication.name, #id)")
+    public ResponseEntity<byte[]> getQrCode(@PathVariable Long id) {
+        byte[] png = registrationService.generateQrCode(id);
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG).body(png);
     }
 }
