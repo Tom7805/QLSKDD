@@ -712,7 +712,9 @@ Khi sự kiện **không còn `OPEN`** (đã `CLOSED` hoặc `CANCELLED`), mọi
 
 ### `GET /api/v1/events` — Danh sách sự kiện có phân trang
 
-**Query params:** `page` (mặc định `0`), `size` (mặc định `10`). Mặc định sắp xếp theo `startAt` tăng dần (sự kiện sắp diễn ra lên đầu) — không cần truyền tham số `sort`.
+**Query params:** `keyword` (tuỳ chọn), `page` (mặc định `0`), `size` (mặc định `10`). Mặc định sắp xếp theo `startAt` tăng dần (sự kiện sắp diễn ra lên đầu) — không cần truyền tham số `sort`.
+
+> **B5.1 (Tìm kiếm sự kiện theo tên / địa điểm):** `keyword` tìm theo `name` HOẶC `location`, `LIKE %keyword%`, không phân biệt hoa thường. Được trim khoảng trắng đầu/cuối ở tầng controller trước khi tìm. `keyword` rỗng hoặc không truyền → trả toàn bộ danh sách (không lỗi). Không khớp gì → `content` rỗng, `totalElements = 0` (không lỗi). Ví dụ: `GET /api/v1/events?keyword=hội thảo&page=0&size=10`.
 
 **Response — 200 OK**
 ```json

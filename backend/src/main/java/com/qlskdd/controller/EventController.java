@@ -31,12 +31,15 @@ public class EventController {
 
     @GetMapping
     public ResponseEntity<BaseRes<PageRes<EventRes>>> getEvents(
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         // B2.5-T2: mặc định sort theo startAt tăng dần (sự kiện sắp diễn ra lên trước)
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "startAt"));
-        PageRes<EventRes> result = eventService.getAllEvents(pageable);
+        // B5.1-T2: trim khoảng trắng đầu/cuối trước khi tìm
+        String trimmedKeyword = keyword == null ? null : keyword.trim();
+        PageRes<EventRes> result = eventService.getAllEvents(trimmedKeyword, pageable);
 
         return ResponseEntity.ok(BaseRes.success("Lấy danh sách sự kiện thành công", result));
     }

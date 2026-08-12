@@ -130,8 +130,13 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public PageRes<EventRes> getAllEvents(Pageable pageable) {
-        Page<Event> eventPage = eventRepository.findAll(pageable);
+    public PageRes<EventRes> getAllEvents(String keyword, Pageable pageable) {
+        // B5.1-T1: keyword rỗng/null -> trả toàn bộ (không lỗi); có keyword -> LIKE trên
+        // name HOẶC location, không phân biệt hoa thường
+        Page<Event> eventPage = (keyword == null || keyword.isBlank())
+                ? eventRepository.findAll(pageable)
+                : eventRepository.findByNameContainingIgnoreCaseOrLocationContainingIgnoreCase(
+                        keyword, keyword, pageable);
 
         // B2.5-T1: đếm số đăng ký ACTIVE cho CẢ TRANG bằng đúng 1 truy vấn group by,
         // không gọi countByEventIdAndStatus lặp lại cho từng sự kiện (tránh N+1)
