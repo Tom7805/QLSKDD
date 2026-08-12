@@ -97,6 +97,13 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- B5.2-T3: DB nhúng cho @DataJpaTest, kiểm chứng EventSpecification lọc đúng
+             trên dữ liệu thật (không thay thế MySQL ở runtime — chỉ dùng khi test) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

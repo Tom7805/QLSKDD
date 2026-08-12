@@ -18,4 +18,9 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
     // group by, tránh chạy countByCategoryId lặp lại cho từng loại (N+1)
     @Query("SELECT e.category.id, COUNT(e) FROM Event e WHERE e.category IS NOT NULL GROUP BY e.category.id")
     List<Object[]> countEventsGroupedByCategory();
+
+    // B5.1-T1 + B5.2-T1: tìm/lọc GET /events giờ đi qua JpaSpecificationExecutor.findAll(spec,
+    // pageable) — xem EventSpecification.filter(). Bản findByNameContainingIgnoreCaseOr...
+    // (B5.1-T1 gốc) đã bị thay thế vì EventSpecification là tập hợp lớn hơn (keyword + category
+    // + status + from/to), tránh 2 đường lọc trùng lặp trên cùng 1 endpoint.
 }

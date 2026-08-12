@@ -27,6 +27,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -187,6 +188,51 @@ class EventControllerTest {
                         .content("{}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors[?(@.field == 'status')]").exists());
+    }
+
+    /**
+     * Test case B5.2-T3: kiểm chứng wiring HTTP thật cho GET /events với bộ lọc (không
+     * cần @WithMockUser vì permitAll — giống mọi GET /events/**).
+     */
+    @Test
+    void danhSachSuKien_CoBoLoc_traVe200() throws Exception {
+        when(eventService.searchEvents(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new PageRes<>(Collections.emptyList(), 0, 10, 0, 0, true));
+
+        mockMvc.perform(get(EVENTS_URL + "?keyword=hoi thao&categoryId=1&status=OPEN&from=2026-01-01&to=2026-12-31"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    /**
+     * Test case B5.2-T3, TC4 (wiring): from sau to -> 400. Validate nằm ở service, Controller
+     * chỉ chuyển tiếp; test ở đây xác nhận BusinessException từ service được map đúng
+     * thành 400 qua GlobalExceptionHandler.
+     */
+    @Test
+    void danhSachSuKien_FromSauTo_traVe400() throws Exception {
+        when(eventService.searchEvents(any(), any(), any(), eq("2026-06-10"), eq("2026-06-01"), any()))
+                .thenThrow(new com.qlskdd.exception.BusinessException(
+                        org.springframework.http.HttpStatus.BAD_REQUEST,
+                        "Tham số from phải nhỏ hơn hoặc bằng to"));
+
+        mockMvc.perform(get(EVENTS_URL + "?from=2026-06-10&to=2026-06-01"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Tham số from phải nhỏ hơn hoặc bằng to"));
+    }
+
+    /**
+     * Test case B5.2-T3: status không hợp lệ -> 400.
+     */
+    @Test
+    void danhSachSuKien_StatusKhongHopLe_traVe400() throws Exception {
+        when(eventService.searchEvents(any(), any(), eq("xyz"), any(), any(), any()))
+                .thenThrow(new com.qlskdd.exception.BusinessException(
+                        org.springframework.http.HttpStatus.BAD_REQUEST, "Trạng thái không hợp lệ"));
+
+        mockMvc.perform(get(EVENTS_URL + "?status=xyz"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Trạng thái không hợp lệ"));
     }
 
     /**

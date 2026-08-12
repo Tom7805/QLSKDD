@@ -31,54 +31,33 @@ public class EventController {
 
     @GetMapping
     public ResponseEntity<BaseRes<PageRes<EventRes>>> getEvents(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
-            @RequestParam(required = false) String sort) {
+            @RequestParam(required = false) String sort,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
-        // parse sort param if provided (format: field,dir), default: startAt,asc
+        // B2.5-T2: mặc định sort theo startAt tăng dần (sự kiện sắp diễn ra lên trước);
+        // B5.2-T2: cho phép truyền sort=field,dir để đổi — sai định dạng thì bỏ qua, giữ mặc định
         Sort sortObj = Sort.by(Sort.Direction.ASC, "startAt");
         if (sort != null && sort.contains(",")) {
             String[] parts = sort.split(",");
             try {
-                Sort.Direction dir = Sort.Direction.fromString(parts[1]);
-                sortObj = Sort.by(dir, parts[0]);
+                sortObj = Sort.by(Sort.Direction.fromString(parts[1]), parts[0]);
             } catch (Exception ignored) {
+                // giữ mặc định startAt,asc
             }
         }
-
         Pageable pageable = PageRequest.of(page, size, sortObj);
 
-        java.time.LocalDate fromDate = null;
-        java.time.LocalDate toDate = null;
-        try {
-            if (from != null && !from.isBlank()) fromDate = java.time.LocalDate.parse(from);
-            if (to != null && !to.isBlank()) toDate = java.time.LocalDate.parse(to);
-        } catch (java.time.format.DateTimeParseException ex) {
-            throw new com.qlskdd.exception.BusinessException(org.springframework.http.HttpStatus.BAD_REQUEST,
-                    "Định dạng from/to phải là yyyy-MM-dd");
-        }
-
-        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
-            throw new com.qlskdd.exception.BusinessException(org.springframework.http.HttpStatus.BAD_REQUEST,
-                    "Tham số from phải nhỏ hơn hoặc bằng to");
-        }
-
-        // validate status value
-        if (status != null && !status.isBlank()) {
-            try {
-                com.qlskdd.enums.EventStatus.valueOf(status.trim().toUpperCase());
-            } catch (IllegalArgumentException ex) {
-                throw new com.qlskdd.exception.BusinessException(org.springframework.http.HttpStatus.BAD_REQUEST,
-                        "Trạng thái không hợp lệ");
-            }
-        }
-
-        PageRes<EventRes> result = eventService.searchEvents(keyword, categoryId, status, fromDate, toDate, pageable);
+        // B5.1-T2: trim khoảng trắng đầu/cuối trước khi tìm; parse/validate from-to/status
+        // (định dạng ngày, from>to, status không hợp lệ) đều nằm ở service — controller
+        // không nhảy tầng validate, giống cách getAttendanceList(id, status, pageable) làm.
+        String trimmedKeyword = keyword == null ? null : keyword.trim();
+        PageRes<EventRes> result = eventService.searchEvents(trimmedKeyword, categoryId, status, from, to, pageable);
 
         return ResponseEntity.ok(BaseRes.success("Lấy danh sách sự kiện thành công", result));
     }
