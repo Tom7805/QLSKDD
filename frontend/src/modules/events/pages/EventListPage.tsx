@@ -7,6 +7,7 @@ import { ROUTES } from '../../../constants/routes';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { usePermission } from '../../../hooks/usePermission';
 import EventCard from '../components/EventCard';
+import EventFilter, { type EventFilterValue } from '../components/EventFilter';
 import { getEvents } from '../eventsApi';
 import type { EventsPage } from '../eventsTypes';
 
@@ -24,6 +25,13 @@ export default function EventListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = readPage(searchParams.get('page'));
   const keyword = searchParams.get('keyword')?.trim() ?? '';
+  const filters: EventFilterValue = {
+    categoryId: searchParams.get('categoryId') ?? '',
+    status: searchParams.get('status') ?? '',
+    from: searchParams.get('from') ?? '',
+    to: searchParams.get('to') ?? '',
+  };
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
   const [searchValue, setSearchValue] = useState(keyword);
   const debouncedSearchValue = useDebounce(searchValue, 400);
   const [result, setResult] = useState<EventsPage>(EMPTY_PAGE);
@@ -52,7 +60,12 @@ export default function EventListPage() {
     let active = true;
     setLoading(true);
     setError(null);
-    getEvents(page, PAGE_SIZE, keyword)
+    getEvents(page, PAGE_SIZE, keyword, {
+      ...(filters.categoryId ? { categoryId: Number(filters.categoryId) } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.from ? { from: filters.from } : {}),
+      ...(filters.to ? { to: filters.to } : {}),
+    })
       .then((data) => {
         if (!active) return;
         setResult(data);
@@ -71,7 +84,21 @@ export default function EventListPage() {
       })
       .finally(() => active && setLoading(false));
     return () => { active = false; };
-  }, [keyword, page, reloadKey, setSearchParams]);
+  }, [filters.categoryId, filters.from, filters.status, filters.to, keyword, page, reloadKey, setSearchParams]);
+
+  const changeFilters = (nextFilters: EventFilterValue) => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      (Object.keys(nextFilters) as Array<keyof EventFilterValue>).forEach((key) => {
+        if (nextFilters[key]) next.set(key, nextFilters[key]);
+        else next.delete(key);
+      });
+      next.delete('page');
+      return next;
+    });
+  };
+
+  const clearFilters = () => changeFilters({ categoryId: '', status: '', from: '', to: '' });
 
   const changePage = (nextPage: number) => {
     setSearchParams((current) => {
@@ -103,7 +130,7 @@ export default function EventListPage() {
           )}
         </header>
         <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:border-b lg:border-slate-100 lg:pb-4">
             <SearchInput
               value={searchValue}
               onChange={setSearchValue}
@@ -115,6 +142,9 @@ export default function EventListPage() {
               </p>
             )}
           </div>
+          <div className="mt-3 lg:mt-4">
+            <EventFilter value={filters} onChange={changeFilters} onClear={clearFilters} activeCount={activeFilterCount} />
+          </div>
         </div>
         {error ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center" role="alert">
@@ -125,18 +155,20 @@ export default function EventListPage() {
           <div className="space-y-4" aria-label="Đang tải danh sách sự kiện">
             {Array.from({ length: 6 }, (_, index) => <div key={index} className="h-24 animate-pulse rounded-2xl bg-slate-200" />)}
           </div>
-        ) : result.content.length === 0 && keyword ? (
+        ) : result.content.length === 0 && (keyword || activeFilterCount > 0) ? (
           <div className="rounded-2xl border border-dashed border-blue-200 bg-gradient-to-b from-blue-50/70 to-white px-6 py-14 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-700" aria-hidden="true">
               <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <circle cx="10.5" cy="10.5" r="6.5" /><path strokeLinecap="round" d="m16 16 4 4M8 9h5M8 12h3" />
               </svg>
             </div>
-            <h2 className="mt-4 text-lg font-bold text-slate-800">Không tìm thấy sự kiện phù hợp với &apos;{keyword}&apos;</h2>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">Thử kiểm tra lại từ khóa hoặc tìm bằng một tên, địa điểm khác.</p>
+            <h2 className="mt-4 text-lg font-bold text-slate-800">
+              {keyword ? <>Không tìm thấy sự kiện phù hợp với &apos;{keyword}&apos;</> : 'Không có sự kiện phù hợp với bộ lọc'}
+            </h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">Thử thay đổi điều kiện hoặc xóa bộ lọc để xem lại tất cả sự kiện.</p>
             <button
               type="button"
-              onClick={() => setSearchValue('')}
+              onClick={() => { setSearchValue(''); clearFilters(); }}
               className="mt-5 inline-flex h-10 items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
             >
               Xóa bộ lọc
