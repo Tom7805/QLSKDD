@@ -86,4 +86,18 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
             + "AND r.status = com.qlskdd.enums.RegistrationStatus.ACTIVE "
             + "AND NOT EXISTS (SELECT c FROM CheckInHistory c WHERE c.registration = r)")
     Page<Registration> findAbsentByEventId(@Param("eventId") Long eventId, Pageable pageable);
+
+    // B5.4-T1: tổng lượt đăng ký hợp lệ (status = ACTIVE) trên TOÀN hệ thống — chỉ số
+    // "tổng lượt đăng ký" của GET /api/v1/dashboard/summary. Lượt đã huỷ (CANCELLED) không tính.
+    long countByStatus(RegistrationStatus status);
+
+    // B5.4-T1: Top N sự kiện có nhiều lượt đăng ký ACTIVE nhất — group by + order by desc,
+    // giới hạn bằng pageable (List + Pageable chỉ áp dụng LIMIT, không chạy count query).
+    // Trả về cột: { eventId, eventName, capacity, COUNT(registration) }. capacity null khi sự
+    // kiện seed từ B0.4 chưa set — service tính fillRate dựa trên khả năng capacity null.
+    @Query("SELECT r.event.id, r.event.name, r.event.capacity, COUNT(r) FROM Registration r "
+            + "WHERE r.status = :status "
+            + "GROUP BY r.event.id, r.event.name, r.event.capacity "
+            + "ORDER BY COUNT(r) DESC")
+    List<Object[]> findTopEventsGroupedByStatus(@Param("status") RegistrationStatus status, Pageable pageable);
 }

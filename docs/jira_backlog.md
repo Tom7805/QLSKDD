@@ -125,3 +125,33 @@
 - **Quyết định thiết kế**: `CheckInHistory` chỉ lưu bản ghi khi điểm danh **thành công** (status trong DB luôn là `SUCCESS`). Các trạng thái `ALREADY_CHECKED_IN`/`INVALID_TICKET`/`WRONG_EVENT` chỉ là giá trị trả về qua API (ném `BusinessException` kèm `errorCode`), không tạo bản ghi — vì mục đích của ràng buộc UNIQUE trên `registration_id` là chặn điểm danh trùng, không phải để lưu lịch sử các lần thử thất bại.
 - Đã nối lại 2 chỗ đang ghi nợ TODO(B4.1) từ trước: `RegistrationServiceImpl.cancel()` (chặn huỷ khi đã điểm danh) và `getRegistrationsByEvent()` (field `checkedIn` giờ đúng dữ liệu thật). Cả 2 đã cập nhật lại trong `docs/api_contract.md` mục 12 và 13.
 - B4.5 (mã QR/check-in nhanh bằng mã) là task `Could`, chưa làm — luồng điểm danh chính hiện tại dùng `registrationId` nhập bằng nút bấm/danh sách, đúng theo định hướng "khi cần" của bản v3.0.
+
+---
+
+## `B5.4` — Dashboard thống kê
+
+> **User story**: *Là quản trị viên, tôi muốn xem dashboard thống kê (tổng sự kiện, sắp diễn ra, tổng lượt đăng ký, tỷ lệ điểm danh, top sự kiện đông) để nắm tình hình.*
+> **Phụ trách**: TV5 – M5 Thống kê
+
+### 🟦 Backend
+
+| Mã task | Loại | Tên công việc | Chi tiết công việc phải làm | Điểm | Trạng thái |
+|---|---|---|---|---|---|
+| `B5.4-T1` | `BE-REPO` | **Truy vấn thống kê** | • Tổng sự kiện; sự kiện sắp diễn ra (`startAt > now`, status OPEN)<br>• Tổng lượt đăng ký ACTIVE; tổng lượt điểm danh<br>• Top 5 sự kiện nhiều đăng ký nhất (group by + order by desc + limit)<br>• Mỗi chỉ số **một truy vấn**, không lặp trong vòng lặp | 3 | ✅ Đã code — `EventRepository.countByStartAtAfterAndStatus`, `RegistrationRepository.countByStatus` + `findTopEventsGroupedByStatus`, dùng `count()` sẵn có cho tổng sự kiện/điểm danh |
+| `B5.4-T2` | `BE-SVC` | **DashboardService** | • Gom thành `DashboardStatRes { totalEvents, upcomingEvents, totalRegistrations, totalCheckIns, attendanceRate }`<br>• `TopEventRes { eventId, eventName, capacity, registered, fillRate }` | 2 | ✅ Đã code — `DashboardService`/`DashboardServiceImpl` + `DashboardMapper`; `attendanceRate` qua `AttendanceRateUtil`, `fillRate` null khi capacity null; limit <=0 → 5, >100 → chặn 100 |
+| `B5.4-T3` | `BE-API` | **API dashboard** | • `GET /api/v1/dashboard/summary` — ADMIN, ORGANIZER<br>• `GET /api/v1/dashboard/top-events?limit=5` | 2 | ✅ Đã code — `DashboardController` `@PreAuthorize("hasAnyRole('ADMIN','ORGANIZER')")` |
+| `B5.4-T4` | `BE-TEST` | **Test case dashboard** | • TC1: số liệu khớp với đếm trực tiếp<br>• TC2: chưa có dữ liệu → tất cả 0, tỷ lệ 0%, không lỗi chia 0<br>• TC3: top-events sắp xếp giảm dần đúng | 2 | ✅ Đã viết — `DashboardServiceTest` (TC1/TC2/TC3 + fillRate null + limit) và `DashboardControllerTest` 200/403/401/limit |
+
+### 🟩 Frontend (B5.4-T5/T6/T7)
+
+| Mã task | Loại | Tên công việc | Chi tiết | Điểm | Trạng thái |
+|---|---|---|---|---|---|
+| `B5.4-T5` | `FE-UI` | **Trang dashboard** | `dashboardApi.ts` (đã có stub); 4 thẻ số liệu; bảng top 5 + thanh tỷ lệ; skeleton/empty | 3 | ⬜ Chưa làm — chờ Backend API |
+| `B5.4-T6` | `FE-UI` | **Biểu đồ (tuỳ chọn)** | recharts BarChart từ JSON của API | 2 | ⬜ Chưa làm |
+| `B5.4-T7` | `FE-RES` | **Responsive dashboard** | 1→2→4 cột; không tràn ngang | 1 | ⬜ Chưa làm |
+
+### Ghi chú bàn giao
+
+- Backend B5.4 đã test thật: **150/150 test pass** (thêm 5 `DashboardServiceTest` + 8 `DashboardControllerTest`). Hướng dẫn test API đầy đủ (folder Postman, url, JSON, mã lỗi) ở `docs/api_contract.md` mục 19 và mục 9 của backlog gốc.
+- Hợp đồng JSON: `summary` → `{ totalEvents, upcomingEvents, totalRegistrations, totalCheckIns, attendanceRate }`; `top-events` → mảng `{ eventId, eventName, capacity, registered, fillRate }`. `attendanceRate`/`fillRate` làm tròn 1 chữ số; `fillRate = null` khi sự kiện chưa có capacity; `top-events` trả `[]` khi chưa có dữ liệu.
+

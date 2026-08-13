@@ -1417,3 +1417,94 @@ Từ B4.5, mỗi lượt đăng ký (`POST /api/v1/registrations`, xem mục 11)
 | `ALREADY_CHECKED_IN` | 409 | Đã điểm danh trước đó |
 | (không có) | 409 | Lượt đăng ký đã bị huỷ |
 | (validation) | 400 | Thiếu `code` hoặc `eventId` |
+
+---
+
+## 19. Dashboard thống kê (B5.4)
+
+> Phạm vi: 2 endpoint phục vụ màn hình dashboard của ADMIN/ORGANIZER — `GET /api/v1/dashboard/summary` (`B5.4-T3`) và `GET /api/v1/dashboard/top-events` (`B5.4-T3`).
+> **Quyền:** cả 2 endpoint chỉ **ADMIN** và **ORGANIZER**. USER thường gọi nhận `403` (`ACCESS_DENIED`), khách chưa đăng nhập nhận `401` (`Bạn cần đăng nhập`).
+
+### 19.1. Thống kê tổng quan
+
+* **URL:** `GET /api/v1/dashboard/summary`
+* **Headers:** `Authorization: Bearer {{accessToken}}`
+* Trả về 4 thẻ số liệu + tỷ lệ điểm danh toàn hệ thống. Mỗi chỉ số đếm bằng **đúng 1 truy vấn** (không lặp trong vòng lặp):
+  * `totalEvents`: tổng sự kiện (mọi trạng thái).
+  * `upcomingEvents`: sự kiện sắp diễn ra (`startAt > hiện tại` **và** `status = OPEN`).
+  * `totalRegistrations`: tổng lượt đăng ký hợp lệ (`status = ACTIVE`; lượt đã huỷ không tính).
+  * `totalCheckIns`: tổng lượt đã điểm danh (số bản ghi `check_in_histories`).
+  * `attendanceRate = totalCheckIns / totalRegistrations * 100`, làm tròn **1 chữ số thập phân**; chưa có ai đăng ký thì trả `0.0` (không lỗi chia 0) — cùng công thức `AttendanceRateUtil` với mục 16.
+
+### Response — 200 OK
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Lấy thống kê tổng quan thành công",
+  "data": {
+    "totalEvents": 3,
+    "upcomingEvents": 2,
+    "totalRegistrations": 40,
+    "totalCheckIns": 12,
+    "attendanceRate": 30.0
+  },
+  "timestamp": "2026-08-13T09:00:00"
+}
+```
+
+### 19.2. Top sự kiện đông người đăng ký
+
+* **URL:** `GET /api/v1/dashboard/top-events?limit=5`
+* **Headers:** `Authorization: Bearer {{accessToken}}`
+* Tham số `limit` (tuỳ chọn, mặc định `5`): số sự kiện trả về. `limit <= 0` → dùng mặc định `5`; `limit > 100` → chặn ở `100` (tránh query nặng khi FE truyền bất thường).
+* Trả về danh sách sắp xếp **giảm dần theo số lượt đăng ký ACTIVE** (đông nhất lên đầu).
+* `fillRate = registered / capacity * 100`, làm tròn 1 chữ số; **= `null`** khi sự kiện chưa có `capacity` (dữ liệu seed cũ) — FE hiển thị `"—"` thay vì chia 0.
+* `eventId` dùng để FE bấm vào dòng chuyển sang trang chi tiết sự kiện.
+
+### Response — 200 OK (limit=5)
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Lấy danh sách sự kiện đông người đăng ký thành công",
+  "data": [
+    {
+      "eventId": 1,
+      "eventName": "Hội thảo Trí tuệ nhân tạo 2026",
+      "capacity": 100,
+      "registered": 80,
+      "fillRate": 80.0
+    },
+    {
+      "eventId": 2,
+      "eventName": "Lễ ra mắt sản phẩm mới",
+      "capacity": 50,
+      "registered": 45,
+      "fillRate": 90.0
+    },
+    {
+      "eventId": 3,
+      "eventName": "Khóa đào tạo kỹ năng mềm",
+      "capacity": 200,
+      "registered": 10,
+      "fillRate": 5.0
+    }
+  ],
+  "timestamp": "2026-08-13T09:00:00"
+}
+```
+
+### Lỗi chung (2 endpoint)
+
+| Tình huống | HTTP | `errorCode` | `message` |
+|---|---|---|---|
+| USER thường gọi | 403 | `ACCESS_DENIED` | "Bạn không có quyền truy cập tài nguyên này" |
+| Chưa đăng nhập / token hết hạn | 401 | `UNAUTHORIZED` | "Bạn cần đăng nhập để thực hiện thao tác này" |
+
+> **Bàn giao cho Frontend (B5.4-T5/T6/T7):**
+> - FE gọi `summary` cho 4 thẻ số liệu (Tổng sự kiện / Sắp diễn ra / Lượt đăng ký / Tỷ lệ điểm danh) — `attendanceRate` hiển thị kèm dấu `%`.
+> - FE gọi `top-events?limit=5` cho bảng/thanh "top sự kiện đông nhất"; bấm vào dòng dùng `eventId` → `ROUTES.EVENT_DETAIL`.
+> - `fillRate === null` → hiển thị `"—"` (không chia 0, không crash).
+> - Cả 4 thẻ + bảng có **skeleton khi tải** và **trạng thái rỗng** khi `data.registered = 0` (trả `[]` không lỗi).
+
