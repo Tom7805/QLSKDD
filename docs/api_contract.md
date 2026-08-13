@@ -1423,7 +1423,7 @@ Từ B4.5, mỗi lượt đăng ký (`POST /api/v1/registrations`, xem mục 11)
 ## 19. Dashboard thống kê (B5.4)
 
 > Phạm vi: 2 endpoint phục vụ màn hình dashboard của ADMIN/ORGANIZER — `GET /api/v1/dashboard/summary` (`B5.4-T3`) và `GET /api/v1/dashboard/top-events` (`B5.4-T3`).
-> **Quyền:** cả 2 endpoint chỉ **ADMIN** và **ORGANIZER**. USER thường gọi nhận `403` (`ACCESS_DENIED`), khách chưa đăng nhập nhận `401` (`Bạn cần đăng nhập`).
+> **Quyền:** cả 2 endpoint chỉ **ADMIN** và **ORGANIZER**. USER thường gọi nhận `403`, khách chưa đăng nhập nhận `401` — xem bảng lỗi chung bên dưới.
 
 ### 19.1. Thống kê tổng quan
 
@@ -1497,10 +1497,12 @@ Từ B4.5, mỗi lượt đăng ký (`POST /api/v1/registrations`, xem mục 11)
 
 ### Lỗi chung (2 endpoint)
 
-| Tình huống | HTTP | `errorCode` | `message` |
-|---|---|---|---|
-| USER thường gọi | 403 | `ACCESS_DENIED` | "Bạn không có quyền truy cập tài nguyên này" |
-| Chưa đăng nhập / token hết hạn | 401 | `UNAUTHORIZED` | "Bạn cần đăng nhập để thực hiện thao tác này" |
+`RestAccessDeniedHandler`/`RestAuthenticationEntryPoint` không set `errorCode` (field bị ẩn khỏi JSON do `ErrorResponse` dùng `@JsonInclude(NON_NULL)`) — FE bắt lỗi theo `status`, không dựa vào `errorCode` cho 2 trường hợp này.
+
+| Tình huống | HTTP | `message` |
+|---|---|---|
+| USER thường gọi | 403 | "Bạn không có quyền thực hiện thao tác này" |
+| Chưa đăng nhập / token hết hạn | 401 | "Bạn cần đăng nhập để thực hiện thao tác này" |
 
 > **Bàn giao cho Frontend (B5.4-T5/T6/T7):**
 > - FE gọi `summary` cho 4 thẻ số liệu (Tổng sự kiện / Sắp diễn ra / Lượt đăng ký / Tỷ lệ điểm danh) — `attendanceRate` hiển thị kèm dấu `%`.
