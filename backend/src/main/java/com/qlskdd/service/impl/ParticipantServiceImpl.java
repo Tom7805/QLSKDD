@@ -36,9 +36,18 @@ public class ParticipantServiceImpl implements ParticipantService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public PageRes<ParticipantRes> getParticipants(String keyword, Pageable pageable) {
+    public PageRes<ParticipantRes> getParticipants(String keyword, Long eventId,
+                                                   RegistrationStatus status, Pageable pageable) {
         String kw = keyword == null ? "" : keyword;
-        Page<User> participants = userRepository.findByRoleNameAndKeyword(RoleEnum.ROLE_USER.name(), kw, pageable);
+        Page<User> participants;
+        if (eventId != null) {
+            // B5.3-T1/T2: lọc theo sự kiện (+ tuỳ chọn status). Truyền thẳng status đã được
+            // chọn (có thể null) — repository tự bỏ qua điều kiện status khi null.
+            participants = userRepository.findByRoleAndKeywordAndEvent(
+                    RoleEnum.ROLE_USER.name(), kw, eventId, status, pageable);
+        } else {
+            participants = userRepository.findByRoleNameAndKeyword(RoleEnum.ROLE_USER.name(), kw, pageable);
+        }
 
         // B3.4-T1: đếm số đăng ký ACTIVE cho CẢ TRANG bằng đúng 1 truy vấn group by,
         // không lặp countByUserIdAndStatus cho từng người (tránh N+1)

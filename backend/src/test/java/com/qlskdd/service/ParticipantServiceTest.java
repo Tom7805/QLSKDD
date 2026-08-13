@@ -7,6 +7,7 @@ import com.qlskdd.enums.RegistrationStatus;
 import com.qlskdd.exception.BusinessException;
 import com.qlskdd.exception.DuplicateDataException;
 import com.qlskdd.exception.ResourceNotFoundException;
+import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.mapper.response.ParticipantRes;
 import com.qlskdd.repository.RegistrationRepository;
 import com.qlskdd.repository.RoleRepository;
@@ -17,14 +18,21 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -153,5 +161,52 @@ class ParticipantServiceTest {
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> participantService.getById(999L));
+    }
+
+    /**
+     * B5.3-T3 · TC1: tìm theo email -> đúng 1 kết quả (eventId = null dùng nhánh cũ).
+     */
+    @Test
+    void testGetParticipants_TimTheoEmail_1KetQua() {
+        User u = User.builder().id(1L).fullName("Nguyễn Văn A").email("a@qlskdd.com")
+                .role(userRole).build();
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<User> page = new PageImpl<>(List.of(u), pageable, 1);
+
+        when(userRepository.findByRoleNameAndKeyword(eq("ROLE_USER"), eq("a@qlskdd.com"), any(Pageable.class)))
+                .thenReturn(page);
+        when(registrationRepository.countGroupedByUserIdsAndStatus(List.of(1L), RegistrationStatus.ACTIVE))
+                .thenReturn(Collections.singletonList(new Object[]{1L, 3L}));
+
+        PageRes<ParticipantRes> res = participantService.getParticipants("a@qlskdd.com", null, null, pageable);
+
+        assertEquals(1, res.getTotalElements());
+        assertEquals("a@qlskdd.com", res.getContent().get(0).getEmail());
+        assertEquals(3L, res.getContent().get(0).getRegisteredEventCount());
+    }
+
+    /**
+     * B5.3-T3 · TC2: lọc theo eventId -> chỉ ra người có đăng ký trong sự kiện đó.
+     * Verify đúng query phân nhánh (kèm status) được gọi.
+     */
+    @Test
+    void testGetParticipants_LocTheoEventId_DungQueryVaKetQua() {
+        User u = User.builder().id(2L).fullName("Trần B").email("b@qlskdd.com")
+                .role(userRole).build();
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<User> page = new PageImpl<>(List.of(u), pageable, 1);
+
+        when(userRepository.findByRoleAndKeywordAndEvent(eq("ROLE_USER"), eq(""), eq(9L),
+                eq(RegistrationStatus.ACTIVE), any(Pageable.class))).thenReturn(page);
+        when(registrationRepository.countGroupedByUserIdsAndStatus(List.of(2L), RegistrationStatus.ACTIVE))
+                .thenReturn(Collections.singletonList(new Object[]{2L, 1L}));
+
+        PageRes<ParticipantRes> res = participantService.getParticipants("", 9L, RegistrationStatus.ACTIVE, pageable);
+
+        assertEquals(1, res.getTotalElements());
+        assertEquals(2L, res.getContent().get(0).getId());
+        assertEquals("Trần B", res.getContent().get(0).getFullName());
+        verify(userRepository).findByRoleAndKeywordAndEvent(anyString(), anyString(), eq(9L),
+                eq(RegistrationStatus.ACTIVE), any(Pageable.class));
     }
 }

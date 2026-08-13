@@ -1,6 +1,7 @@
 package com.qlskdd.controller;
 
 import com.qlskdd.dto.request.ParticipantReq;
+import com.qlskdd.enums.RegistrationStatus;
 import com.qlskdd.mapper.response.BaseRes;
 import com.qlskdd.mapper.response.PageRes;
 import com.qlskdd.mapper.response.ParticipantRes;
@@ -27,10 +28,12 @@ public class ParticipantController {
     @GetMapping
     public ResponseEntity<BaseRes<PageRes<ParticipantRes>>> getParticipants(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long eventId,
+            @RequestParam(required = false) RegistrationStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        PageRes<ParticipantRes> result = participantService.getParticipants(keyword, pageable);
+        PageRes<ParticipantRes> result = participantService.getParticipants(keyword, eventId, status, pageable);
         return ResponseEntity.ok(BaseRes.success("Lấy danh sách người tham gia thành công", result));
     }
 
