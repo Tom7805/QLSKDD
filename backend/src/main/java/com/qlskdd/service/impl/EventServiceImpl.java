@@ -26,6 +26,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import com.qlskdd.specification.EventSpecification;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -129,16 +131,60 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toDetailRes(event, totalRegistered, attendanceRate);
     }
 
+    // B5.2-T1/T2: điểm vào duy nhất của GET /events — thay thế getAllEvents (B2.5) và
+    // bản keyword-only (B5.1), vì EventSpecification.filter đã là tập hợp lớn hơn (bao
+    // trọn tìm theo keyword khi categoryId/status/from/to đều null). keyword rỗng/null,
+    // categoryId null, status rỗng/null, from/to rỗng/null -> bỏ qua điều kiện tương ứng,
+    // không lỗi (giữ đúng hành vi cũ của B2.5/B5.1: không truyền gì -> trả toàn bộ).
     @Override
-    public PageRes<EventRes> getAllEvents(Pageable pageable) {
-        Page<Event> eventPage = eventRepository.findAll(pageable);
+    public PageRes<EventRes> searchEvents(String keyword, Long categoryId, String status,
+                                           String from, String to, Pageable pageable) {
+        LocalDate fromDate = parseDateOrThrow(from, "from");
+        LocalDate toDate = parseDateOrThrow(to, "to");
 
-        // B2.5-T1: đếm số đăng ký ACTIVE cho CẢ TRANG bằng đúng 1 truy vấn group by,
-        // không gọi countByEventIdAndStatus lặp lại cho từng sự kiện (tránh N+1)
+        // B5.2-T2: from > to -> 400
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Tham số from phải nhỏ hơn hoặc bằng to");
+        }
+
+        // status không hợp lệ -> 400 ngay ở service (không lặng lẽ bỏ qua điều kiện lọc),
+        // cùng cách AttendanceFilter.fromParam đang làm cho B4.4
+        String normalizedStatus = normalizeStatusOrThrow(status);
+
+        var spec = EventSpecification.filter(keyword, categoryId, normalizedStatus, fromDate, toDate);
+        Page<Event> eventPage = eventRepository.findAll(spec, pageable);
+        return toPageRes(eventPage);
+    }
+
+    private LocalDate parseDateOrThrow(String raw, String paramName) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(raw.trim());
+        } catch (java.time.format.DateTimeParseException ex) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST,
+                    "Định dạng " + paramName + " phải là yyyy-MM-dd");
+        }
+    }
+
+    private String normalizeStatusOrThrow(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        try {
+            return EventStatus.valueOf(status.trim().toUpperCase()).name();
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Trạng thái không hợp lệ");
+        }
+    }
+
+    // B2.5-T1/B4.3-T4: đếm số đăng ký ACTIVE và số đã điểm danh cho CẢ TRANG bằng đúng
+    // 1 truy vấn group by mỗi loại (tránh N+1), dùng chung cho mọi cách liệt kê sự kiện
+    // có phân trang (danh sách thường lẫn có lọc).
+    private PageRes<EventRes> toPageRes(Page<Event> eventPage) {
         List<Long> eventIds = eventPage.getContent().stream().map(Event::getId).toList();
         Map<Long, Long> activeCountByEventId = new HashMap<>();
-        // B4.3-T4: tương tự, đếm số đã điểm danh (present) cho cả trang bằng 1 truy vấn
-        // group by để tính attendanceRate — không query riêng cho từng sự kiện.
         Map<Long, Long> presentCountByEventId = new HashMap<>();
         if (!eventIds.isEmpty()) {
             for (Object[] row : registrationRepository

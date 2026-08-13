@@ -36,4 +36,7 @@ public interface CheckInHistoryRepository extends JpaRepository<CheckInHistory, 
     @Query("SELECT c.registration.event.id, COUNT(c) FROM CheckInHistory c "
             + "WHERE c.registration.event.id IN :eventIds GROUP BY c.registration.event.id")
     List<Object[]> countGroupedByEventIds(@Param("eventIds") List<Long> eventIds);
+
+    // B5.4-T1: "tổng lượt điểm danh" của GET /api/v1/dashboard/summary dùng thẳng count()
+    // có sẵn của JpaRepository (1 truy vấn COUNT toàn bộ bảng check_in_histories).
 }

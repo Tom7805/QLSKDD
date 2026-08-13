@@ -1220,6 +1220,129 @@
       "id": "6e357b95-d046-42db-a923-00c6d52d4435",
       "description": "ParticipantController - /api/v1/participants (chỉ ADMIN, ORGANIZER)",
       "uid": "56137981-6e357b95-d046-42db-a923-00c6d52d4435"
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Thống kê tổng quan - Summary (200)",
+          "id": "7d3e4a91-0001-4f0a-9c3d-1a2b3c4d5e6f",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "summary"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-7d3e4a91-0001-4f0a-9c3d-1a2b3c4d5e6f"
+        },
+        {
+          "name": "Top sự kiện - mặc định limit 5 (200)",
+          "id": "7d3e4a91-0002-4f0a-9c3d-1a2b3c4d5e6f",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/top-events",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "top-events"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-7d3e4a91-0002-4f0a-9c3d-1a2b3c4d5e6f"
+        },
+        {
+          "name": "Top sự kiện - limit=3 (200)",
+          "id": "7d3e4a91-0003-4f0a-9c3d-1a2b3c4d5e6f",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/top-events?limit=3",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "top-events"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "3"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-7d3e4a91-0003-4f0a-9c3d-1a2b3c4d5e6f"
+        },
+        {
+          "name": "Top sự kiện - limit=0 dùng mặc định 5 (200)",
+          "id": "7d3e4a91-0004-4f0a-9c3d-1a2b3c4d5e6f",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/top-events?limit=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "top-events"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-7d3e4a91-0004-4f0a-9c3d-1a2b3c4d5e6f"
+        },
+        {
+          "name": "Summary - Không token (401)",
+          "id": "7d3e4a91-0005-4f0a-9c3d-1a2b3c4d5e6f",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "summary"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-7d3e4a91-0005-4f0a-9c3d-1a2b3c4d5e6f"
+        }
+      ],
+      "id": "7d3e4a91-2b6c-4f0a-9c3d-1a2b3c4d5e6f",
+      "description": "DashboardController - /api/v1/dashboard (chỉ ADMIN, ORGANIZER)",
+      "uid": "56137981-7d3e4a91-2b6c-4f0a-9c3d-1a2b3c4d5e6f"
     }
   ],
   "auth": {

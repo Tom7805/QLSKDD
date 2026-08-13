@@ -92,7 +92,7 @@ export default function CategoryListPage() {
             <p className="mt-1 text-sm text-slate-500">Thêm, sửa hoặc xoá loại sự kiện. Loại đang có sự kiện không thể xoá.</p>
           </div>
           <button type="button" onClick={openCreateForm} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">
-            <span className="text-xl leading-none">＋</span> Thêm loại mới
+            <span className="text-xl leading-none" aria-hidden="true">＋</span> Thêm loại mới
           </button>
         </div>
 
