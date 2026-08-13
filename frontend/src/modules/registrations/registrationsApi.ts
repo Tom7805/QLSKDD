@@ -29,7 +29,7 @@ export const getEventRegistrations = (eventId: number, page = 0, size = 10): Pro
     .get<ApiResponse<EventRegistrationsResponse>>(`${EVENTS_BASE_URL}/${eventId}/registrations`, { params: { page, size } })
     .then((response) => response.data.data);
 
-export const getParticipants = (params: { keyword?: string; page?: number; size?: number } = {}): Promise<ParticipantPage> =>
+export const getParticipants = (params: { keyword?: string; eventId?: number; page?: number; size?: number } = {}): Promise<ParticipantPage> =>
   apiClient.get<ApiResponse<ParticipantPage>>(PARTICIPANTS_BASE_URL, { params }).then((response) => response.data.data);
 
 export const createParticipant = (request: ParticipantRequest): Promise<Participant> =>
