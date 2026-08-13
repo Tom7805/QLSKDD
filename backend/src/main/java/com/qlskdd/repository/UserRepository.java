@@ -1,6 +1,7 @@
 package com.qlskdd.repository;
 
 import com.qlskdd.entity.User;
+import com.qlskdd.enums.RegistrationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,4 +32,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
             + "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<User> findByRoleNameAndKeyword(@Param("roleName") String roleName,
                                           @Param("keyword") String keyword, Pageable pageable);
+
+    // B5.3-T1: người tham gia (role ROLE_USER) CÓ đăng ký trong sự kiện eventId, tìm theo
+    // họ tên/email (không phân biệt hoa thường). Có thể CHỌN trạng thái đăng ký khi lọc:
+    // - status = ACTIVE / CANCELLED -> chỉ lấy người có đăng ký ở trạng thái đó
+    // - status = null              -> lấy mọi trạng thái đăng ký (không lọc theo status)
+    @Query("SELECT u FROM User u WHERE u.role.name = :roleName AND u.id IN "
+            + "(SELECT r.user.id FROM Registration r WHERE r.event.id = :eventId "
+            + "AND (:status IS NULL OR r.status = :status)) "
+            + "AND (LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) "
+            + "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<User> findByRoleAndKeywordAndEvent(@Param("roleName") String roleName,
+                                             @Param("keyword") String keyword,
+                                             @Param("eventId") Long eventId,
+                                             @Param("status") RegistrationStatus status,
+                                             Pageable pageable);
 }
