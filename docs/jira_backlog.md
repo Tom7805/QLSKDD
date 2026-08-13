@@ -155,3 +155,31 @@
 - Backend B5.4 đã test thật: **150/150 test pass** (thêm 5 `DashboardServiceTest` + 8 `DashboardControllerTest`). Hướng dẫn test API đầy đủ (folder Postman, url, JSON, mã lỗi) ở `docs/api_contract.md` mục 19 và mục 9 của backlog gốc.
 - Hợp đồng JSON: `summary` → `{ totalEvents, upcomingEvents, totalRegistrations, totalCheckIns, attendanceRate }`; `top-events` → mảng `{ eventId, eventName, capacity, registered, fillRate }`. `attendanceRate`/`fillRate` làm tròn 1 chữ số; `fillRate = null` khi sự kiện chưa có capacity; `top-events` trả `[]` khi chưa có dữ liệu.
 
+---
+
+## `B5.5` — Xuất báo cáo theo khoảng thời gian
+
+> **User story**: *Là quản trị viên, tôi muốn xuất báo cáo sự kiện/điểm danh theo khoảng thời gian để lưu trữ.*
+> **Phụ trách**: TV5 – M5 Thống kê
+
+### 🟦 Backend
+
+| Mã task | Loại | Tên công việc | Chi tiết công việc phải làm | Điểm | Trạng thái |
+|---|---|---|---|---|---|
+| `B5.5-T1` | `BE-SVC` | **Tiện ích xuất CSV** | • `ExportCsvUtil` ghi CSV encoding UTF-8 có BOM để Excel không lỗi font tiếng Việt<br>• Cột: STT, tên sự kiện, thời gian, địa điểm, tổng đăng ký, có mặt, tỷ lệ tham dự | 2 | ✅ Đã code — `ExportCsvUtil.writeEventReport`, escape dấu phẩy/ngoặc kép theo chuẩn CSV (RFC 4180) |
+| `B5.5-T2` | `BE-API` | **API xuất báo cáo** | • `GET /api/v1/reports/events/export?from=&to=`<br>• Header `Content-Type: text/csv`, `Content-Disposition: attachment; filename=bao-cao.csv`<br>• Chỉ ADMIN và ORGANIZER | 2 | ✅ Đã code — `ReportController`/`ReportService`/`ReportServiceImpl`; `from`/`to` bắt buộc, dùng lại `EventSpecification` (B5.2) để lọc theo `startAt`, dùng lại 2 truy vấn group-by có sẵn (B2.5/B4.3/B5.4) để tính tổng đăng ký/có mặt — không N+1 |
+| `B5.5-T3` | `BE-TEST` | **Test case xuất báo cáo** | • TC1: số dòng CSV = số sự kiện trong khoảng thời gian<br>• TC2: mở file bằng Excel không lỗi font tiếng Việt | 1 | ✅ Đã viết — `ExportCsvUtilTest` (BOM, escape, số dòng, giữ đúng chữ tiếng Việt sau decode UTF-8), `ReportServiceTest` (TC1 + validate from/to + tính đúng tổng đăng ký/có mặt/tỷ lệ), `ReportControllerTest` (200/403/401 + đúng header response) |
+
+### 🟩 Frontend (B5.5-T4)
+
+| Mã task | Loại | Tên công việc | Chi tiết | Điểm | Trạng thái |
+|---|---|---|---|---|---|
+| `B5.5-T4` | `FE-UI` | **Giao diện xuất báo cáo** | Chọn khoảng thời gian + nút "Xuất CSV"; nhận blob rồi tạo link tải tự động; nút hiện loading trong lúc chờ; xong → toast "Đã tải báo cáo" | 1 | ⬜ Chưa làm — chờ Backend API |
+
+### Ghi chú bàn giao
+
+- Backend B5.5 đã test thật: **168/168 test pass** (thêm 4 `ExportCsvUtilTest` + 6 `ReportServiceTest` + 6 `ReportControllerTest`). Hợp đồng API đầy đủ (query params, header response, định dạng cột CSV, mã lỗi 400) ở `docs/api_contract.md` mục 20.
+- `from`/`to` **bắt buộc** (khác B5.2 nơi 2 tham số này tuỳ chọn) — thiếu 1 trong 2 → 400 rõ message, không rơi vào 500.
+- Response thành công là **file CSV** (`Content-Type: text/csv`), không phải JSON — FE bắt buộc gọi với `responseType: 'blob'`, không dùng `apiClient` mặc định nếu client đó ép `Accept: application/json`.
+- File CSV có BOM UTF-8 ở đầu — mở trực tiếp bằng Excel (double-click) không bị lỗi font tiếng Việt.
+

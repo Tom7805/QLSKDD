@@ -1510,3 +1510,62 @@ Từ B4.5, mỗi lượt đăng ký (`POST /api/v1/registrations`, xem mục 11)
 > - `fillRate === null` → hiển thị `"—"` (không chia 0, không crash).
 > - Cả 4 thẻ + bảng có **skeleton khi tải** và **trạng thái rỗng** khi `data.registered = 0` (trả `[]` không lỗi).
 
+---
+
+## 20. Xuất báo cáo sự kiện theo khoảng thời gian (B5.5)
+
+> Phạm vi: 1 endpoint — `GET /api/v1/reports/events/export` (`B5.5-T2`). Tải file CSV danh sách sự kiện trong khoảng thời gian, kèm tổng đăng ký/có mặt/tỷ lệ tham dự từng sự kiện.
+> **Quyền:** chỉ **ADMIN** và **ORGANIZER**. USER thường gọi nhận `403`, khách chưa đăng nhập nhận `401` (xem bảng lỗi mục 19 — dùng chung 1 `GlobalExceptionHandler`).
+
+### `GET /api/v1/reports/events/export?from=&to=`
+
+**Query params (cả 2 đều bắt buộc):**
+
+| Tham số | Định dạng | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| `from` | `yyyy-MM-dd` | ✅ | Lọc theo `startAt >= from 00:00:00` |
+| `to` | `yyyy-MM-dd` | ✅ | Lọc theo `startAt <= to 23:59:59` |
+
+Dùng lại đúng logic lọc khoảng thời gian của `EventSpecification` (B5.2) — cùng ngữ nghĩa `from`/`to` với `GET /api/v1/events`. Sự kiện được lấy theo `startAt`, sắp xếp tăng dần.
+
+**Response — 200 OK**
+
+- `Content-Type: text/csv`
+- `Content-Disposition: attachment; filename="bao-cao.csv"`
+- Body là file CSV **UTF-8 có BOM** (để Excel mở trực tiếp không lỗi font tiếng Việt), phân cách bằng dấu phẩy, xuống dòng `\r\n`, các cột chuỗi được bọc `"..."` theo chuẩn CSV (RFC 4180) — an toàn khi tên sự kiện/địa điểm chứa dấu phẩy hoặc dấu ngoặc kép.
+
+Cột (theo đúng thứ tự):
+
+| Cột | Nội dung |
+|---|---|
+| STT | Số thứ tự, bắt đầu từ 1 |
+| Tên sự kiện | `event.name` |
+| Thời gian | `event.startAt`, định dạng `dd/MM/yyyy HH:mm` |
+| Địa điểm | `event.location` |
+| Tổng đăng ký | Số lượt đăng ký `status = ACTIVE` |
+| Có mặt | Số lượt đã điểm danh (bản ghi `check_in_histories`) |
+| Tỷ lệ tham dự (%) | `Có mặt / Tổng đăng ký * 100`, làm tròn 1 chữ số — cùng `AttendanceRateUtil` với mục 16/19; `0.0` nếu sự kiện chưa ai đăng ký (không lỗi chia 0) |
+
+Ví dụ nội dung file (đã giải mã, bỏ BOM):
+```
+STT,Tên sự kiện,Thời gian,Địa điểm,Tổng đăng ký,Có mặt,Tỷ lệ tham dự (%)
+1,"Hội thảo Trí tuệ nhân tạo 2026",10/03/2026 08:00,"Hội trường A",60,45,75.0
+2,"Workshop React",15/03/2026 08:00,"Phòng Lab B",20,0,0.0
+```
+
+Không có sự kiện nào trong khoảng thời gian → file chỉ có dòng tiêu đề, **không lỗi**.
+
+### Response — 400 Bad Request
+
+| Tình huống | `message` |
+|---|---|
+| Thiếu `from` hoặc `to` | "Vui lòng chọn tham số from (định dạng yyyy-MM-dd)" (hoặc `to`) |
+| Sai định dạng (không phải `yyyy-MM-dd`) | "Định dạng from phải là yyyy-MM-dd" (hoặc `to`) |
+| `from` sau `to` | "Tham số from phải nhỏ hơn hoặc bằng to" |
+
+> **Bàn giao cho Frontend (B5.5-T4):**
+> - Giao diện: chọn khoảng thời gian (2 ô ngày `from`/`to`, có thể tái dùng cùng pattern với `EventFilter` ở B5.2) + nút **"Xuất CSV"**.
+> - Gọi API bằng `axios` với `responseType: 'blob'` (không phải JSON) — nhận về `Blob`, tạo `URL.createObjectURL(blob)` rồi gán vào thẻ `<a download="bao-cao.csv">` để trình duyệt tự tải, sau đó `URL.revokeObjectURL(...)`. **Không dùng `apiClient` mặc định nếu nó ép `Accept: application/json`** — cần override header `Accept: text/csv` hoặc dùng instance axios riêng, tránh trình duyệt/axios cố `JSON.parse` một file CSV.
+> - Trước khi gọi API: validate `from <= to` ngay trên client (giống B5.2), tránh round-trip 400 không cần thiết.
+> - Nút "Xuất CSV" hiện trạng thái loading trong lúc tải, khoá nút chống bấm 2 lần; xong → toast `"Đã tải báo cáo"` (theo Definition of Done chung của dự án).
+> - Lỗi 400 → đọc `message` từ response. Lưu ý: vì response lỗi vẫn là JSON (`ErrorResponse`) trong khi response thành công là file CSV, FE cần phân biệt qua `response.status` chứ không thể giả định luôn là 1 kiểu nội dung.
