@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 public class CheckInRes {
     private CheckInStatus status;
     private String message;
+    private Long registrationId;
     private String participantName;
     private LocalDateTime checkedInAt;
 }

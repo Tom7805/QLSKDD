@@ -15,6 +15,7 @@ export interface CheckInByCodeRequest {
 export interface CheckInResponse {
   status: 'SUCCESS';
   message: string;
+  registrationId: number;
   participantName: string;
   checkedInAt: string;
 }

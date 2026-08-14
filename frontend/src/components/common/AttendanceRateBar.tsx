@@ -16,11 +16,11 @@ export default function AttendanceRateBar({ rate, label = 'Tỷ lệ tham dự' 
 
   return (
     <div>
-      <div className="flex items-center justify-between text-xs">
-        {label && <span className={`font-semibold ${text}`}>{label}</span>}
-        <span className={`ml-auto font-semibold ${text}`}>{rate}%</span>
+      <div className="flex items-baseline justify-between gap-2">
+        {label && <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</span>}
+        <span className={`ml-auto text-lg font-bold leading-none ${text}`}>{rate}%</span>
       </div>
-      <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuenow={rate} aria-valuemin={0} aria-valuemax={100} aria-label={label || 'Tỷ lệ tham dự'}>
+      <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuenow={rate} aria-valuemin={0} aria-valuemax={100} aria-label={label || 'Tỷ lệ tham dự'}>
         <div className={`h-full rounded-full transition-all ${bar}`} style={{ width: `${clamped}%` }} />
       </div>
     </div>

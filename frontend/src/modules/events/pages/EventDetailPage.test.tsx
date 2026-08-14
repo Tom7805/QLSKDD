@@ -68,6 +68,7 @@ describe('EventDetailPage registration', () => {
       totalRegistered: 2,
       availableSeats: 8,
       attendanceRate: 0,
+      registered: false,
     });
 
     mocks.registerForEventMock.mockResolvedValue({
@@ -96,6 +97,57 @@ describe('EventDetailPage registration', () => {
     expect(await screen.findByText('Đã đăng ký')).toBeInTheDocument();
     expect(screen.getAllByText(/Đăng ký thành công/).length).toBeGreaterThan(0);
     expect(screen.getByRole('dialog', { name: 'Vé tham dự của bạn' })).toBeInTheDocument();
+  });
+
+  it('hiển thị "Đã đăng ký" ngay khi tải trang nếu API báo đã đăng ký từ trước, không cần bấm mới biết', async () => {
+    store.dispatch(
+      setCredentials({
+        user: {
+          id: 1,
+          username: 'user01',
+          fullName: 'Người dùng',
+          email: 'user@example.com',
+          role: 'ROLE_USER',
+        },
+        token: 'token',
+      }),
+    );
+
+    mocks.getEventByIdMock.mockResolvedValue({
+      id: 1,
+      name: 'Sự kiện thử',
+      description: 'Mô tả',
+      location: 'Đà Nẵng',
+      capacity: 10,
+      startAt: '2026-08-10T08:00:00.000Z',
+      endAt: '2026-08-12T17:00:00.000Z',
+      status: 'OPEN',
+      categoryId: 1,
+      categoryName: 'Hội thảo',
+      createdBy: 'organizer',
+      createdAt: '2026-08-01T08:00:00.000Z',
+      totalRegistered: 2,
+      availableSeats: 8,
+      attendanceRate: 0,
+      registered: true,
+    });
+
+    render(
+      <Provider store={store}>
+        <ToastProvider>
+          <MemoryRouter initialEntries={['/events/1']}>
+            <Routes>
+              <Route path="/events/:id" element={<EventDetailPage />} />
+            </Routes>
+          </MemoryRouter>
+        </ToastProvider>
+      </Provider>,
+    );
+
+    const button = await screen.findByRole('button', { name: 'Đã đăng ký' });
+    expect(button).toBeDisabled();
+    expect(screen.getByText('Bạn đã đăng ký sự kiện này')).toBeInTheDocument();
+    expect(mocks.registerForEventMock).not.toHaveBeenCalled();
   });
 
   it('hiển thị biểu đồ tổng hợp có mặt / vắng cho ORGANIZER', async () => {
@@ -128,6 +180,7 @@ describe('EventDetailPage registration', () => {
       totalRegistered: 2,
       availableSeats: 8,
       attendanceRate: 50,
+      registered: false,
     });
 
     mocks.getAttendanceSummaryMock.mockResolvedValue({

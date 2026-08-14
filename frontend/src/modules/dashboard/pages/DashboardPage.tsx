@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getDashboardSummary, getTopEvents } from '../dashboardApi';
 import type { DashboardStat, TopEvent } from '../dashboardTypes';
@@ -8,8 +9,14 @@ import TopEventsTable from '../components/TopEventsTable';
 import { ROUTES } from '../../../constants/routes';
 
 const BAR_COLOR = '#1c5cab';
+const AXIS_LABEL_MAX_CHARS = 10;
+
+function truncateLabel(name: string) {
+  return name.length > AXIS_LABEL_MAX_CHARS ? `${name.slice(0, AXIS_LABEL_MAX_CHARS)}…` : name;
+}
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const [stat, setStat] = useState<DashboardStat | null>(null);
   const [topEvents, setTopEvents] = useState<TopEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +68,7 @@ export default function DashboardPage() {
   const cardLoading = loading || stat === null;
 
   const handleRowClick = (eventId: number) => {
-    window.location.assign(ROUTES.EVENT_DETAIL.replace(':id', String(eventId)));
+    navigate(ROUTES.EVENT_DETAIL.replace(':id', String(eventId)));
   };
 
   return (
@@ -119,13 +126,12 @@ export default function DashboardPage() {
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                         <XAxis
                           dataKey="name"
+                          tickFormatter={truncateLabel}
                           tick={{ fontSize: 11, fill: '#64748b' }}
                           tickLine={false}
                           axisLine={false}
                           interval={0}
-                          angle={-30}
-                          textAnchor="end"
-                          height={60}
+                          height={36}
                         />
                         <YAxis
                           domain={[0, 'dataMax + 5']}
@@ -135,17 +141,20 @@ export default function DashboardPage() {
                           width={32}
                         />
                         <Tooltip
+                          isAnimationActive={false}
                           cursor={{ fill: '#f1f5f9' }}
                           contentStyle={{ fontSize: 12, borderRadius: 6 }}
+                          labelFormatter={(_, payload) => payload?.[0]?.payload?.name ?? ''}
                         />
                         <Bar
                           dataKey="registered"
                           fill={BAR_COLOR}
                           radius={[6, 6, 0, 0]}
+                          isAnimationActive={false}
                           className="cursor-pointer transition-opacity hover:opacity-90"
                           onClick={(data) => {
-                            const ev = data as { eventId?: number };
-                            if (ev?.eventId) handleRowClick(ev.eventId);
+                            const eventId = (data?.payload as { eventId?: number } | undefined)?.eventId;
+                            if (eventId) handleRowClick(eventId);
                           }}
                         />
                       </BarChart>

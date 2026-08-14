@@ -40,6 +40,7 @@ public class EventServiceImpl implements EventService {
     private final CategoryRepository categoryRepository;
     private final CheckInHistoryRepository checkInHistoryRepository;
     private final RegistrationRepository registrationRepository;
+    private final com.qlskdd.repository.UserRepository userRepository;
     private final EventMapper eventMapper;
 
     @Override
@@ -224,6 +225,22 @@ public class EventServiceImpl implements EventService {
     public EventDetailRes getById(Long id) {
         Event event = findEventOrThrow(id);
         long totalRegistered = registrationRepository.countByEventIdAndStatus(id, RegistrationStatus.ACTIVE);
-        return buildDetailRes(event, totalRegistered);
+        long present = totalRegistered == 0 ? 0L : checkInHistoryRepository.countByRegistration_EventId(event.getId());
+        double attendanceRate = AttendanceRateUtil.calculate(present, totalRegistered);
+        return eventMapper.toDetailRes(event, totalRegistered, attendanceRate, isRegisteredByCurrentUser(id));
+    }
+
+    // B3.1: "đã đăng ký chưa" chỉ có ý nghĩa với người dùng đã đăng nhập — khách vãng lai
+    // (anonymousUser, do GET /events/{id} permitAll) luôn coi là chưa đăng ký
+    private boolean isRegisteredByCurrentUser(Long eventId) {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getName())) {
+            return false;
+        }
+        return userRepository.findByUsername(authentication.getName())
+                .map(user -> registrationRepository.existsByEventIdAndUserIdAndStatus(
+                        eventId, user.getId(), RegistrationStatus.ACTIVE))
+                .orElse(false);
     }
 }

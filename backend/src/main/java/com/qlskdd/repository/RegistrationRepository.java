@@ -22,6 +22,13 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     // B3.1-T2: kiểm tra đăng ký trùng
     boolean existsByEventIdAndUserIdAndStatus(Long eventId, Long userId, RegistrationStatus status);
 
+    // B3.1/B3.2: bảng registrations có unique constraint (event_id, user_id) bất kể status
+    // (huỷ đăng ký chỉ đổi status, không xoá bản ghi — giữ lịch sử). Vì vậy 1 user chỉ có
+    // ĐÚNG 1 bản ghi cho 1 sự kiện; đăng ký lại sau khi huỷ phải tái sử dụng bản ghi cũ này
+    // (đổi status + mã vé mới) thay vì insert bản ghi mới, nếu không sẽ vi phạm unique
+    // constraint ở DB -> lỗi 500 (xem RegistrationServiceImpl.register()).
+    Optional<Registration> findByEventIdAndUserId(Long eventId, Long userId);
+
     // B3.1-T2: tìm theo mã vé
     Optional<Registration> findByCode(String code);
 

@@ -100,7 +100,7 @@ class RegistrationServiceTest {
         User user = buildUser();
         when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
         when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
-        when(registrationRepository.existsByEventIdAndUserIdAndStatus(1L, 2L, RegistrationStatus.ACTIVE)).thenReturn(false);
+        when(registrationRepository.findByEventIdAndUserId(1L, 2L)).thenReturn(Optional.empty());
         when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(50L);
 
         Registration savedMock = Registration.builder().id(100L).code("CODE123").build();
@@ -124,7 +124,7 @@ class RegistrationServiceTest {
         User user = buildUser();
         when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
         when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
-        when(registrationRepository.existsByEventIdAndUserIdAndStatus(1L, 2L, RegistrationStatus.ACTIVE)).thenReturn(false);
+        when(registrationRepository.findByEventIdAndUserId(1L, 2L)).thenReturn(Optional.empty());
         when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(50L);
         when(registrationRepository.existsByCode(any())).thenReturn(false);
         when(registrationRepository.save(any(Registration.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -144,7 +144,7 @@ class RegistrationServiceTest {
         User user = buildUser();
         when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
         when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
-        when(registrationRepository.existsByEventIdAndUserIdAndStatus(1L, 2L, RegistrationStatus.ACTIVE)).thenReturn(false);
+        when(registrationRepository.findByEventIdAndUserId(1L, 2L)).thenReturn(Optional.empty());
         when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(50L);
         // Lần kiểm tra đầu tiên coi như trùng, các lần sau thì không -> phải thử lại
         when(registrationRepository.existsByCode(any())).thenReturn(true, false);
@@ -162,7 +162,7 @@ class RegistrationServiceTest {
         User user = buildUser();
         when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
         when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
-        when(registrationRepository.existsByEventIdAndUserIdAndStatus(1L, 2L, RegistrationStatus.ACTIVE)).thenReturn(false);
+        when(registrationRepository.findByEventIdAndUserId(1L, 2L)).thenReturn(Optional.empty());
         when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(100L); // Bằng capacity
 
         OverbookingException ex = assertThrows(OverbookingException.class, () -> registrationService.register(1L));
@@ -176,15 +176,44 @@ class RegistrationServiceTest {
     void testRegister_DangKyTrung_Nem409() {
         Event event = buildEvent(EventStatus.OPEN);
         User user = buildUser();
+        Registration activeRegistration = Registration.builder()
+                .id(50L).event(event).status(RegistrationStatus.ACTIVE).code("OLDCODE").build();
         when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
         when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
-        when(registrationRepository.existsByEventIdAndUserIdAndStatus(1L, 2L, RegistrationStatus.ACTIVE)).thenReturn(true);
+        when(registrationRepository.findByEventIdAndUserId(1L, 2L)).thenReturn(Optional.of(activeRegistration));
 
         DuplicateDataException ex = assertThrows(DuplicateDataException.class, () -> registrationService.register(1L));
 
         assertEquals(HttpStatus.CONFLICT, ex.getStatus());
         assertEquals("DUPLICATE_REGISTRATION", ex.getErrorCode());
         verify(registrationRepository, never()).save(any());
+    }
+
+    /**
+     * B3.1/B3.2: bảng registrations có unique constraint (event_id, user_id) bất kể status
+     * (huỷ chỉ đổi status, không xoá bản ghi). Đăng ký lại sau khi huỷ phải TÁI SỬ DỤNG
+     * đúng bản ghi cũ (id không đổi) thay vì insert bản ghi mới — nếu không sẽ vi phạm
+     * unique constraint ở DB, gây lỗi 500 khi người dùng đăng ký lại sau khi huỷ.
+     */
+    @Test
+    void testRegister_DangKyLaiSauKhiHuy_TaiSuDungBanGhiCu() {
+        Event event = buildEvent(EventStatus.OPEN);
+        User user = buildUser();
+        Registration cancelledRegistration = Registration.builder()
+                .id(50L).event(event).status(RegistrationStatus.CANCELLED).code("OLDCODE").build();
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+        when(userRepository.findByUsername("user1")).thenReturn(Optional.of(user));
+        when(registrationRepository.findByEventIdAndUserId(1L, 2L)).thenReturn(Optional.of(cancelledRegistration));
+        when(registrationRepository.countByEventIdAndStatus(1L, RegistrationStatus.ACTIVE)).thenReturn(50L);
+        when(registrationRepository.existsByCode(any())).thenReturn(false);
+        when(registrationRepository.save(any(Registration.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RegistrationRes res = registrationService.register(1L);
+
+        assertEquals(50L, res.getRegistrationId());
+        assertEquals(RegistrationStatus.ACTIVE, cancelledRegistration.getStatus());
+        assertNotEquals("OLDCODE", cancelledRegistration.getCode());
+        verify(registrationRepository).save(cancelledRegistration);
     }
 
     @Test

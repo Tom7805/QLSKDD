@@ -52,7 +52,10 @@ public class Registration {
     @Column(unique = true, length = 50, nullable = false)
     private String code;
 
+    // Không đặt updatable=false: khi đăng ký lại sau khi huỷ (RegistrationServiceImpl
+    // .register() tái sử dụng bản ghi cũ vì unique constraint (event_id,user_id)),
+    // registeredAt cần cập nhật lại thành thời điểm đăng ký lại, không giữ mốc thời gian cũ.
     @CreationTimestamp
-    @Column(name = "registered_at", updatable = false)
+    @Column(name = "registered_at")
     private LocalDateTime registeredAt;
 }

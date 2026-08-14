@@ -89,6 +89,7 @@ public class CheckInServiceImpl implements CheckInService {
         return CheckInRes.builder()
                 .status(CheckInStatus.SUCCESS)
                 .message("Điểm danh thành công")
+                .registrationId(registration.getId())
                 .participantName(registration.getUser().getFullName())
                 .checkedInAt(history.getCheckedInAt())
                 .build();

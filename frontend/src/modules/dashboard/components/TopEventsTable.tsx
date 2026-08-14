@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import type { TopEvent } from '../dashboardTypes';
 
@@ -26,9 +27,10 @@ function FillRateBar({ rate }: { rate: number | null }) {
 }
 
 export default function TopEventsTable({ events, loading, onRowClick }: TopEventsTableProps) {
+  const navigate = useNavigate();
   const gotoDetail = (eventId: number) => {
     if (onRowClick) onRowClick(eventId);
-    else window.location.assign(ROUTES.EVENT_DETAIL.replace(':id', String(eventId)));
+    else navigate(ROUTES.EVENT_DETAIL.replace(':id', String(eventId)));
   };
 
   return (

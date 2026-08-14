@@ -16,6 +16,7 @@ import com.qlskdd.repository.CategoryRepository;
 import com.qlskdd.repository.CheckInHistoryRepository;
 import com.qlskdd.repository.EventRepository;
 import com.qlskdd.repository.RegistrationRepository;
+import com.qlskdd.repository.UserRepository;
 import com.qlskdd.service.impl.EventServiceImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,6 +69,9 @@ class EventServiceTest {
     @Mock
     private CheckInHistoryRepository checkInHistoryRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     private final EventMapper eventMapper = new EventMapper();
 
     private EventServiceImpl eventService;
@@ -77,7 +81,7 @@ class EventServiceTest {
     @BeforeEach
     void setUp() {
         eventService = new EventServiceImpl(eventRepository, categoryRepository, checkInHistoryRepository,
-                registrationRepository, eventMapper);
+                registrationRepository, userRepository, eventMapper);
         category = EventCategory.builder().id(1L).name("Hội thảo").build();
         setCurrentUser("organizer");
     }
