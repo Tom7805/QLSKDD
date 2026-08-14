@@ -16,6 +16,7 @@ export interface EventDetail {
   totalRegistered: number | null;
   availableSeats: number | null;
   attendanceRate: number | null;
+  registered: boolean;
 }
 
 export interface EventSummary {

@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -70,9 +71,13 @@ public class RegistrationServiceImpl implements RegistrationService {
         User user = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("Tài khoản", "username", currentUsername));
 
-        boolean isDuplicate = registrationRepository.existsByEventIdAndUserIdAndStatus(
-                eventId, user.getId(), RegistrationStatus.ACTIVE);
-        if (isDuplicate) {
+        // B3.1/B3.2: bảng registrations có unique constraint (event_id, user_id) bất kể
+        // status — huỷ đăng ký (B3.2) chỉ đổi status sang CANCELLED, không xoá bản ghi.
+        // Vì vậy 1 user chỉ có ĐÚNG 1 bản ghi cho 1 sự kiện: nếu đã có bản ghi (dù đang
+        // ACTIVE hay đã CANCELLED) thì phải tái sử dụng, không được insert bản ghi mới —
+        // insert mới sẽ vi phạm unique constraint ở DB, gây lỗi 500 khi đăng ký lại sau khi huỷ.
+        Optional<Registration> existing = registrationRepository.findByEventIdAndUserId(eventId, user.getId());
+        if (existing.isPresent() && existing.get().getStatus() == RegistrationStatus.ACTIVE) {
             throw new DuplicateDataException("Bạn đã đăng ký sự kiện này", "DUPLICATE_REGISTRATION");
         }
 
@@ -85,12 +90,13 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         String code = generateUniqueCode();
 
-        Registration registration = Registration.builder()
+        Registration registration = existing.orElseGet(() -> Registration.builder()
                 .event(event)
                 .user(user)
-                .status(RegistrationStatus.ACTIVE)
-                .code(code)
-                .build();
+                .build());
+        registration.setStatus(RegistrationStatus.ACTIVE);
+        registration.setCode(code);
+        registration.setRegisteredAt(LocalDateTime.now());
 
         registration = registrationRepository.save(registration);
 

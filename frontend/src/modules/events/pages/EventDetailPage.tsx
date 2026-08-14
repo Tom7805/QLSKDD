@@ -52,7 +52,11 @@ export default function EventDetailPage() {
     setLoading(true);
     setError(null);
     getEventById(eventId)
-      .then((data) => active && setEvent(data))
+      .then((data) => {
+        if (!active) return;
+        setEvent(data);
+        setIsRegistered(data.registered);
+      })
       .catch((requestError: unknown) => {
         if (!active) return;
         const message = axios.isAxiosError<{ message?: string }>(requestError) ? requestError.response?.data?.message : undefined;

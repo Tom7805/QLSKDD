@@ -90,14 +90,15 @@ export default function CheckInPage() {
     setCodePending(true);
     try {
       const result = await checkInByCode({ code, eventId: numericEventId });
-      let updated = false;
-      setParticipants((current) => current.map((item) => {
-        if (!updated && !item.checkedIn && item.fullName === result.participantName) {
-          updated = true;
-          return { ...item, checkedIn: true, checkedInAt: result.checkedInAt };
-        }
-        return item;
-      }));
+      if (participants.some((item) => item.id === result.registrationId)) {
+        setParticipants((current) => current.map((item) =>
+          item.id === result.registrationId ? { ...item, checkedIn: true, checkedInAt: result.checkedInAt } : item,
+        ));
+      } else {
+        // Không khớp được registrationId (VD: backend đang chạy bản cũ chưa có field này) ->
+        // tải lại toàn bộ danh sách để dòng không bị kẹt ở trạng thái "Chưa đến" sai sự thật.
+        setReloadKey((key) => key + 1);
+      }
       playSuccessSound();
       showToast(`✓ Điểm danh thành công — ${result.participantName}`, 'success');
     } catch (requestError: unknown) {

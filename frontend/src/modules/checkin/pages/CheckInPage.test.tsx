@@ -44,7 +44,7 @@ describe('CheckInPage', () => {
   });
 
   it('cập nhật dòng và báo thành công mà không tải lại danh sách', async () => {
-    vi.mocked(checkInParticipant).mockResolvedValue({ status: 'SUCCESS', message: 'OK', participantName: participant.fullName, checkedInAt: '2026-08-10T09:00:00' });
+    vi.mocked(checkInParticipant).mockResolvedValue({ status: 'SUCCESS', message: 'OK', registrationId: participant.id, participantName: participant.fullName, checkedInAt: '2026-08-10T09:00:00' });
     renderPage();
     fireEvent.click((await screen.findAllByRole('button', { name: 'Điểm danh' }))[0]);
     expect(await screen.findByText(`✓ Điểm danh thành công — ${participant.fullName}`)).toBeInTheDocument();
@@ -60,13 +60,24 @@ describe('CheckInPage', () => {
     await waitFor(() => expect(screen.getAllByRole('button', { name: 'Điểm danh' })).toHaveLength(2));
   });
 
-  it('gửi mã bằng Enter và tự xoá ô sau khi điểm danh', async () => {
-    vi.mocked(checkInByCode).mockResolvedValue({ status: 'SUCCESS', message: 'OK', participantName: participant.fullName, checkedInAt: '2026-08-10T09:00:00' });
+  it('gửi mã bằng Enter, cập nhật dòng theo registrationId và tự xoá ô sau khi điểm danh', async () => {
+    vi.mocked(checkInByCode).mockResolvedValue({ status: 'SUCCESS', message: 'OK', registrationId: participant.id, participantName: participant.fullName, checkedInAt: '2026-08-10T09:00:00' });
     renderPage();
     const input = await screen.findByLabelText('Mã đăng ký');
     fireEvent.change(input, { target: { value: 'abc12345' } });
     fireEvent.submit(input.closest('form')!);
     await waitFor(() => expect(checkInByCode).toHaveBeenCalledWith({ code: 'ABC12345', eventId: 7 }));
     await waitFor(() => expect(input).toHaveValue(''));
+    expect(screen.queryAllByRole('button', { name: 'Điểm danh' })).toHaveLength(0);
+  });
+
+  it('tải lại toàn bộ danh sách khi registrationId trả về không khớp ai trong danh sách hiện tại', async () => {
+    vi.mocked(checkInByCode).mockResolvedValue({ status: 'SUCCESS', message: 'OK', registrationId: 999, participantName: participant.fullName, checkedInAt: '2026-08-10T09:00:00' });
+    renderPage();
+    const input = await screen.findByLabelText('Mã đăng ký');
+    fireEvent.change(input, { target: { value: 'abc12345' } });
+    fireEvent.submit(input.closest('form')!);
+    await waitFor(() => expect(checkInByCode).toHaveBeenCalledWith({ code: 'ABC12345', eventId: 7 }));
+    await waitFor(() => expect(getEventRegistrations).toHaveBeenCalledTimes(2));
   });
 });

@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Ẩn nút hiện/ẩn mật khẩu mặc định của Edge/IE — trùng với icon con mắt tự dựng trong LoginForm/ChangePasswordForm */
+input[type='password']::-ms-reveal,
+input[type='password']::-ms-clear {
+  display: none;
+}
