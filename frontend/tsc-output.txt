@@ -1,1 +1,0 @@
-tsconfig.json(19,18): error TS6310: Referenced project 'C:/Users/TGDD/du an/QLSKDD/frontend/tsconfig.node.json' may not disable emit.
