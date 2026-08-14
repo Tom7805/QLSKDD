@@ -6,6 +6,7 @@ import { getDashboardSummary, getTopEvents } from '../dashboardApi';
 import type { DashboardStat, TopEvent } from '../dashboardTypes';
 import StatCard from '../components/StatCard';
 import TopEventsTable from '../components/TopEventsTable';
+import ExportReportPanel from '../components/ExportReportPanel';
 import { ROUTES } from '../../../constants/routes';
 
 const BAR_COLOR = '#1c5cab';
@@ -101,6 +102,10 @@ export default function DashboardPage() {
                   <StatCard key={card.label} label={card.label} value={card.value} loading={cardLoading} />
                 ))}
               </div>
+            </section>
+
+            <section className="mt-6">
+              <ExportReportPanel />
             </section>
 
             <section className="mt-6">

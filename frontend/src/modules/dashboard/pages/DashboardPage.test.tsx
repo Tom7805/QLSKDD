@@ -3,10 +3,12 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDashboardSummary, getTopEvents } from '../dashboardApi';
 import DashboardPage from './DashboardPage';
+import { ToastProvider } from '../../../components/common/Toast';
 
 vi.mock('../dashboardApi', () => ({
   getDashboardSummary: vi.fn(),
   getTopEvents: vi.fn(),
+  exportEventsCsv: vi.fn(),
 }));
 
 const mockSummary = {
@@ -22,6 +24,16 @@ const mockTopEvents = [
   { eventId: 2, eventName: 'Tiệc trà', capacity: 20, registered: 10, fillRate: 50 },
 ];
 
+function renderPage() {
+  return render(
+    <MemoryRouter>
+      <ToastProvider>
+        <DashboardPage />
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+}
+
 describe('DashboardPage', () => {
   beforeEach(() => vi.clearAllMocks());
 
@@ -29,11 +41,7 @@ describe('DashboardPage', () => {
     vi.mocked(getDashboardSummary).mockResolvedValue(mockSummary);
     vi.mocked(getTopEvents).mockResolvedValue(mockTopEvents);
 
-    render(
-      <MemoryRouter>
-        <DashboardPage />
-      </MemoryRouter>,
-    );
+    renderPage();
 
     expect(await screen.findByText('Tổng sự kiện')).toBeInTheDocument();
     expect(screen.getByText('12')).toBeInTheDocument();
@@ -52,12 +60,18 @@ describe('DashboardPage', () => {
     vi.mocked(getDashboardSummary).mockResolvedValue(mockSummary);
     vi.mocked(getTopEvents).mockResolvedValue([]);
 
-    render(
-      <MemoryRouter>
-        <DashboardPage />
-      </MemoryRouter>,
-    );
+    renderPage();
 
     expect(await screen.findAllByText('Chưa có sự kiện nào.')).toHaveLength(2);
+  });
+
+  it('hiển thị panel xuất báo cáo CSV', async () => {
+    vi.mocked(getDashboardSummary).mockResolvedValue(mockSummary);
+    vi.mocked(getTopEvents).mockResolvedValue(mockTopEvents);
+
+    renderPage();
+
+    expect(await screen.findByText('Xuất báo cáo CSV')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Xuất CSV' })).toBeInTheDocument();
   });
 });
