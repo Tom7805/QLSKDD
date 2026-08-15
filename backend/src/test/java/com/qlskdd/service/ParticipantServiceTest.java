@@ -135,6 +135,13 @@ class ParticipantServiceTest {
         verify(userRepository, never()).delete(any());
     }
 
+    /**
+     * Chỉ chặn xoá khi còn ACTIVE — nếu người này chỉ còn lượt đăng ký CANCELLED (giữ
+     * lịch sử từ B3.2, không xoá bản ghi khi huỷ) thì phải xoá được. registrations.user_id
+     * là FK NOT NULL nên bắt buộc phải dọn các bản ghi CANCELLED còn lại trước khi xoá
+     * user, nếu không sẽ vỡ ràng buộc khoá ngoại ở DB thật (mock ở đây không tự phát hiện
+     * được lỗi FK, nên assert rõ deleteByUserId có được gọi để khoá đúng hành vi).
+     */
     @Test
     void testDelete_KhongConDangKy_XoaThanhCong() {
         User participant = User.builder().id(8L).username("p2").role(userRole)
@@ -144,6 +151,7 @@ class ParticipantServiceTest {
 
         participantService.delete(8L);
 
+        verify(registrationRepository).deleteByUserId(8L);
         verify(userRepository).delete(participant);
     }
 

@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
@@ -127,6 +128,7 @@ public class ParticipantServiceImpl implements ParticipantService {
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
         User user = findParticipantOrThrow(id);
 
@@ -137,6 +139,9 @@ public class ParticipantServiceImpl implements ParticipantService {
                     "Không thể xoá: người này còn " + activeCount + " lượt đăng ký");
         }
 
+        // Qua được điều kiện trên nghĩa là các registration còn lại (nếu có) đều đã
+        // CANCELLED — dọn trước khi xoá user để không vỡ FK NOT NULL (registrations.user_id)
+        registrationRepository.deleteByUserId(id);
         userRepository.delete(user);
     }
 

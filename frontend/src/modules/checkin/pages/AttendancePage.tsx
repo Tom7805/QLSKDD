@@ -54,6 +54,23 @@ function StatusBadge({ checkedIn }: { checkedIn: boolean }) {
   );
 }
 
+// B4.3-T4: thanh tiến độ đổi màu theo ngưỡng — <50% đỏ, 50-80% vàng, >80% xanh (giống
+// AttendanceRateBar dùng ở trang chi tiết sự kiện, nhưng tách riêng vì đây là card tối màu).
+function rateColor(rate: number) {
+  if (rate < 50) return 'bg-red-400';
+  if (rate <= 80) return 'bg-amber-400';
+  return 'bg-emerald-400';
+}
+
+function StatCard({ label, value, accent }: { label: string; value: number; accent: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p>
+      <p className={`mt-2 text-3xl font-extrabold ${accent}`}>{value}</p>
+    </div>
+  );
+}
+
 function MobileCard({ item, order }: { item: AttendanceItem; order: number }) {
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:hidden">
@@ -141,12 +158,26 @@ export default function AttendancePage() {
               <h1 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-4xl">Danh sách tham dự</h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100 sm:text-base">Đối chiếu nhanh người đã đến và chưa đến, dữ liệu được cập nhật trực tiếp từ hệ thống.</p>
             </div>
-            <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur">
+            <div className="w-full rounded-2xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur sm:w-64">
               <p className="text-xs font-semibold uppercase tracking-wider text-blue-200">Tỷ lệ có mặt</p>
               <p className="mt-1 text-3xl font-extrabold">{summary.summary.attendanceRate.toFixed(1)}%</p>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/15" role="progressbar" aria-valuenow={summary.summary.attendanceRate} aria-valuemin={0} aria-valuemax={100} aria-label="Tỷ lệ có mặt">
+                <div
+                  className={`h-full rounded-full transition-all ${rateColor(summary.summary.attendanceRate)}`}
+                  style={{ width: `${Math.min(100, Math.max(0, summary.summary.attendanceRate))}%` }}
+                />
+              </div>
             </div>
           </div>
         </header>
+
+        {!error && (
+          <section aria-label="Số liệu tổng hợp" className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatCard label="Tổng đăng ký" value={summary.summary.totalRegistered} accent="text-slate-900" />
+            <StatCard label="Có mặt" value={summary.summary.present} accent="text-emerald-600" />
+            <StatCard label="Vắng" value={summary.summary.absent} accent="text-red-600" />
+          </section>
+        )}
 
         {error ? (
           <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center text-red-700 shadow-sm">

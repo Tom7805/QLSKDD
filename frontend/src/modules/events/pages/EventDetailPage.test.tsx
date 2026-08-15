@@ -7,6 +7,10 @@ import { clearCredentials, setCredentials } from '../../../stores/slices/authSli
 import { store } from '../../../stores/store';
 import EventDetailPage from './EventDetailPage';
 
+// Ngày tương đối so với lúc test chạy — tránh lặp lại lỗi hardcode ngày cố định
+// (vd '2026-08-10') khiến test tự "hết hạn" và fail sai khi đồng hồ hệ thống vượt qua mốc đó.
+const futureDate = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+
 const mocks = vi.hoisted(() => ({
   getEventByIdMock: vi.fn(),
   registerForEventMock: vi.fn(),
@@ -52,24 +56,31 @@ describe('EventDetailPage registration', () => {
       }),
     );
 
-    mocks.getEventByIdMock.mockResolvedValue({
+    const baseEvent = {
       id: 1,
       name: 'Sự kiện thử',
       description: 'Mô tả',
       location: 'Đà Nẵng',
       capacity: 10,
-      startAt: '2026-08-10T08:00:00.000Z',
-      endAt: '2026-08-12T17:00:00.000Z',
-      status: 'OPEN',
+      // Ngày tương đối so với lúc test chạy (không hardcode) — sự kiện phải luôn ở
+      // tương lai để nút "Đăng ký tham gia" không bị khoá bởi điều kiện "đã diễn ra".
+      startAt: futureDate(2).toISOString(),
+      endAt: futureDate(4).toISOString(),
+      status: 'OPEN' as const,
       categoryId: 1,
       categoryName: 'Hội thảo',
       createdBy: 'organizer',
-      createdAt: '2026-08-01T08:00:00.000Z',
+      createdAt: new Date().toISOString(),
       totalRegistered: 2,
       availableSeats: 8,
       attendanceRate: 0,
-      registered: false,
-    });
+    };
+    // Lần tải đầu: chưa đăng ký. Sau khi đăng ký thành công, trang gọi lại getEventById
+    // (để cập nhật availableSeats) — backend thật lúc đó đã trả registered=true, nên mock
+    // ở lần gọi thứ 2 phải phản ánh đúng, tránh "clobber" giá trị optimistic set trước đó.
+    mocks.getEventByIdMock
+      .mockResolvedValueOnce({ ...baseEvent, registered: false })
+      .mockResolvedValue({ ...baseEvent, registered: true, totalRegistered: 3, availableSeats: 7 });
 
     mocks.registerForEventMock.mockResolvedValue({
       registrationId: 55,
@@ -119,13 +130,13 @@ describe('EventDetailPage registration', () => {
       description: 'Mô tả',
       location: 'Đà Nẵng',
       capacity: 10,
-      startAt: '2026-08-10T08:00:00.000Z',
-      endAt: '2026-08-12T17:00:00.000Z',
+      startAt: futureDate(2).toISOString(),
+      endAt: futureDate(4).toISOString(),
       status: 'OPEN',
       categoryId: 1,
       categoryName: 'Hội thảo',
       createdBy: 'organizer',
-      createdAt: '2026-08-01T08:00:00.000Z',
+      createdAt: new Date().toISOString(),
       totalRegistered: 2,
       availableSeats: 8,
       attendanceRate: 0,
@@ -170,13 +181,13 @@ describe('EventDetailPage registration', () => {
       description: 'Mô tả',
       location: 'Đà Nẵng',
       capacity: 10,
-      startAt: '2026-08-10T08:00:00.000Z',
-      endAt: '2026-08-12T17:00:00.000Z',
+      startAt: futureDate(2).toISOString(),
+      endAt: futureDate(4).toISOString(),
       status: 'OPEN',
       categoryId: 1,
       categoryName: 'Hội thảo',
       createdBy: 'organizer',
-      createdAt: '2026-08-01T08:00:00.000Z',
+      createdAt: new Date().toISOString(),
       totalRegistered: 2,
       availableSeats: 8,
       attendanceRate: 50,

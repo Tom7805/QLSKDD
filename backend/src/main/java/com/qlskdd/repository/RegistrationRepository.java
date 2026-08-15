@@ -57,6 +57,13 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     // B3.4-T1: đếm số lượt đăng ký ACTIVE của 1 người tham gia — dùng để chặn xoá
     long countByUserIdAndStatus(Long userId, RegistrationStatus status);
 
+    // B3.4-T2: xoá người tham gia chỉ bị chặn khi còn ACTIVE (đã kiểm tra ở service trước
+    // khi gọi hàm này) — nghĩa là mọi bản ghi registration còn lại của user lúc này chắc
+    // chắn đã CANCELLED. user_id là FK NOT NULL trên registrations nên phải dọn các bản ghi
+    // CANCELLED này trước khi xoá user, nếu không sẽ vỡ ràng buộc khoá ngoại ở DB (lỗi 500
+    // không được xử lý riêng, rơi vào handler chung) dù nghiệp vụ cho phép xoá trường hợp này.
+    void deleteByUserId(Long userId);
+
     // B3.4-T1: đếm số lượt đăng ký ACTIVE cho CẢ MỘT TRANG người tham gia bằng đúng 1
     // truy vấn group by (tránh N+1), dùng cho cột "số sự kiện đã đăng ký"
     @Query("SELECT r.user.id, COUNT(r) FROM Registration r "
