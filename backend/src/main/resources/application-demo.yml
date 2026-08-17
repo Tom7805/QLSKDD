@@ -1,0 +1,27 @@
+# Profile `demo` (B6.3-T2) — dữ liệu trình diễn cuối kỳ do DemoSeeder nạp.
+#
+# Chạy: ./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
+#
+# CỐ Ý trỏ vào database RIÊNG `qlsk_dd_demo`, không dùng chung `qlsk_dd` với profile dev:
+# DemoSeeder chỉ nạp dữ liệu khi các bảng còn RỖNG. Nếu dùng chung database thì sau lần chạy
+# dev đầu tiên (DataSeeder đã tạo 3 tài khoản + 3 sự kiện) bảng không còn rỗng nữa, nên
+# DemoSeeder sẽ im lặng bỏ qua — đúng lúc lên demo thì không có dữ liệu trình diễn nào.
+# Tách database ra thì dev và demo không đè nhau, và muốn dựng lại dữ liệu demo sạch chỉ cần
+# DROP đúng một database, không mất dữ liệu đang làm dở của cả nhóm.
+#
+# `createDatabaseIfNotExist=true` để không phải CREATE DATABASE thủ công trước buổi demo.
+spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/qlsk_dd_demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true&characterEncoding=UTF-8
+    username: root
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    # Tắt log SQL: buổi demo có chiếu màn hình, console đầy câu SQL vừa rối vừa che mất log cần xem
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
