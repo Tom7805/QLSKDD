@@ -62,7 +62,7 @@ Hệ thống đã chạy thật trên internet:
 | Swagger UI | https://qlskdd-frontend.onrender.com/swagger-ui/index.html |
 
 > [!CAUTION]
-> **Bắt buộc đánh thức trước 5 phút.** Backend chạy gói miễn phí của Render nên **tự tắt sau 15 phút không ai dùng**, lần gọi đầu sau đó mất **tới 50 giây**. Database trên Aiven cũng có thể bị tắt khi để lâu.
+> **Bắt buộc đánh thức trước 5 phút.** Backend chạy gói miễn phí của Render nên **tự tắt sau 15 phút không ai dùng**. Lần gọi đầu sau đó phải chờ **khoảng 1 phút rưỡi**: Render quảng cáo ~50 giây, nhưng **đo thực tế trên chính service này là 65,8 giây** riêng phần khởi động ứng dụng, cộng thêm thời gian dựng container. Database trên Aiven cũng có thể bị tắt khi để lâu.
 >
 > Cách đánh thức: mở trang, đăng nhập một lần, mở Dashboard. Thấy số liệu hiện ra là cả hai đã sẵn sàng.
 >
