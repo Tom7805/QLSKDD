@@ -1,0 +1,60 @@
+# Profile `prod` — dùng khi chạy trong Docker (xem docker-compose.yml).
+#
+# Nguyên tắc của file này: KHÔNG chứa bất kỳ giá trị bí mật nào. Mọi thứ nhạy cảm đọc từ
+# biến môi trường, và CỐ Ý không đặt giá trị mặc định — thiếu biến thì ứng dụng phải chết
+# ngay lúc khởi động với thông báo rõ ràng, tốt hơn nhiều so với việc lặng lẽ chạy bằng một
+# khoá mặc định mà ai đọc repo cũng biết.
+spring:
+  datasource:
+    # Trong Docker, host là TÊN SERVICE `mysql`, không phải 127.0.0.1 — trong container thì
+    # 127.0.0.1 trỏ về chính container backend, nơi không có MySQL nào cả.
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      # Container MySQL mặc định cho 151 kết nối; 10 là dư cho quy mô đồ án và tránh
+      # trường hợp pool phình ra chiếm hết slot khi có nhiều lần khởi động lại liên tiếp.
+      maximum-pool-size: 10
+      connection-timeout: 20000
+
+  jpa:
+    hibernate:
+      # ĐÁNH ĐỔI CÓ Ý THỨC: để `update` chứ không phải `validate`.
+      #
+      # `validate` là lựa chọn đúng cho production thật, nhưng nó yêu cầu schema PHẢI có sẵn
+      # trước khi ứng dụng khởi động. Ở đây `docker compose up` tạo một MySQL rỗng hoàn toàn,
+      # nên `validate` sẽ làm backend chết ngay lần chạy đầu — mất luôn mục tiêu "một lệnh là
+      # cả hệ thống lên" của B6.4.
+      #
+      # Cách làm đúng cho hệ thống chạy thật là dùng Flyway/Liquibase quản lý migration rồi
+      # đổi sang `validate`. Dự án chưa làm phần đó, và đây là chỗ ghi lại điều còn thiếu
+      # thay vì im lặng cho qua.
+      ddl-auto: update
+    # Tắt log SQL: ở môi trường chạy thật, log SQL vừa làm log phình to vừa có nguy cơ
+    # in ra dữ liệu người dùng.
+    show-sql: false
+    open-in-view: false
+
+  # Không nạp DataSeeder (chỉ chạy ở profile dev) và không nạp DemoSeeder (profile demo):
+  # database production không được có tài khoản mẫu với mật khẩu ai cũng biết.
+
+app:
+  jwt:
+    # Không có giá trị mặc định — bắt buộc truyền APP_JWT_SECRET từ ngoài vào.
+    secret: ${APP_JWT_SECRET}
+    expiration-milliseconds: ${APP_JWT_EXPIRATION:86400000}
+
+  cors:
+    # Danh sách origin được phép, phân tách bằng dấu phẩy. Khi frontend chạy sau nginx và
+    # gọi API theo đường dẫn tương đối `/api/v1` thì trình duyệt không gửi request cross-origin
+    # nào, nên mặc định để RỖNG — không mở CORS cho ai cả.
+    # Chỉ điền khi có client ở tên miền khác thật sự cần gọi API.
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:}
+
+# Log gọn hơn ở môi trường chạy thật
+logging:
+  level:
+    root: INFO
+    com.qlskdd: INFO
+    org.hibernate.SQL: WARN

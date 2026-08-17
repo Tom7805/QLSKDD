@@ -287,7 +287,38 @@ QLSKDD/
 
 ## 7. Cài đặt & chạy dự án
 
-### Yêu cầu tiền đề
+Có hai cách: chạy bằng **Docker** (nhanh nhất, không cần cài gì ngoài Docker) hoặc **chạy trực tiếp** trên máy (phù hợp khi đang phát triển).
+
+### Cách A — Docker, một lệnh duy nhất
+
+Không cần cài JDK, Maven hay Node — mọi thứ build bên trong container. Chỉ cần **Docker Desktop** (Windows: chạy `wsl --install` trong PowerShell Admin rồi khởi động lại máy trước).
+
+```powershell
+Copy-Item .env.example .env      # macOS/Linux: cp .env.example .env
+```
+
+Mở `.env` sửa **hai** giá trị bắt buộc — `QLSKDD_DB_PASSWORD` và `QLSKDD_JWT_SECRET` — rồi:
+
+```bash
+docker compose up -d --build
+```
+
+Lần đầu mất 3–5 phút, lần sau vài chục giây nhờ cache. Thiếu biến bắt buộc thì compose dừng ngay với thông báo rõ ràng thay vì khởi động rồi chết giữa chừng.
+
+| Thành phần | URL |
+|---|---|
+| Ứng dụng | http://localhost:3000 |
+| API (trực tiếp, cho Postman) | http://localhost:8080/api/v1 |
+| Swagger UI | http://localhost:3000/swagger-ui/index.html |
+
+Đăng nhập bằng `demo_admin` / `admin123` — dữ liệu demo (4 sự kiện, 12 tài khoản, 17 lượt đăng ký) được nạp sẵn.
+
+> Hướng dẫn đầy đủ — bảng biến môi trường, lệnh vận hành, xử lý sự cố, các quyết định thiết kế
+> và phần chưa làm: **[docs/deployment.md](docs/deployment.md)**
+
+### Cách B — Chạy trực tiếp trên máy
+
+#### Yêu cầu tiền đề
 
 | Công cụ | Phiên bản tối thiểu |
 |---|---|
@@ -368,24 +399,41 @@ Khi chạy profile `dev`, hệ thống tự tạo sẵn ba tài khoản để th
 
 ## 9. Biến môi trường
 
-**Backend** — `backend/src/main/resources/application.yml` và các file profile tương ứng:
+### Chạy trực tiếp trên máy (cách B)
+
+**Backend** — `backend/src/main/resources/application.yml`:
 
 | Biến | Mặc định (dev) | Mô tả |
 |---|---|---|
 | `DB_PASSWORD` | — | Mật khẩu MySQL (**bắt buộc**, đọc từ biến môi trường) |
-| — _(trong `application.yml`)_ | `jdbc:mysql://127.0.0.1:3306/qlsk_dd` | Chuỗi kết nối MySQL |
-| — _(trong `application.yml`)_ | `root` | Tài khoản CSDL |
-| `app.jwt.secret` | _(giá trị mẫu trong file cấu hình)_ | Khóa ký JWT |
-| `app.jwt.expiration-milliseconds` | `86400000` | Hạn access token (24 giờ) |
+| `APP_JWT_SECRET` | _(khoá dev ghi trong file, xem cảnh báo dưới)_ | Khóa ký JWT |
+| `APP_JWT_EXPIRATION` | `86400000` | Hạn access token (24 giờ) |
+| `APP_CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Origin được phép gọi API |
 
-**Frontend** — `frontend/.env`:
+**Frontend** — `frontend/.env` (copy từ `frontend/.env.example`):
 
 | Biến | Ví dụ | Mô tả |
 |---|---|---|
 | `VITE_API_BASE_URL` | `http://localhost:8080/api/v1` | Địa chỉ API backend |
 
+### Chạy bằng Docker (cách A)
+
+Khai báo trong `.env` ở thư mục gốc — copy từ [`.env.example`](.env.example):
+
+| Biến | Bắt buộc | Mặc định | Mô tả |
+|---|:--:|---|---|
+| `QLSKDD_DB_PASSWORD` | ✅ | — | Mật khẩu root của MySQL trong container |
+| `QLSKDD_JWT_SECRET` | ✅ | — | Khóa ký JWT |
+| `QLSKDD_DB_NAME` | | `qlsk_dd` | Tên database |
+| `QLSKDD_JWT_EXPIRATION` | | `86400000` | Hạn access token |
+| `QLSKDD_SPRING_PROFILES` | | `prod,demo` | `prod` = database rỗng; `prod,demo` = có dữ liệu demo |
+| `QLSKDD_CORS_ALLOWED_ORIGINS` | | rỗng | Chỉ cần khi có client ở tên miền khác |
+
+> [!IMPORTANT]
+> Tiền tố `QLSKDD_` là **cố ý**. Docker Compose ưu tiên biến môi trường của máy cao hơn file `.env`; nhiều thành viên đã set sẵn `DB_PASSWORD` trên máy để chạy backend ở chế độ dev, nên nếu compose đọc đúng tên đó thì giá trị trong `.env` bị bỏ qua hoàn toàn mà không có cảnh báo nào.
+
 > [!CAUTION]
-> `app.jwt.secret` hiện đang được ghi trực tiếp trong `application.yml` để tiện chạy dev. **Trước khi triển khai production, bắt buộc chuyển sang biến môi trường và đổi sang khóa mới** — ai đọc được repo là ký được token cho bất kỳ tài khoản nào. Tương tự, không commit file `.env` hay bất kỳ secret nào lên Git.
+> `application.yml` có sẵn một khoá JWT **chỉ dùng cho dev** để chạy ở máy không cần cấu hình gì thêm. Profile `prod` khai báo `secret: ${APP_JWT_SECRET}` **không có giá trị mặc định**, nên thiếu biến là ứng dụng chết ngay lúc khởi động — đúng như mong muốn. Không commit file `.env` hay bất kỳ secret nào lên Git.
 
 ## 10. API Endpoints
 
@@ -541,6 +589,9 @@ cd frontend && npm test          # npm run test:watch để chạy ở chế đ�
 | Tài liệu | Nội dung |
 |---|---|
 | [api_contract.md](docs/api_contract.md) | Hợp đồng API đầy đủ |
+| [deployment.md](docs/deployment.md) | Triển khai bằng Docker: biến môi trường, vận hành, xử lý sự cố |
+| [test_cases.md](docs/test_cases.md) | Kịch bản kiểm thử tích hợp |
+| [demo_script.md](docs/demo_script.md) | Kịch bản demo cuối kỳ theo mốc thời gian |
 | [database_schema.sql](docs/database_schema.sql) | Script khởi tạo cơ sở dữ liệu |
 | [jira_backlog.md](docs/jira_backlog.md) | Backlog & user story |
 | [postman/](docs/postman/) | Postman Collection để thử API |
