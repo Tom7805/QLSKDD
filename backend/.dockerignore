@@ -1,0 +1,22 @@
+# Mọi thứ ở đây bị loại khỏi build context gửi sang Docker daemon.
+# target/ chứa jar + class đã build trên Windows — vừa nặng vừa vô dụng trong image Linux,
+# và nếu lọt vào sẽ làm cache layer của Maven vỡ mỗi lần build lại ở máy khác.
+target/
+*.class
+*.jar
+
+# Log, file tạm
+*.log
+logs/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.settings/
+.classpath
+.project
+
+# Dockerfile không cần copy vào image
+Dockerfile
+.dockerignore

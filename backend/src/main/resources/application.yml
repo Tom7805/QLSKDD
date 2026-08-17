@@ -16,13 +16,28 @@ spring:
       hibernate:
         format_sql: true
 
-  security:
-    user:
-      name: user
-      password: 123456 # Mật khẩu cố định
+# B6.4-T4: đã xoá khối `spring.security.user` (name: user / password: 123456).
+# Đó là tài khoản mặc định trong bộ nhớ của Spring Boot, chỉ có tác dụng khi ứng dụng KHÔNG
+# tự khai báo UserDetailsService. Dự án có `CustomUserDetailsService` là @Service nên
+# UserDetailsServiceAutoConfiguration tự tắt và khối đó chưa bao giờ được dùng — nhưng vẫn là
+# một mật khẩu ghi cứng nằm trong repo, nên xoá cho sạch.
 
 # Cấu hình JWT cho xác thực người dùng (Task B1.1-T3)
 app:
   jwt:
-    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-    expiration-milliseconds: 86400000 # 24 giờ tính bằng mili-giây
+    # ĐÂY LÀ KHOÁ CHỈ DÙNG CHO MÔI TRƯỜNG DEV Ở MÁY CÁ NHÂN.
+    #
+    # Nó nằm trong repo nên coi như công khai — ai đọc được repo là ký được token cho bất kỳ
+    # tài khoản nào. Chấp nhận được ở dev (database chỉ có tài khoản mẫu), nhưng TUYỆT ĐỐI
+    # không dùng ở môi trường chạy thật: profile prod khai báo `secret: ${APP_JWT_SECRET}`
+    # không có giá trị mặc định, nên thiếu biến môi trường là ứng dụng chết ngay lúc khởi động.
+    #
+    # B6.4-T4: khoá cũ đã bị commit lên Git từ sớm nên xoá khỏi file bây giờ cũng không xoá
+    # được khỏi lịch sử — vì vậy đã SINH KHOÁ MỚI thay vì chỉ di chuyển khoá cũ ra ngoài.
+    secret: ${APP_JWT_SECRET:2f7b0c9a4e6d18f35a9c72be04d1836ef5a0c3d97b62e48fa105c7de93b2064a}
+    expiration-milliseconds: ${APP_JWT_EXPIRATION:86400000} # 24 giờ tính bằng mili-giây
+
+  cors:
+    # Origin được phép gọi API, phân tách bằng dấu phẩy (xem SecurityConfig.corsConfigurationSource).
+    # Mặc định là 2 cổng dev để chạy ở máy không cần cấu hình gì thêm.
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}

@@ -323,7 +323,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
           ) : (
             <span className="flex min-w-0 items-center gap-2.5">
               <AppLogo />
-              <span className="truncate text-[15px] font-extrabold tracking-tight text-ink">QLSK_DD</span>
+              <span className="truncate text-[15px] font-extrabold tracking-tight text-ink">Quản lý sự kiện</span>
             </span>
           )}
           {!collapsed && (
