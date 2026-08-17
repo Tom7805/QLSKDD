@@ -80,9 +80,15 @@ services:
       DB_PASSWORD: ${QLSKDD_DB_PASSWORD:?Thieu QLSKDD_DB_PASSWORD - hay copy .env.example thanh .env}
       APP_JWT_SECRET: ${QLSKDD_JWT_SECRET:?Thieu QLSKDD_JWT_SECRET - hay copy .env.example thanh .env}
       APP_JWT_EXPIRATION: ${QLSKDD_JWT_EXPIRATION:-86400000}
-      # Frontend gọi API qua nginx theo đường dẫn tương đối nên cùng origin, không phát sinh
-      # CORS. Để rỗng = không mở CORS cho origin nào.
-      APP_CORS_ALLOWED_ORIGINS: ${QLSKDD_CORS_ALLOWED_ORIGINS:-}
+      # PHẢI có origin của frontend, KHÔNG được để rỗng.
+      #
+      # Dù frontend gọi API theo đường dẫn tương đối qua nginx (cùng origin), trình duyệt VẪN
+      # gửi header `Origin` cho mọi request POST/PUT/DELETE — chỉ GET mới được miễn. Danh sách
+      # cho phép rỗng thì Spring Security chặn ngay bằng 403 "Invalid CORS request", và giao
+      # diện hiện "Sai tài khoản hoặc mật khẩu" dù mật khẩu hoàn toàn đúng.
+      #
+      # Không bắt được bằng curl (curl không gửi `Origin`) — phải thử bằng trình duyệt thật.
+      APP_CORS_ALLOWED_ORIGINS: ${QLSKDD_CORS_ALLOWED_ORIGINS:-http://localhost:3000}
       TZ: Asia/Ho_Chi_Minh
     ports:
       # Publish để dùng Swagger/Postman trực tiếp trong buổi demo.
