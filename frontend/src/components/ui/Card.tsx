@@ -14,14 +14,11 @@ export function Card({
   floating?: boolean;
   children: ReactNode;
 }) {
-  const base = floating
-<<<<<<< HEAD
-    ? 'glass-card'
-    : 'rounded-2xl border border-hairline bg-white shadow-card';
-=======
-    ? 'rounded-3xl border border-white/80 bg-white/95 shadow-float backdrop-blur-sm'
-    : 'rounded-2xl border border-hairline/90 bg-white shadow-card';
->>>>>>> 85ff8f49043fe298082949bc3d77c59c4588f808
+  /*
+   * Bản kính mờ dùng lớp dùng chung `.glass-card` chứ không chép lại chuỗi lớp: nó xuất
+   * hiện ở gần 20 chỗ trong app, để mỗi nơi một chuỗi riêng thì sớm muộn cũng lệch nhau.
+   */
+  const base = floating ? 'glass-card' : 'rounded-2xl border border-hairline/90 bg-white shadow-card';
   return <div className={`${base} ${className}`}>{children}</div>;
 }
 
