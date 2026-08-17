@@ -24,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.LocalDate;
@@ -225,7 +226,24 @@ public class EventServiceImpl implements EventService {
         return PageRes.of(dtoPage);
     }
 
+    /*
+     * PHẢI có @Transactional: `Event.category` khai FetchType.LAZY, mà EventMapper.toDetailRes
+     * gọi `getCategory().getName()`. Không có transaction thì session Hibernate đã đóng trước
+     * lúc map, và lời gọi đó ném LazyInitializationException -> toàn bộ trang chi tiết sự kiện
+     * trả 500.
+     *
+     * Vì sao trước đây không ai thấy: Spring Boot mặc định bật `open-in-view=true`, giữ session
+     * mở suốt request nên nạp lười vẫn chạy. Profile prod tắt nó đi (đúng thực hành, vì OSIV
+     * giấu lỗi và giữ kết nối database lâu hơn cần thiết) nên lỗi mới lộ.
+     *
+     * Thêm nữa, dữ liệu của DataSeeder (profile dev) KHÔNG gắn loại sự kiện — `getCategory()`
+     * trả null nên mapper không chạm vào proxy. Chỉ tới khi dùng dữ liệu DemoSeeder (có gắn
+     * loại) trên bản deploy thì mới nổ. Hai lớp che khuất cộng lại làm lỗi sống sót rất lâu.
+     *
+     * readOnly = true: chỉ đọc, báo cho Hibernate bỏ qua dirty checking.
+     */
     @Override
+    @Transactional(readOnly = true)
     public EventDetailRes getById(Long id) {
         Event event = findEventOrThrow(id);
         long totalRegistered = registrationRepository.countByEventIdAndStatus(id, RegistrationStatus.ACTIVE);
