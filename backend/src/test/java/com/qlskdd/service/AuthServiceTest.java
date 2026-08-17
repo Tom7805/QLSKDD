@@ -1,6 +1,7 @@
 package com.qlskdd.service;
 
 import com.qlskdd.dto.request.LoginReq;
+import com.qlskdd.dto.request.ProfileReq;
 import com.qlskdd.entity.Role;
 import com.qlskdd.entity.User;
 import com.qlskdd.mapper.response.LoginRes;
@@ -129,5 +130,65 @@ class AuthServiceTest {
 
         // When & Then
         assertThrows(BadCredentialsException.class, () -> authService.login(request));
+    }
+
+    /**
+     * Sửa hồ sơ chỉ được đụng tới họ tên / điện thoại / ảnh. username, email và role là
+     * bất biến ở luồng này — nếu ai đó thêm chúng vào ProfileReq sau này, test sẽ đỏ.
+     */
+    @Test
+    void testUpdateProfile_ChiSuaCacTruongChoPhep() {
+        ProfileReq request = new ProfileReq();
+        request.setFullName("  Tên Mới  ");
+        request.setPhone("0900123456");
+        request.setAvatar("preset:violet");
+
+        when(userRepository.findByUsername("admin")).thenReturn(Optional.of(mockUser));
+        when(userRepository.save(any(User.class))).thenAnswer(call -> call.getArgument(0));
+
+        LoginRes.UserLoginInfo result = authService.updateProfile("admin", request);
+
+        assertEquals("Tên Mới", result.getFullName(), "Họ tên phải được cắt khoảng trắng thừa");
+        assertEquals("0900123456", result.getPhone());
+        assertEquals("preset:violet", result.getAvatar());
+        // Không đổi: định danh đăng nhập và quyền
+        assertEquals("admin", result.getUsername());
+        assertEquals("admin@qlskdd.com", result.getEmail());
+        assertEquals("ROLE_ADMIN", result.getRole());
+    }
+
+    /**
+     * Form gửi chuỗi rỗng khi người dùng xoá trắng ô -> lưu null, tránh cột users vừa có
+     * null vừa có chuỗi rỗng cho cùng một ý nghĩa "chưa có dữ liệu".
+     */
+    @Test
+    void testUpdateProfile_ChuoiRong_LuuThanhNull() {
+        mockUser.setPhone("0123456789");
+        mockUser.setAvatar("preset:sky");
+
+        ProfileReq request = new ProfileReq();
+        request.setFullName("Quản trị viên");
+        request.setPhone("");
+        request.setAvatar("");
+
+        when(userRepository.findByUsername("admin")).thenReturn(Optional.of(mockUser));
+        when(userRepository.save(any(User.class))).thenAnswer(call -> call.getArgument(0));
+
+        LoginRes.UserLoginInfo result = authService.updateProfile("admin", request);
+
+        assertNull(result.getPhone());
+        assertNull(result.getAvatar());
+    }
+
+    @Test
+    void testUpdateProfile_KhongTonTaiTaiKhoan_NemLoi() {
+        ProfileReq request = new ProfileReq();
+        request.setFullName("Ai đó");
+
+        when(userRepository.findByUsername("khong-ton-tai")).thenReturn(Optional.empty());
+
+        assertThrows(UsernameNotFoundException.class,
+                () -> authService.updateProfile("khong-ton-tai", request));
+        verify(userRepository, never()).save(any());
     }
 }

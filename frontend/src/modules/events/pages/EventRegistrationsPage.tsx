@@ -90,15 +90,15 @@ export default function EventRegistrationsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
-        <button type="button" onClick={() => navigate(ROUTES.EVENTS)} className="mb-5 text-sm font-semibold text-blue-700">
+        <button type="button" onClick={() => navigate(ROUTES.EVENTS)} className="mb-5 text-sm font-semibold text-ink">
           ← Quay lại danh sách sự kiện
         </button>
 
         <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-blue-600">Đăng ký sự kiện</p>
+            <p className="text-sm font-semibold text-ink">Đăng ký sự kiện</p>
             <h1 className="mt-1 text-3xl font-bold text-slate-900">Danh sách người đăng ký</h1>
             <p className="mt-2 text-sm text-slate-500">Theo dõi danh sách đăng ký và sức chứa của sự kiện.</p>
           </div>
@@ -106,15 +106,15 @@ export default function EventRegistrationsPage() {
             <button
               type="button"
               onClick={() => navigate(`/events/${eventIdNumber}/check-in`)}
-              className="min-h-12 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
+              className="min-h-12 rounded-xl bg-ink px-5 py-3 font-semibold text-white hover:bg-ink-soft"
             >
               Mở màn hình điểm danh
             </button>
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <div className="rounded-3xl bg-white px-4 py-3 shadow-float">
             <p className="text-sm font-medium text-slate-500">Đã đăng ký: {response.summary.totalRegistered} / {response.summary.capacity ?? 0}</p>
             <div className="mt-2 h-2.5 w-48 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={usagePercent}>
               <div
-                className={`h-full rounded-full transition-all ${usagePercent >= 80 ? 'bg-amber-500' : 'bg-blue-600'}`}
+                className={`h-full rounded-full transition-all ${usagePercent >= 80 ? 'bg-amber-500' : 'bg-ink'}`}
                 style={{ width: `${usagePercent}%` }}
               />
             </div>
@@ -125,7 +125,7 @@ export default function EventRegistrationsPage() {
         {error ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center" role="alert">
             <p className="font-medium text-red-700">{error}</p>
-            <button type="button" onClick={() => setReloadKey((key) => key + 1)} className="mt-3 font-semibold text-blue-700">
+            <button type="button" onClick={() => setReloadKey((key) => key + 1)} className="mt-3 font-semibold text-ink">
               Thử lại
             </button>
           </div>
@@ -142,7 +142,7 @@ export default function EventRegistrationsPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-3xl bg-white shadow-float">
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50">
                   <tr>

@@ -15,7 +15,7 @@ interface ParticipantFilterProps {
   activeCount: number;
 }
 
-const fieldClassName = 'h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100';
+const fieldClassName = 'h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-ink/30 focus:ring-4 focus:ring-ink/10';
 
 function FilterFields({ value, onChange, events }: Pick<ParticipantFilterProps, 'value' | 'onChange'> & { events: EventSummary[] }) {
   const update = (field: keyof ParticipantFilterValue, nextValue: string | number) => onChange({ ...value, [field]: nextValue });

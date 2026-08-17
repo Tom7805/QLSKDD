@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from './stores/store';
-import { restoreSession, selectIsLoggedIn, selectUser } from './stores/slices/authSlice';
+import { useAppDispatch } from './stores/store';
+import { restoreSession } from './stores/slices/authSlice';
 import LoginPage from './modules/auth/pages/LoginPage';
 import ForbiddenPage from './modules/auth/pages/ForbiddenPage';
 import CategoryListPage from './modules/categories/pages/CategoryListPage';
@@ -21,19 +21,8 @@ import ParticipantListPage from './modules/registrations/pages/ParticipantListPa
 import CheckInPage from './modules/checkin/pages/CheckInPage';
 import AttendancePage from './modules/checkin/pages/AttendancePage';
 import DashboardPage from './modules/dashboard/pages/DashboardPage';
-
-function HomePage() {
-  const isLoggedIn = useAppSelector(selectIsLoggedIn);
-  const user = useAppSelector(selectUser);
-
-  return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-slate-50">
-      <h1 className="text-2xl font-semibold text-slate-800">
-        QLSK_DD Frontend{isLoggedIn && user ? ` — Xin chào, ${user.fullName}` : ''}
-      </h1>
-    </div>
-  );
-}
+import HomePage from './modules/home/pages/HomePage';
+import ProfilePage from './modules/auth/pages/ProfilePage';
 
 function App() {
   const dispatch = useAppDispatch();
@@ -54,6 +43,7 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path={ROUTES.HOME} element={<HomePage />} />
           <Route path={ROUTES.CHANGE_PASSWORD} element={<ChangePasswordPage />} />
+          <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
           <Route path={ROUTES.EVENTS} element={<EventListPage />} />
           <Route path={ROUTES.MY_REGISTRATIONS} element={<MyRegistrationsPage />} />
           <Route path={ROUTES.EVENT_DETAIL} element={<EventDetailPage />} />

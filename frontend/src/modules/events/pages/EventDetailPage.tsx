@@ -6,6 +6,7 @@ import AttendanceRateBar from '../../../components/common/AttendanceRateBar';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import EventStatusBadge, { type EventStatus } from '../../../components/common/EventStatusBadge';
 import { useToast } from '../../../components/common/Toast';
+import SortableGrid from '../../../components/ui/SortableGrid';
 import { ROUTES } from '../../../constants/routes';
 import { selectUser } from '../../../stores/slices/authSlice';
 import { useAppSelector } from '../../../stores/store';
@@ -23,6 +24,9 @@ const formatDateTime = (value: string) => {
   const day = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'long' }).format(date);
   return `${time} ${day}`;
 };
+
+/** Khoá localStorage nhớ thứ tự hai khối của trang chi tiết */
+const DETAIL_ORDER_KEY = 'qlskdd.eventDetail.blockOrder';
 
 export default function EventDetailPage() {
   const { id } = useParams();
@@ -109,7 +113,7 @@ export default function EventDetailPage() {
 
   if (loading) return <div className="mx-auto max-w-7xl animate-pulse space-y-5 p-6" aria-label="Đang tải chi tiết sự kiện"><div className="h-10 w-2/3 rounded bg-slate-200" /><div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]"><div className="h-96 rounded-2xl bg-slate-200" /><div className="h-72 rounded-2xl bg-slate-200" /></div></div>;
 
-  if (error || !event) return <div className="p-6"><div role="alert" className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-8 text-center"><p className="font-semibold text-red-700">{error ?? 'Không tìm thấy sự kiện.'}</p><button type="button" onClick={() => setReloadKey((key) => key + 1)} className="mt-4 font-semibold text-blue-700">Thử lại</button></div></div>;
+  if (error || !event) return <div className="min-h-full bg-workspace p-6"><div role="alert" className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-8 text-center"><p className="font-semibold text-red-700">{error ?? 'Không tìm thấy sự kiện.'}</p><button type="button" onClick={() => setReloadKey((key) => key + 1)} className="mt-4 font-semibold text-ink">Thử lại</button></div></div>;
 
   const registered = event.totalRegistered ?? Math.max(0, event.capacity - (event.availableSeats ?? event.capacity));
   const usagePercent = event.capacity > 0 ? Math.min(100, Math.round((registered / event.capacity) * 100)) : 0;
@@ -157,13 +161,26 @@ export default function EventDetailPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
-        <button type="button" onClick={() => navigate(ROUTES.EVENTS)} className="mb-5 text-sm font-semibold text-blue-700">← Danh sách sự kiện</button>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)] lg:items-start">
-          <main className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+        <button type="button" onClick={() => navigate(ROUTES.EVENTS)} className="mb-5 text-sm font-semibold text-ink">← Danh sách sự kiện</button>
+        {/*
+          Hai khối đổi chỗ được. Bề rộng 2 + 1 trên lưới 3 cột nên dù xếp khối nào trước
+          thì tổng cũng vừa đúng một hàng, và mỗi khối luôn giữ đúng bề rộng của nó.
+        */}
+        <SortableGrid
+          storageKey={DETAIL_ORDER_KEY}
+          ariaLabel="Các khối của trang chi tiết sự kiện"
+          className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start"
+          blocks={[
+            {
+              id: 'info',
+              title: 'Thông tin sự kiện',
+              className: 'lg:col-span-2',
+              content: (
+          <main className="rounded-3xl bg-white p-5 shadow-float sm:p-7">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div><p className="text-sm font-semibold text-blue-600">{event.categoryName || 'Sự kiện'}</p><h1 className="mt-1 text-3xl font-bold text-slate-900">{event.name}</h1></div>
+              <div><p className="text-sm font-semibold text-ink">{event.categoryName || 'Sự kiện'}</p><h1 className="mt-1 text-3xl font-bold text-slate-900">{event.name}</h1></div>
               <EventStatusBadge status={event.status} />
             </div>
             <dl className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -177,7 +194,7 @@ export default function EventDetailPage() {
               <div className={`mt-4 grid grid-cols-1 gap-6 ${canManageEvent && attendanceSummary ? 'lg:grid-cols-2' : ''}`}>
                 <div>
                   <div className="flex justify-between text-sm"><span className="font-semibold text-slate-700">Số người đăng ký</span><span className="text-slate-600">{registered}/{event.capacity}</span></div>
-                  <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuenow={usagePercent} aria-valuemin={0} aria-valuemax={100}><div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${usagePercent}%` }} /></div>
+                  <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuenow={usagePercent} aria-valuemin={0} aria-valuemax={100}><div className="h-full rounded-full bg-ink transition-all" style={{ width: `${usagePercent}%` }} /></div>
                   {event.attendanceRate !== null && <div className="mt-4 border-t border-slate-100 pt-4"><AttendanceRateBar rate={event.attendanceRate} /></div>}
                 </div>
                 {canManageEvent && attendanceSummary && (
@@ -189,8 +206,14 @@ export default function EventDetailPage() {
               </div>
             </section>
           </main>
-
-          <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-6">
+              ),
+            },
+            {
+              id: 'actions',
+              title: 'Thao tác',
+              className: 'lg:col-span-1',
+              content: (
+          <aside className="rounded-3xl bg-white p-5 shadow-float">
             <h2 className="text-lg font-bold text-slate-900">Thao tác</h2>
             <div className="mt-5 flex flex-col gap-3">
               {user?.role === 'ROLE_USER' && (
@@ -199,7 +222,7 @@ export default function EventDetailPage() {
                     type="button"
                     onClick={handleRegister}
                     disabled={!canRegister || isRegistering}
-                    className="min-h-11 rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    className="min-h-11 rounded-xl bg-ink px-4 py-2 font-semibold text-white hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
                     {isRegistering ? 'Đang xử lý...' : isRegistered ? 'Đã đăng ký' : 'Đăng ký tham gia'}
                   </button>
@@ -207,7 +230,7 @@ export default function EventDetailPage() {
                 </>
               )}
               {canManageEvent && <>
-                <button type="button" onClick={() => navigate(ROUTES.EVENT_EDIT.replace(':id', String(event.id)))} className="min-h-11 rounded-xl border border-blue-200 px-4 py-2 font-semibold text-blue-700 hover:bg-blue-50">Sửa sự kiện</button>
+                <button type="button" onClick={() => navigate(ROUTES.EVENT_EDIT.replace(':id', String(event.id)))} className="min-h-11 rounded-xl border border-slate-200 px-4 py-2 font-semibold text-ink hover:bg-slate-50">Sửa sự kiện</button>
                 {event.status === 'OPEN' && <button type="button" onClick={() => setPendingStatus('CLOSED')} className="min-h-11 rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50">Đóng sự kiện</button>}
                 <button
                   type="button"
@@ -227,7 +250,10 @@ export default function EventDetailPage() {
               </>}
             </div>
           </aside>
-        </div>
+              ),
+            },
+          ]}
+        />
       </div>
       <ConfirmDialog open={pendingStatus !== null} title={pendingStatus === 'CANCELLED' ? 'Xác nhận huỷ sự kiện' : 'Xác nhận đóng sự kiện'} message={pendingStatus === 'CANCELLED' ? `Huỷ sự kiện '${event.name}'? Người đã đăng ký sẽ không thể tham dự.` : `Đóng sự kiện '${event.name}'? Sự kiện sẽ ngừng nhận đăng ký mới.`} confirmLabel={pendingStatus === 'CANCELLED' ? 'Huỷ sự kiện' : 'Đóng sự kiện'} onConfirm={handleChangeStatus} onCancel={() => setPendingStatus(null)} loading={isChangingStatus} />
       <ConfirmDialog
@@ -247,6 +273,10 @@ export default function EventDetailPage() {
         registrationId={newTicket?.registrationId ?? null}
         code={newTicket?.code ?? ''}
         eventName={newTicket?.eventName ?? event.name}
+        startAt={event.startAt}
+        endAt={event.endAt}
+        location={event.location}
+        attendeeName={user?.fullName ?? null}
         onClose={() => setNewTicket(null)}
       />
     </div>

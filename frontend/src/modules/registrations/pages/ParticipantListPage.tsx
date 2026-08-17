@@ -62,7 +62,7 @@ export default function ParticipantListPage() {
 
   const actions = (item: Participant) => (
     <div className="flex gap-2">
-      <button type="button" onClick={() => { setEditing(item); setFormOpen(true); }} className="rounded-lg border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700">Sửa</button>
+      <button type="button" onClick={() => { setEditing(item); setFormOpen(true); }} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-ink">Sửa</button>
       <button type="button" onClick={() => setDeleteTarget(item)} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700">Xoá</button>
     </div>
   );
@@ -75,18 +75,18 @@ export default function ParticipantListPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
         <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-blue-600">Đăng ký sự kiện</p>
+            <p className="text-sm font-medium text-ink">Đăng ký sự kiện</p>
             <h1 className="mt-1 text-2xl font-bold text-slate-900">Quản lý người tham gia</h1>
             <p className="mt-1 text-sm text-slate-500">Cập nhật thông tin và theo dõi số sự kiện đã đăng ký.</p>
           </div>
-          <button type="button" onClick={() => { setEditing(null); setFormOpen(true); }} className="h-11 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white">＋ Thêm người tham gia</button>
+          <button type="button" onClick={() => { setEditing(null); setFormOpen(true); }} className="h-11 rounded-xl bg-ink px-4 text-sm font-semibold text-white">＋ Thêm người tham gia</button>
         </header>
 
-        <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+        <section className="overflow-hidden rounded-3xl bg-white shadow-float">
           <div className="border-b p-4">
             <ParticipantFilter
               value={filters}
@@ -97,7 +97,7 @@ export default function ParticipantListPage() {
             <div className="mt-3 flex items-center justify-between">
               <span className="text-sm text-slate-500">{result.totalElements} người tham gia</span>
               {activeFilterCount > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-ink">
                   {activeFilterCount} bộ lọc đang áp dụng
                 </span>
               )}
@@ -107,11 +107,11 @@ export default function ParticipantListPage() {
           {error ? (
             <div className="p-10 text-center">
               <p role="alert" className="text-red-600">{error}</p>
-              <button type="button" onClick={() => setReload((x) => x + 1)} className="mt-3 font-semibold text-blue-600">Thử lại</button>
+              <button type="button" onClick={() => setReload((x) => x + 1)} className="mt-3 font-semibold text-ink">Thử lại</button>
             </div>
           ) : loading ? (
             <div role="status" className="flex min-h-64 items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-100 border-t-blue-600" />
               <span className="sr-only">Đang tải</span>
             </div>
           ) : !result.content.length ? (
@@ -165,7 +165,7 @@ export default function ParticipantListPage() {
                       </div>
                     </dl>
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => { setEditing(item); setFormOpen(true); }} className="flex-1 rounded-lg border border-blue-200 py-2 text-sm font-semibold text-blue-700">Sửa</button>
+                      <button type="button" onClick={() => { setEditing(item); setFormOpen(true); }} className="flex-1 rounded-lg border border-slate-200 py-2 text-sm font-semibold text-ink">Sửa</button>
                       <button type="button" onClick={() => setDeleteTarget(item)} className="flex-1 rounded-lg border border-red-200 py-2 text-sm font-semibold text-red-700">Xoá</button>
                     </div>
                   </article>

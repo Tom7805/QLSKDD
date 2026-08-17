@@ -30,7 +30,7 @@ export default function CheckInTable({ participants, pendingIds, onCheckIn }: Ch
               {statusBadge(participant)}
             </div>
             {!participant.checkedIn && (
-              <button type="button" disabled={pendingIds.has(participant.id)} onClick={() => onCheckIn(participant)} className="mt-4 min-h-12 w-full rounded-xl bg-blue-600 px-4 font-semibold text-white hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60">
+              <button type="button" disabled={pendingIds.has(participant.id)} onClick={() => onCheckIn(participant)} className="mt-4 min-h-12 w-full rounded-xl bg-ink px-4 font-semibold text-white hover:bg-ink-soft disabled:cursor-wait disabled:opacity-60">
                 {pendingIds.has(participant.id) ? 'Đang điểm danh…' : 'Điểm danh'}
               </button>
             )}
@@ -45,7 +45,7 @@ export default function CheckInTable({ participants, pendingIds, onCheckIn }: Ch
             {participants.map((participant) => (
               <tr key={participant.id}>
                 <td className="px-5 py-4 font-medium text-slate-900">{participant.fullName}</td><td className="px-5 py-4 text-slate-600">{participant.email}</td><td className="px-5 py-4">{statusBadge(participant)}</td>
-                <td className="px-5 py-4 text-right">{!participant.checkedIn && <button type="button" disabled={pendingIds.has(participant.id)} onClick={() => onCheckIn(participant)} className="min-h-12 rounded-xl bg-blue-600 px-5 font-semibold text-white hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60">{pendingIds.has(participant.id) ? 'Đang xử lý…' : 'Điểm danh'}</button>}</td>
+                <td className="px-5 py-4 text-right">{!participant.checkedIn && <button type="button" disabled={pendingIds.has(participant.id)} onClick={() => onCheckIn(participant)} className="min-h-12 rounded-xl bg-ink px-5 font-semibold text-white hover:bg-ink-soft disabled:cursor-wait disabled:opacity-60">{pendingIds.has(participant.id) ? 'Đang xử lý…' : 'Điểm danh'}</button>}</td>
               </tr>
             ))}
           </tbody>

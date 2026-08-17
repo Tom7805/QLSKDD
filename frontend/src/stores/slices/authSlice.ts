@@ -48,6 +48,11 @@ const authSlice = createSlice({
       state.isLoggedIn = false;
       localStorage.removeItem('accessToken');
     },
+    // Sau khi lưu hồ sơ: cập nhật ngay vào store để avatar/tên đổi tức thì ở sidebar,
+    // không phải gọi lại /auth/me
+    setProfile: (state, action: PayloadAction<User>) => {
+      state.user = action.payload;
+    },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
@@ -77,7 +82,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, clearCredentials, setLoading, setError } = authSlice.actions;
+export const { setCredentials, clearCredentials, setProfile, setLoading, setError } = authSlice.actions;
 
 // Đăng xuất: xoá token + reset state ngay ở client, sau đó gọi API logout theo kiểu
 // best-effort. JWT stateless nên không được giữ người dùng chờ phản hồi từ server.

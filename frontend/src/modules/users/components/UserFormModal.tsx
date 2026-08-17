@@ -163,7 +163,7 @@ export default function UserFormModal({ open, mode, user, onClose, onSaved, onEr
   const inputClass = (field: keyof FormState) => `mt-1.5 h-11 w-full rounded-xl border px-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4 ${
     fieldErrors[field]
       ? 'border-red-400 focus:border-red-500 focus:ring-red-100'
-      : 'border-slate-300 focus:border-blue-500 focus:ring-blue-100'
+      : 'border-slate-300 focus:border-ink/30 focus:ring-ink/10'
   }`;
 
   const fieldError = (field: keyof FormState) => fieldErrors[field] ? (
@@ -219,7 +219,7 @@ export default function UserFormModal({ open, mode, user, onClose, onSaved, onEr
 
         <div className="flex justify-end gap-3 border-t border-slate-200 pt-5">
           <button type="button" onClick={onClose} disabled={saving} className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Hủy</button>
-          <button type="submit" disabled={saving} className="inline-flex min-w-24 items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400">
+          <button type="submit" disabled={saving} className="inline-flex min-w-24 items-center justify-center rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-blue-400">
             {saving ? 'Đang lưu...' : mode === 'create' ? 'Tạo tài khoản' : 'Lưu thay đổi'}
           </button>
         </div>

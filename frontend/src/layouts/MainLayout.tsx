@@ -1,16 +1,55 @@
-import { Outlet } from 'react-router-dom';
-import Navbar from '../components/layout/Navbar';
+import { useEffect, useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '../components/layout/Sidebar';
+import Topbar from '../components/layout/Topbar';
 
-// Footer đầy đủ (cùng phần còn lại của B0.4-T9) chưa triển khai ở đây.
+const COLLAPSE_STORAGE_KEY = 'qlskdd.sidebarCollapsed';
+
+/**
+ * Khung ứng dụng: nền xám phủ toàn màn, bên trên là HAI tấm bo tròn tách rời — sidebar
+ * và vùng nội dung — cách nhau một khe hở. Tách hẳn thay vì gộp chung một khối giúp mắt
+ * phân biệt ngay đâu là điều hướng, đâu là nội dung đang xem.
+ *
+ * Chỉ vùng nội dung cuộn (trang không cuộn) nên sidebar và thanh trên luôn đứng yên;
+ * thẻ tài khoản vì thế cũng luôn nằm ở đáy sidebar.
+ */
 export default function MainLayout() {
+  const { pathname } = useLocation();
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_STORAGE_KEY) === '1');
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem(COLLAPSE_STORAGE_KEY, collapsed ? '1' : '0');
+  }, [collapsed]);
+
+  // Đổi trang thì đóng ngăn kéo mobile và đưa vùng nội dung về đầu — vùng cuộn là
+  // <main> chứ không phải window nên window.scrollTo của trang con không lo việc này.
+  useEffect(() => {
+    setMobileOpen(false);
+    document.getElementById('app-scroll-area')?.scrollTo({ top: 0 });
+  }, [pathname]);
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Navbar />
-      <div className="flex">
-        <Sidebar />
-        <main className="min-w-0 flex-1">
-          <Outlet />
+    <div className="flex h-screen gap-0 bg-canvas p-0 lg:gap-3 lg:p-3">
+      <Sidebar
+        collapsed={collapsed}
+        onToggleCollapse={() => setCollapsed((value) => !value)}
+        mobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
+      />
+
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-white shadow-shell lg:rounded-[24px]">
+        <Topbar onOpenMobileMenu={() => setMobileOpen(true)} />
+        <main id="app-scroll-area" className="min-h-0 flex-1 overflow-y-auto scrollbar-slim">
+          {/*
+            Đổi khoá theo pathname để mỗi lần sang trang khác là nội dung mới trồi lên
+            mượt thay vì thay thế đột ngột. Chỉ theo pathname, KHÔNG theo query string —
+            nếu không thì mỗi lần đổi tuần/bộ lọc trên cùng một trang cũng chạy lại
+            hiệu ứng, gây chớp giật.
+          */}
+          <div key={pathname} className="animate-page">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

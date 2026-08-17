@@ -4,6 +4,7 @@ import type {
   ChangePasswordRequest,
   LoginRequest,
   LoginResponse,
+  ProfileRequest,
   User,
 } from './authTypes';
 
@@ -17,6 +18,11 @@ export const login = (req: LoginRequest): Promise<LoginResponse> =>
 export const getMe = (): Promise<User> =>
   apiClient
     .get<ApiResponse<User>>(`${AUTH_BASE_URL}/me`)
+    .then((res) => res.data.data);
+
+export const updateProfile = (req: ProfileRequest): Promise<User> =>
+  apiClient
+    .put<ApiResponse<User>>(`${AUTH_BASE_URL}/me`, req)
     .then((res) => res.data.data);
 
 export const logout = (): Promise<void> =>

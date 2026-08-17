@@ -39,7 +39,7 @@ function inputClass(field: keyof FormState, fieldErrors: FieldErrors) {
   return `mt-1.5 h-11 w-full rounded-xl border px-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4 ${
     fieldErrors[field]
       ? 'border-red-400 focus:border-red-500 focus:ring-red-100'
-      : 'border-slate-300 focus:border-blue-500 focus:ring-blue-100'
+      : 'border-slate-300 focus:border-ink/30 focus:ring-ink/10'
   }`;
 }
 
@@ -266,7 +266,7 @@ export default function EventForm({ initialEvent, onDirtyChange }: EventFormProp
             onChange={(e) => updateField('description', e.target.value)}
             rows={4}
             placeholder="Mô tả ngắn về sự kiện"
-            className="mt-1.5 w-full rounded-xl border border-slate-300 px-3.5 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            className="mt-1.5 w-full rounded-xl border border-slate-300 px-3.5 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-ink/30 focus:ring-4 focus:ring-ink/10"
           />
         </label>
 
@@ -329,7 +329,7 @@ export default function EventForm({ initialEvent, onDirtyChange }: EventFormProp
         <button
           type="submit"
           disabled={saving || loadingCategories}
-          className="inline-flex min-w-[160px] items-center justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
+          className="inline-flex min-w-[160px] items-center justify-center rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-white hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-blue-400"
         >
           {saving ? 'Đang lưu...' : initialEvent ? 'Lưu thay đổi' : 'Lưu sự kiện'}
         </button>
@@ -339,7 +339,7 @@ export default function EventForm({ initialEvent, onDirtyChange }: EventFormProp
         <button
           type="submit"
           disabled={saving || loadingCategories}
-          className="min-w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
+          className="min-w-full rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-blue-400"
         >
           {saving ? 'Đang lưu...' : initialEvent ? 'Lưu thay đổi' : 'Lưu sự kiện'}
         </button>

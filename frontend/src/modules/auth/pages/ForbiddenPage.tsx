@@ -14,7 +14,7 @@ export default function ForbiddenPage() {
       <button
         type="button"
         onClick={() => navigate(ROUTES.HOME)}
-        className="mt-3 min-h-11 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+        className="mt-3 min-h-11 rounded-lg bg-ink px-5 py-2.5 text-sm font-semibold text-white hover:bg-ink-soft"
       >
         Về trang chủ
       </button>

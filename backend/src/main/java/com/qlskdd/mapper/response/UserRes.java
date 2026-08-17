@@ -18,6 +18,7 @@ public class UserRes {
     private String fullName;
     private String email;
     private String phone;
+    private String avatar;
     private String role;
     private Boolean enabled;
     private LocalDateTime createdAt;
