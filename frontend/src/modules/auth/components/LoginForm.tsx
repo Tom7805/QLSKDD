@@ -132,14 +132,14 @@ export default function LoginForm() {
       {error && (
         <div
           role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="animate-rise rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
         >
           {error}
         </div>
       )}
 
       <div>
-        <label htmlFor="username" className="mb-1.5 block text-sm font-medium text-slate-700">
+        <label htmlFor="username" className="mb-2 block text-[13px] font-bold text-slate-700">
           Tên đăng nhập
         </label>
         <input
@@ -156,7 +156,7 @@ export default function LoginForm() {
             setFieldErrors((current) => ({ ...current, username: undefined }));
           }}
           placeholder="Nhập tên đăng nhập"
-          className={`block min-h-11 w-full rounded-lg border px-3.5 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 ${fieldErrors.username ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-300 focus:border-ink/30 focus:ring-ink/30/20'}`}
+          className={`block min-h-12 w-full rounded-xl border bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 placeholder:font-normal placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 ${fieldErrors.username ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/10'}`}
         />
         {fieldErrors.username && (
           <p id="username-error" className="mt-1 text-sm text-red-600">
@@ -166,7 +166,7 @@ export default function LoginForm() {
       </div>
 
       <div>
-        <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700">
+        <label htmlFor="password" className="mb-2 block text-[13px] font-bold text-slate-700">
           Mật khẩu
         </label>
         <div className="relative">
@@ -184,7 +184,7 @@ export default function LoginForm() {
               setFieldErrors((current) => ({ ...current, password: undefined }));
             }}
             placeholder="Nhập mật khẩu"
-            className={`block min-h-11 w-full rounded-lg border px-3.5 py-2.5 pr-11 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 ${fieldErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-300 focus:border-ink/30 focus:ring-ink/30/20'}`}
+            className={`block min-h-12 w-full rounded-xl border bg-slate-50/70 px-4 py-3 pr-12 text-sm font-medium text-slate-900 placeholder:font-normal placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 ${fieldErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/10'}`}
           />
           <button
             type="button"
@@ -206,7 +206,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-ink px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-blue-400"
+        className="button-shine flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_30px_-10px_rgba(99,102,241,.55)] active:translate-y-0 active:scale-[.99] disabled:cursor-not-allowed disabled:translate-y-0 disabled:from-indigo-300 disabled:to-indigo-300 disabled:shadow-none"
       >
         {loading && <SpinnerIcon />}
         {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
