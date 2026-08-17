@@ -37,18 +37,21 @@ function FilterBox({
   label,
   hint,
   ariaLabel,
+  /** Viền màu nhạt riêng cho từng trục lọc — nhìn màu viền là biết đang ở nhóm nào */
+  borderTone,
   children,
 }: {
   label: string;
   hint: string;
   ariaLabel?: string;
+  borderTone: string;
   children: ReactNode;
 }) {
   return (
     <section
       role={ariaLabel ? 'group' : undefined}
       aria-label={ariaLabel}
-      className="flex min-w-0 flex-1 basis-64 flex-wrap items-center gap-1.5 rounded-2xl bg-white px-3.5 py-2.5 shadow-card"
+      className={`flex min-w-0 flex-1 basis-64 flex-wrap items-center gap-1.5 glass-card px-3.5 py-2.5 ${borderTone}`}
     >
       <span title={hint} className="shrink-0 cursor-help text-[10px] font-bold uppercase tracking-wide text-slate-400">
         {label}
@@ -79,7 +82,7 @@ export default function EventFilterBar({
   return (
     <div className="mb-3 flex shrink-0 flex-wrap items-stretch gap-2">
       {categories.length > 0 && (
-        <FilterBox label="Loại" hint="Phân loại sự kiện do ban tổ chức đặt">
+        <FilterBox label="Loại" hint="Phân loại sự kiện do ban tổ chức đặt" borderTone="border-violet-200/90">
           <CategoryList
             categories={categories}
             value={filters.categoryId}
@@ -89,7 +92,7 @@ export default function EventFilterBar({
         </FilterBox>
       )}
 
-      <FilterBox label="Đăng ký" hint="Ban tổ chức còn nhận đăng ký hay không" ariaLabel="Trạng thái đăng ký">
+      <FilterBox label="Đăng ký" hint="Ban tổ chức còn nhận đăng ký hay không" ariaLabel="Trạng thái đăng ký" borderTone="border-amber-200/90">
         <FilterChip selected={filters.status === ''} onClick={() => update('status', '')}>
           Tất cả
         </FilterChip>
@@ -110,7 +113,7 @@ export default function EventFilterBar({
 
       {/* Chế độ lịch lấy khoảng ngày từ thanh điều hướng, chỉ danh sách mới cần chọn tay */}
       {!isCalendar && (
-        <FilterBox label="Khoảng ngày" hint="Chỉ hiện sự kiện bắt đầu trong khoảng này">
+        <FilterBox label="Khoảng ngày" hint="Chỉ hiện sự kiện bắt đầu trong khoảng này" borderTone="border-sky-200/90">
           <input
             aria-label="Từ ngày"
             className={dateFieldClass}
@@ -136,7 +139,7 @@ export default function EventFilterBar({
         <button
           type="button"
           onClick={onClear}
-          className="flex shrink-0 items-center gap-1 self-stretch rounded-2xl bg-white px-3.5 text-[11.5px] font-bold text-ink-muted shadow-card transition-all duration-150 hover:bg-ink hover:text-white active:scale-[0.98]"
+          className="flex shrink-0 items-center gap-1 self-stretch rounded-2xl border border-slate-200 bg-white px-3.5 text-[11.5px] font-bold text-ink-muted transition-all duration-150 hover:border-ink hover:bg-ink hover:text-white raise"
         >
           Xóa bộ lọc
           <span className="text-[10px] tabular-nums opacity-70">{activeCount}</span>

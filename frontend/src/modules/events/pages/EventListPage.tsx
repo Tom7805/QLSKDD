@@ -265,7 +265,7 @@ export default function EventListPage() {
     */
     <div
       className={[
-        'flex flex-col bg-workspace p-4 sm:p-5 lg:p-6',
+        'flex flex-col bg-scene p-4 sm:p-5 lg:p-6',
         isCalendar ? 'min-h-full xl:h-[calc(100vh-5.5rem)]' : 'min-h-full',
       ].join(' ')}
     >
@@ -305,7 +305,7 @@ export default function EventListPage() {
           </div>
 
           {isCalendar && (
-            <div className="inline-flex h-10 shrink-0 items-center rounded-full bg-white p-1 shadow-card">
+            <div className="inline-flex h-10 shrink-0 items-center rounded-full border border-slate-200 bg-white p-1 shadow-raise">
               <button
                 type="button"
                 onClick={() => stepRange(-1)}
@@ -393,7 +393,7 @@ export default function EventListPage() {
               className={`flex min-h-0 flex-1 flex-col transition-opacity duration-200 ${fetching && !firstLoad ? 'opacity-50' : 'opacity-100'}`}
             >
               {noResult && isCalendar && (
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 shadow-card">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3 glass-card px-4 py-3">
                   <p className="text-sm text-slate-600">
                     {hasNarrowedSearch ? (
                       keyword
@@ -407,7 +407,7 @@ export default function EventListPage() {
                     <button
                       type="button"
                       onClick={() => { setSearchValue(''); clearFilters(); }}
-                      className="inline-flex h-9 items-center rounded-full bg-slate-100 px-4 text-[13px] font-bold text-ink-muted transition-all duration-150 hover:bg-ink hover:text-white active:scale-[0.97]"
+                      className="inline-flex h-9 items-center rounded-full bg-slate-100 px-4 text-[13px] font-bold text-ink-muted transition-all duration-150 hover:bg-ink hover:text-white active:scale-[0.97] raise"
                     >
                       Xóa bộ lọc
                     </button>
@@ -429,7 +429,7 @@ export default function EventListPage() {
                   {Array.from({ length: 6 }, (_, index) => <div key={index} className="h-24 animate-pulse rounded-2xl bg-white/70" />)}
                 </div>
               ) : noResult && hasNarrowedSearch ? (
-                <div className="animate-rise rounded-3xl bg-white px-6 py-14 text-center shadow-card">
+                <div className="animate-rise glass-card px-6 py-14 text-center">
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-400" aria-hidden="true">
                     <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                       <circle cx="10.5" cy="10.5" r="6.5" /><path strokeLinecap="round" d="m16 16 4 4M8 9h5M8 12h3" />
@@ -442,13 +442,13 @@ export default function EventListPage() {
                   <button
                     type="button"
                     onClick={() => { setSearchValue(''); clearFilters(); }}
-                    className="mt-5 inline-flex h-10 items-center justify-center rounded-full bg-ink px-5 text-sm font-bold text-white transition-all duration-150 hover:bg-ink-soft active:scale-[0.97]"
+                    className="mt-5 inline-flex h-10 items-center justify-center rounded-full bg-ink px-5 text-sm font-bold text-white transition-all duration-150 hover:bg-ink-soft active:scale-[0.97] raise"
                   >
                     Xóa bộ lọc
                   </button>
                 </div>
               ) : noResult ? (
-                <div className="animate-rise rounded-3xl bg-white p-12 text-center shadow-card">
+                <div className="animate-rise glass-card p-12 text-center">
                   <p className="text-lg font-semibold text-slate-700">Chưa có sự kiện nào</p>
                   <p className="mt-1 text-sm text-slate-500">Các sự kiện mới sẽ xuất hiện tại đây.</p>
                 </div>

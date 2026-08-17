@@ -70,7 +70,7 @@ function countdownLabel(startAt: string, now: Date) {
  */
 function Glass({ className = '', children }: { className?: string; children: ReactNode }) {
   return (
-    <div className={`h-full rounded-3xl border border-white/70 bg-white/55 shadow-glass backdrop-blur-xl ${className}`}>
+    <div className={`glass-card h-full ${className}`}>
       {children}
     </div>
   );

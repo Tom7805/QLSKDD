@@ -20,17 +20,6 @@ export default {
       },
       backgroundImage: {
         /*
-         * Nền của các trang có thẻ nổi. Một dải xanh lạnh rất nhạt, cộng một quầng sáng
-         * trắng lớn ở góc trên bên trái để mặt nền không phẳng lì.
-         *
-         * Cố ý CHỈ dùng một họ màu (xanh): bản trước pha thêm hồng ở đáy, mà tím nhạt gặp
-         * hồng nhạt thì ra một sắc xám đục — nền trông bẩn chứ không dịu.
-         */
-        workspace:
-          'radial-gradient(1100px 520px at 12% -14%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 62%), linear-gradient(180deg, #eff3fb 0%, #e6ecf7 100%)',
-        /** Dải chào ở trang chủ — đậm hơn nền một nấc để vẫn tách ra khỏi nó */
-        welcome: 'linear-gradient(112deg, #dde6fb 0%, #e5e6fa 46%, #e9f0fd 100%)',
-        /*
          * Nền của trang chủ kính mờ, dựng hoàn toàn bằng CSS — không tải thêm file ảnh.
          *
          * Cố ý để SÁNG chứ không tối: chữ trên trang này là chữ đậm màu mực, nên nếu vì

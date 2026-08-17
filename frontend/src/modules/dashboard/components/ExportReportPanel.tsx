@@ -41,7 +41,7 @@ export default function ExportReportPanel() {
   return (
     <section
       aria-label="Xuất báo cáo"
-      className="flex h-full flex-col rounded-3xl bg-white shadow-float"
+      className="flex h-full flex-col glass-card border-emerald-200/80"
     >
       <div className="flex items-center gap-2.5 border-b border-hairline px-4 py-3 sm:px-5">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-ink-muted" aria-hidden="true">
@@ -85,7 +85,7 @@ export default function ExportReportPanel() {
           type="button"
           onClick={handleExport}
           disabled={!canExport || exporting}
-          className="mt-auto inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-ink px-4 text-sm font-semibold text-white transition-all duration-150 hover:bg-ink-soft active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:active:scale-100"
+          className="mt-auto inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-ink px-4 text-sm font-semibold text-white transition-all duration-150 hover:bg-ink-soft active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:active:scale-100 raise"
         >
           {exporting ? (
             <>

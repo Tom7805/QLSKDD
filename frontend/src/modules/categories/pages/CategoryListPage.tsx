@@ -83,7 +83,7 @@ export default function CategoryListPage() {
   };
 
   return (
-    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-scene p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -91,12 +91,12 @@ export default function CategoryListPage() {
             <h1 className="mt-1 text-2xl font-bold text-slate-900">Quản lý loại sự kiện</h1>
             <p className="mt-1 text-sm text-slate-500">Thêm, sửa hoặc xoá loại sự kiện. Loại đang có sự kiện không thể xoá.</p>
           </div>
-          <button type="button" onClick={openCreateForm} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-ink px-4 text-sm font-semibold text-white shadow-sm hover:bg-ink-soft">
+          <button type="button" onClick={openCreateForm} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-ink px-4 text-sm font-semibold text-white shadow-sm hover:bg-ink-soft raise">
             <span className="text-xl leading-none" aria-hidden="true">＋</span> Thêm loại mới
           </button>
         </div>
 
-        <div className="overflow-hidden rounded-3xl bg-white shadow-float">
+        <div className="overflow-hidden glass-card border-violet-200/80">
           <div className="border-b border-slate-200 px-4 py-4 sm:px-6">
             <p className="text-sm text-slate-500">Có {categories.length} loại sự kiện.</p>
           </div>
@@ -165,7 +165,7 @@ export default function CategoryListPage() {
                       <div className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">{category.eventCount} sự kiện</div>
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <button type="button" onClick={() => openEditForm(category)} className="min-w-[120px] rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-ink hover:bg-slate-50">Sửa</button>
+                      <button type="button" onClick={() => openEditForm(category)} className="min-w-[120px] rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-ink hover:bg-slate-50 raise">Sửa</button>
                       <button type="button" onClick={() => setDeleteTarget(category)} className="min-w-[120px] rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50">Xoá</button>
                     </div>
                   </article>

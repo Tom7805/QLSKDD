@@ -26,6 +26,15 @@ const formatDateTime = (value?: string | null) => {
   return `${time} ${day}`;
 };
 
+/** Sắc viền luân phiên cho các dòng đăng ký */
+const ROW_TONES = [
+  'border-indigo-200 hover:border-indigo-400',
+  'border-amber-200 hover:border-amber-400',
+  'border-sky-200 hover:border-sky-400',
+  'border-emerald-200 hover:border-emerald-400',
+  'border-rose-200 hover:border-rose-400',
+];
+
 export default function MyRegistrationsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = readPage(searchParams.get('page'));
@@ -91,7 +100,7 @@ export default function MyRegistrationsPage() {
   };
 
   return (
-    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-scene p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-6xl">
         <header className="mb-6">
           <p className="text-sm font-semibold text-ink">Đăng ký</p>
@@ -119,9 +128,13 @@ export default function MyRegistrationsPage() {
           </div>
         ) : (
           <>
+            {/* Viền mỗi dòng một sắc luân phiên — dãy thẻ trắng xếp dọc dễ nhoè vào nhau */}
             <div className="space-y-4">
-              {result.content.map((item) => (
-                <article key={item.registrationId} className="rounded-3xl bg-white p-5 shadow-float">
+              {result.content.map((item, index) => (
+                <article
+                  key={item.registrationId}
+                  className={`rounded-3xl border bg-white/70 p-5 shadow-raise backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-raise-lg ${ROW_TONES[index % ROW_TONES.length]}`}
+                >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -148,7 +161,7 @@ export default function MyRegistrationsPage() {
                         <button
                           type="button"
                           onClick={() => setTicket(item)}
-                          className="group flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-ink-soft hover:shadow-md"
+                          className="group flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-ink-soft hover:shadow-md raise"
                         >
                           <span className="grid grid-cols-2 gap-0.5" aria-hidden="true">{Array.from({ length: 4 }, (_, index) => <i key={index} className="h-1.5 w-1.5 rounded-[1px] bg-white" />)}</span>
                           Xem vé QR

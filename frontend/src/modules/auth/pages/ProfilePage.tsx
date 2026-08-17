@@ -111,7 +111,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-scene p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-[1100px]">
         <header className="mb-5">
           <h1 className="text-2xl font-extrabold tracking-tight text-ink sm:text-[26px]">Hồ sơ của tôi</h1>
@@ -120,14 +120,14 @@ export default function ProfilePage() {
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
           <form onSubmit={handleSubmit} className="animate-rise space-y-5">
-            <Card floating>
+            <Card floating className="border-violet-200/80">
               <CardHeader title="Ảnh đại diện" subtitle="Tải ảnh của bạn hoặc chọn một màu nền" />
               <CardBody>
                 <AvatarPicker name={fullName || user.username} value={avatar} onChange={setAvatar} />
               </CardBody>
             </Card>
 
-            <Card floating>
+            <Card floating className="border-indigo-200/80">
               <CardHeader title="Thông tin cá nhân" subtitle="Những mục có thể chỉnh sửa" />
               <CardBody className="space-y-4">
                 <label className="block">
@@ -210,7 +210,7 @@ export default function ProfilePage() {
                 id: 'account',
                 title: 'Tài khoản',
                 content: (
-            <Card floating>
+            <Card floating className="border-sky-200/80">
               <CardBody className="text-center">
                 <Avatar name={user.fullName} avatar={user.avatar} size="lg" className="mx-auto shadow-card" />
                 <p className="mt-3 truncate text-[15px] font-bold text-ink">{user.fullName}</p>
@@ -227,7 +227,7 @@ export default function ProfilePage() {
                 id: 'capabilities',
                 title: 'Quyền của bạn',
                 content: (
-            <Card floating>
+            <Card floating className="border-emerald-200/80">
               <CardHeader icon={<UsersIcon className="h-4 w-4" />} title="Quyền của bạn" subtitle={roleLabel} />
               <CardBody>
                 <ul className="space-y-2.5">
@@ -246,7 +246,7 @@ export default function ProfilePage() {
                 id: 'password',
                 title: 'Đổi mật khẩu',
                 content: (
-            <Card floating>
+            <Card floating className="border-amber-200/80">
               <CardBody>
                 <Link
                   to={ROUTES.CHANGE_PASSWORD}

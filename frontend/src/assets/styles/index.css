@@ -55,6 +55,50 @@ input[type='password']::-ms-clear {
   }
 }
 
+@layer components {
+  /*
+   * Ngôn ngữ hình khối dùng chung cho mọi trang, lấy từ Trang chủ.
+   *
+   * Để ở đây thay vì chép chuỗi class dài vào từng file: các lớp này xuất hiện ở gần 20
+   * chỗ trong app, mỗi lần muốn nới bóng hay đổi độ mờ của kính mà phải sửa 20 nơi thì
+   * chắc chắn sẽ có chỗ bị bỏ sót và lệch đi.
+   */
+
+  /* KHAY chứa: kính mờ trung tính. Màu sắc dồn cho các ô nhỏ bên trong, không tô ở đây */
+  .glass-card {
+    @apply rounded-3xl border border-white/70 bg-white/55 shadow-glass backdrop-blur-xl;
+  }
+
+  /* Ô nhỏ trắng đặc nằm trong khay kính — có viền, có bóng, nhấc lên khi trỏ vào */
+  .glass-tile {
+    @apply rounded-2xl border border-slate-200 bg-white shadow-raise transition-all duration-200;
+  }
+
+  .glass-tile:hover {
+    @apply -translate-y-0.5 border-slate-300 shadow-raise-lg;
+  }
+
+  /*
+   * Nút nổi: có bóng sẵn, nhấc lên khi trỏ vào, ấn xuống khi bấm. Gắn thêm vào chuỗi
+   * class của nút là đủ — không ghi đè màu nền nên nút chính/nút phụ vẫn giữ màu riêng.
+   */
+  .raise {
+    @apply shadow-raise transition-all duration-150;
+  }
+
+  .raise:hover:not(:disabled) {
+    @apply -translate-y-0.5 shadow-raise-lg;
+  }
+
+  .raise:active:not(:disabled) {
+    @apply translate-y-0 scale-[0.97];
+  }
+
+  .raise:disabled {
+    @apply shadow-none;
+  }
+}
+
 @layer utilities {
   /* Nội dung mới (đổi tuần/tháng, đổi tab) trồi lên nhẹ thay vì hiện đột ngột */
   @keyframes rise {

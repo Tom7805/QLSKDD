@@ -15,7 +15,7 @@ export function Card({
   children: ReactNode;
 }) {
   const base = floating
-    ? 'rounded-3xl bg-white shadow-float'
+    ? 'glass-card'
     : 'rounded-2xl border border-hairline bg-white shadow-card';
   return <div className={`${base} ${className}`}>{children}</div>;
 }

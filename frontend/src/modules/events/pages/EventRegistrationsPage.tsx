@@ -90,7 +90,7 @@ export default function EventRegistrationsPage() {
   };
 
   return (
-    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-scene p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
         <button type="button" onClick={() => navigate(ROUTES.EVENTS)} className="mb-5 text-sm font-semibold text-ink">
           ← Quay lại danh sách sự kiện
@@ -106,11 +106,11 @@ export default function EventRegistrationsPage() {
             <button
               type="button"
               onClick={() => navigate(`/events/${eventIdNumber}/check-in`)}
-              className="min-h-12 rounded-xl bg-ink px-5 py-3 font-semibold text-white hover:bg-ink-soft"
+              className="min-h-12 rounded-xl bg-ink px-5 py-3 font-semibold text-white hover:bg-ink-soft raise"
             >
               Mở màn hình điểm danh
             </button>
-          <div className="rounded-3xl bg-white px-4 py-3 shadow-float">
+          <div className="glass-card border-indigo-200/80 px-4 py-3">
             <p className="text-sm font-medium text-slate-500">Đã đăng ký: {response.summary.totalRegistered} / {response.summary.capacity ?? 0}</p>
             <div className="mt-2 h-2.5 w-48 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={usagePercent}>
               <div
@@ -142,7 +142,7 @@ export default function EventRegistrationsPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-3xl bg-white shadow-float">
+            <div className="overflow-x-auto glass-card border-sky-200/80">
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50">
                   <tr>
