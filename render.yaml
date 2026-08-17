@@ -71,9 +71,18 @@ services:
       - key: APP_JWT_EXPIRATION
         value: "86400000"
 
-      # Frontend gọi API qua rewrite nên cùng origin → không cần mở CORS cho ai.
+      # PHẢI khai origin của frontend, KHÔNG được để rỗng.
+      #
+      # Suy luận sai lúc đầu: "frontend gọi API qua rewrite nên cùng origin, không phát sinh
+      # CORS". Đúng với GET, SAI với POST — trình duyệt không gửi header `Origin` cho GET cùng
+      # origin, nhưng LUÔN gửi cho POST/PUT/DELETE. Spring Security thấy có `Origin` mà danh
+      # sách cho phép rỗng thì chặn ngay với 403 "Invalid CORS request", chưa từng kiểm tra
+      # mật khẩu — mà frontend lại hiện "Sai tài khoản hoặc mật khẩu", cực kỳ dễ truy nhầm hướng.
+      #
+      # Lỗi này KHÔNG phát hiện được bằng curl: curl không bao giờ gửi header `Origin`.
+      # Muốn kiểm tra loại lỗi này phải mở trình duyệt thật, hoặc thêm `-H "Origin: ..."`.
       - key: APP_CORS_ALLOWED_ORIGINS
-        value: ""
+        value: https://qlskdd-frontend.onrender.com
 
       # Mật khẩu tài khoản demo. Bản deploy có URL công khai, để mật khẩu mặc định trong mã
       # nguồn thì bất kỳ ai tìm ra địa chỉ đều đăng nhập được với quyền quản trị.
