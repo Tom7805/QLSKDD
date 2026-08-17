@@ -51,6 +51,15 @@ EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \
   CMD wget -q --spider http://127.0.0.1:8080/api/v1/events || exit 1
 
-# Giới hạn heap theo % RAM container thay vì con số cứng, để container đổi giới hạn RAM
-# thì JVM tự co giãn theo.
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]
+# Tham số JVM chọn cho máy NHỎ và CHẬM (gói free của Render: 512MB RAM, 1 CPU chia sẻ) —
+# ở đó khởi động nhanh quan trọng hơn thông lượng đỉnh:
+#
+# MaxRAMPercentage=65  Giới hạn heap theo % RAM container thay vì số cứng. Để 75% trên máy
+#                      512MB thì chỉ còn ~128MB cho metaspace, thread stack và bộ nhớ ngoài
+#                      heap — quá sát, dễ bị hệ điều hành giết vì hết RAM.
+# UseSerialGC          G1 (mặc định) dựng nhiều thread GC và tốn thời gian khởi tạo; trên
+#                      container 1 CPU thì nó vừa chậm hơn vừa tốn RAM hơn Serial.
+# TieredStopAtLevel=1  Chỉ dùng JIT tầng 1: biên dịch nhanh, bỏ tối ưu sâu. Đổi thông lượng
+#                      đỉnh lấy thời gian khởi động — đúng thứ cần khi Render có hạn giờ quét
+#                      cổng, và khi instance free ngủ dậy phải khởi động lại từ đầu.
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=65", "-XX:+UseSerialGC", "-XX:TieredStopAtLevel=1", "-jar", "/app/app.jar"]
