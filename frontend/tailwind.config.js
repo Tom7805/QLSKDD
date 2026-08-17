@@ -5,7 +5,7 @@ export default {
     extend: {
       colors: {
         // Nền xám của "bàn làm việc" — khung ứng dụng bo tròn nổi lên trên nền này
-        canvas: '#ececed',
+        canvas: '#e9edf5',
         // Mực chính: gần đen nhưng ám xanh, dùng cho nút chính / chip đang chọn / chữ đậm
         ink: {
           DEFAULT: '#16181d',
@@ -13,13 +13,27 @@ export default {
           muted: '#5b616e',
         },
         // Đường kẻ/viền thống nhất toàn hệ thống
-        hairline: '#ebecef',
+        hairline: '#e7eaf0',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
       backgroundImage: {
         /*
+<<<<<<< HEAD
+=======
+         * Nền của các trang có thẻ nổi. Một dải xanh lạnh rất nhạt, cộng một quầng sáng
+         * trắng lớn ở góc trên bên trái để mặt nền không phẳng lì.
+         *
+         * Cố ý CHỈ dùng một họ màu (xanh): bản trước pha thêm hồng ở đáy, mà tím nhạt gặp
+         * hồng nhạt thì ra một sắc xám đục — nền trông bẩn chứ không dịu.
+         */
+        workspace:
+          'radial-gradient(900px 500px at 8% -10%, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0) 66%), radial-gradient(700px 440px at 100% 0%, rgba(199,210,254,0.42), transparent 64%), linear-gradient(155deg, #f4f7fc 0%, #e9eef8 52%, #eef2f8 100%)',
+        /** Dải chào ở trang chủ — đậm hơn nền một nấc để vẫn tách ra khỏi nó */
+        welcome: 'linear-gradient(112deg, #dde6fb 0%, #e5e6fa 46%, #e9f0fd 100%)',
+        /*
+>>>>>>> 85ff8f49043fe298082949bc3d77c59c4588f808
          * Nền của trang chủ kính mờ, dựng hoàn toàn bằng CSS — không tải thêm file ảnh.
          *
          * Cố ý để SÁNG chứ không tối: chữ trên trang này là chữ đậm màu mực, nên nếu vì
@@ -37,18 +51,18 @@ export default {
       },
       boxShadow: {
         // Bóng rất nhẹ cho thẻ nổi trên nền trắng (tránh viền cứng)
-        card: '0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.05)',
+        card: '0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -18px rgba(30, 41, 59, 0.24)',
         // Bóng khi thẻ được hover / nhấc lên
         lift: '0 4px 12px rgba(16, 24, 40, 0.08), 0 2px 4px rgba(16, 24, 40, 0.04)',
         // Bóng của cả khung ứng dụng
-        shell: '0 12px 40px rgba(16, 24, 40, 0.10)',
+        shell: '0 24px 70px -28px rgba(30, 41, 59, 0.34), 0 4px 18px -10px rgba(30, 41, 59, 0.16)',
         // Bóng của mục điều hướng / tab đang chọn (viên thuốc trắng)
         pill: '0 1px 2px rgba(16, 24, 40, 0.06), 0 2px 6px rgba(16, 24, 40, 0.05)',
         // Bóng của popover / menu thả xuống
         pop: '0 8px 28px rgba(16, 24, 40, 0.12), 0 2px 6px rgba(16, 24, 40, 0.06)',
         // Bóng của thẻ nổi trên nền bg-workspace — ám xanh tím cùng tông với nền nên
         // trông như thẻ lơ lửng phía trên, không phải một hình chữ nhật dán phẳng
-        float: '0 18px 45px -24px rgba(49, 46, 129, 0.45)',
+        float: '0 18px 45px -26px rgba(49, 46, 129, 0.42), 0 2px 8px -4px rgba(15,23,42,.1)',
         'float-lg': '0 24px 50px -22px rgba(49, 46, 129, 0.55)',
         /*
          * Thẻ kính mờ: một bóng đổ mềm bên dưới CỘNG một vệt sáng trắng mảnh chạy dọc

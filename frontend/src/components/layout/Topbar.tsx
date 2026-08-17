@@ -40,7 +40,7 @@ export default function Topbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => v
   const today = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit' }).format(new Date());
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-slate-100 bg-white px-4 sm:px-6">
+    <header className="relative z-20 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-slate-200/60 bg-white/80 px-4 backdrop-blur-xl sm:px-6">
       <div className="flex min-w-0 items-center gap-2">
         <button
           type="button"
@@ -67,15 +67,15 @@ export default function Topbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => v
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        <span className="hidden items-center gap-2 rounded-full bg-slate-50 px-3.5 py-1.5 text-xs font-semibold capitalize text-slate-500 md:inline-flex">
-          <CalendarIcon className="h-4 w-4 text-slate-400" />
+        <span className="hidden items-center gap-2 rounded-full border border-slate-200/70 bg-white px-3.5 py-1.5 text-xs font-semibold capitalize text-slate-500 shadow-sm md:inline-flex">
+          <CalendarIcon className="h-4 w-4 text-indigo-500" />
           {today}
         </span>
         <button
           type="button"
           onClick={() => navigate(ROUTES.EVENTS)}
           aria-label="Tìm kiếm sự kiện"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/70 bg-white text-slate-500 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:text-indigo-600 hover:shadow-md"
         >
           <SearchIcon className="h-[18px] w-[18px]" />
         </button>
