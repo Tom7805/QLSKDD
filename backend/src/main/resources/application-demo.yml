@@ -1,0 +1,34 @@
+# Profile `demo` (B6.3-T2) — dữ liệu trình diễn cuối kỳ do DemoSeeder nạp.
+#
+# Chạy: ./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
+#
+# CỐ Ý trỏ vào database RIÊNG `qlsk_dd_demo`, không dùng chung `qlsk_dd` với profile dev:
+# DemoSeeder chỉ nạp dữ liệu khi các bảng còn RỖNG. Nếu dùng chung database thì sau lần chạy
+# dev đầu tiên (DataSeeder đã tạo 3 tài khoản + 3 sự kiện) bảng không còn rỗng nữa, nên
+# DemoSeeder sẽ im lặng bỏ qua — đúng lúc lên demo thì không có dữ liệu trình diễn nào.
+# Tách database ra thì dev và demo không đè nhau, và muốn dựng lại dữ liệu demo sạch chỉ cần
+# DROP đúng một database, không mất dữ liệu đang làm dở của cả nhóm.
+#
+# `createDatabaseIfNotExist=true` để không phải CREATE DATABASE thủ công trước buổi demo.
+#
+# Ba giá trị datasource dưới đây CHO PHÉP GHI ĐÈ từ ngoài, vì profile này còn được bật KÈM
+# profile prod khi chạy trong Docker (`SPRING_PROFILES_ACTIVE=prod,demo`) để container có sẵn
+# dữ liệu trình diễn. Lúc đó host phải là tên service `mysql`, không phải 127.0.0.1 — ghi cứng
+# địa chỉ ở đây thì backend trong container sẽ đi tìm MySQL bên trong chính nó, không bao giờ
+# kết nối được. Để dạng ${...:mặc định} thì cả hai cách chạy đều đúng, không phụ thuộc vào
+# thứ tự nạp profile.
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/qlsk_dd_demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true&characterEncoding=UTF-8}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    # Tắt log SQL: buổi demo có chiếu màn hình, console đầy câu SQL vừa rối vừa che mất log cần xem
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false

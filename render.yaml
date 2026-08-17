@@ -1,0 +1,129 @@
+# QLSKDD — Render Blueprint (B6.5-T3)
+#
+# Khai báo hạ tầng bằng file thay vì bấm tay trong dashboard: ai cũng đọc được cấu hình đang
+# chạy là gì, và dựng lại được y hệt nếu phải tạo lại service.
+#
+# Cách dùng: Render Dashboard → New → Blueprint → chọn repo này → Apply.
+#
+# -----------------------------------------------------------------------------------------
+# KIẾN TRÚC
+#
+#   Người dùng ──→ qlskdd-frontend  (Static Site, MIỄN PHÍ, KHÔNG bao giờ ngủ)
+#                        │ rewrite /api/*  ─────────┐
+#                                                   ↓
+#                  qlskdd-backend  (Docker Web Service, free, NGỦ sau 15 phút không dùng)
+#                                                   ↓ SSL
+#                  Aiven for MySQL (bên ngoài Render, gói free 1GB, Bangalore)
+#
+# Frontend là Static Site chứ không phải web service chạy nginx như trong docker-compose:
+# static site của Render miễn phí và KHÔNG bị ngủ, nên trang luôn mở được ngay. Phần proxy
+# /api mà nginx đảm nhiệm ở Docker thì ở đây do `routes` bên dưới làm — vẫn giữ được nguyên
+# tắc "frontend gọi API cùng origin" nên KHÔNG phát sinh CORS.
+# -----------------------------------------------------------------------------------------
+
+services:
+  # ===========================================================================
+  # Backend — Spring Boot, build từ backend/Dockerfile
+  # ===========================================================================
+  - name: qlskdd-backend
+    type: web
+    runtime: docker
+    plan: free
+    # Singapore là region miễn phí gần Bangalore (nơi đặt MySQL trên Aiven) nhất.
+    region: singapore
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+
+    # Endpoint công khai, đi hết chuỗi Controller → Service → Repository → MySQL, nên trả 200
+    # nghĩa là cả ứng dụng lẫn kết nối database đều sống.
+    healthCheckPath: /api/v1/events
+
+    # TẮT auto-deploy: việc deploy do workflow .github/workflows/ci-cd.yml quyết định, và chỉ
+    # sau khi toàn bộ test đã xanh. Bật lên thì Render deploy ngay khi có commit, kể cả commit
+    # làm hỏng test — mất đúng ý nghĩa của CI/CD.
+    autoDeployTrigger: off
+
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        # prod = cấu hình chạy thật; demo = DemoSeeder nạp dữ liệu trình diễn.
+        # Bỏ `,demo` đi thì database rỗng hoàn toàn và KHÔNG đăng nhập được bằng tài khoản nào.
+        value: prod,demo
+
+      # 3 giá trị dưới đây là thông tin kết nối Aiven — `sync: false` nghĩa là Render KHÔNG lấy
+      # từ file này mà bắt nhập tay trong dashboard, nên mật khẩu không bao giờ nằm trong Git.
+      #
+      # SPRING_DATASOURCE_URL phải có sslMode=REQUIRED — Aiven từ chối kết nối không mã hoá.
+      # Dạng đầy đủ:
+      #   jdbc:mysql://<host>.aivencloud.com:<port>/defaultdb?sslMode=REQUIRED&serverTimezone=Asia/Ho_Chi_Minh&characterEncoding=UTF-8
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+
+      # Render tự sinh chuỗi ngẫu nhiên lần đầu và giữ nguyên qua các lần deploy sau.
+      # Không ai — kể cả người viết file này — biết giá trị đó, đúng thứ cần cho khoá ký JWT.
+      - key: APP_JWT_SECRET
+        generateValue: true
+
+      - key: APP_JWT_EXPIRATION
+        value: "86400000"
+
+      # Frontend gọi API qua rewrite nên cùng origin → không cần mở CORS cho ai.
+      - key: APP_CORS_ALLOWED_ORIGINS
+        value: ""
+
+      # Mật khẩu tài khoản demo. Bản deploy có URL công khai, để mật khẩu mặc định trong mã
+      # nguồn thì bất kỳ ai tìm ra địa chỉ đều đăng nhập được với quyền quản trị.
+      # `sync: false` → nhập tay trong dashboard, chỉ nhóm biết.
+      - key: APP_DEMO_ADMIN_PASSWORD
+        sync: false
+      - key: APP_DEMO_ORGANIZER_PASSWORD
+        sync: false
+      - key: APP_DEMO_USER_PASSWORD
+        sync: false
+
+  # ===========================================================================
+  # Frontend — React build sẵn, phục vụ tĩnh
+  # ===========================================================================
+  - name: qlskdd-frontend
+    type: web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    autoDeployTrigger: off
+
+    envVars:
+      # Đường dẫn TƯƠNG ĐỐI, nhờ các rewrite bên dưới. Vite nhúng biến này vào bundle ngay lúc
+      # build nên bắt buộc phải khai ở đây, không truyền được lúc chạy.
+      - key: VITE_API_BASE_URL
+        value: /api/v1
+
+    routes:
+      # ---------------------------------------------------------------------------------
+      # ⚠️ PHẢI SỬA `destination` bên dưới sau khi tạo service backend lần đầu.
+      # Render cấp URL thật theo dạng https://qlskdd-backend-xxxx.onrender.com — lấy đúng URL
+      # đó ở dashboard rồi thay vào cả 3 dòng. Để sai thì frontend mở được nhưng mọi thao tác
+      # gọi API đều lỗi mạng.
+      # ---------------------------------------------------------------------------------
+      - type: rewrite
+        source: /api/*
+        destination: https://qlskdd-backend.onrender.com/api/*
+
+      # Swagger UI tiện cho buổi demo: xem tài liệu API ngay trên cùng một tên miền
+      - type: rewrite
+        source: /swagger-ui/*
+        destination: https://qlskdd-backend.onrender.com/swagger-ui/*
+      - type: rewrite
+        source: /v3/api-docs*
+        destination: https://qlskdd-backend.onrender.com/v3/api-docs*
+
+      # BẮT BUỘC với React Router, và phải nằm CUỐI CÙNG: các luật trên khớp trước.
+      # Người dùng đang ở /events/5 bấm F5 thì trình duyệt xin đúng đường dẫn đó, trên đĩa
+      # không có file nào tên vậy — thiếu luật này là ra 404.
+      - type: rewrite
+        source: /*
+        destination: /index.html

@@ -1,0 +1,1368 @@
+{
+  "info": {
+    "_postman_id": "cdd0a0dd-2c79-4a8b-803f-e3a6e54f10bf",
+    "name": "QLSKDD API",
+    "description": "Collection API cho hệ thống Quản lý sự kiện. Đồng bộ từ backend Spring Boot (com.qlskdd.controller). Folder tổ chức theo module nghiệp vụ, request đặt tên theo mẫu \"Hành động + Đối tượng\".",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "56137981"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Test cases",
+          "item": [
+            {
+              "name": "Đăng nhập - Sai mật khẩu (401)",
+              "id": "435912a4-0759-49fe-997a-39bc1267072d",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"username\": \"admin\",\r\n  \"password\": \"sai_mat_khau_123\"\r\n}\r\n"
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "response": [],
+              "uid": "56137981-435912a4-0759-49fe-997a-39bc1267072d"
+            },
+            {
+              "name": "Đăng nhập - Thiếu username (400)",
+              "id": "d50d3c63-45ad-4f41-89f7-37780386e52e",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"username\": \"\",\r\n  \"password\": \"admin123\"\r\n}\r\n"
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "response": [],
+              "uid": "56137981-d50d3c63-45ad-4f41-89f7-37780386e52e"
+            }
+          ],
+          "id": "a080a451-d707-4763-b00c-14f6869f28dc",
+          "uid": "56137981-a080a451-d707-4763-b00c-14f6869f28dc"
+        },
+        {
+          "name": "Đăng nhập - Admin",
+          "id": "62507dd3-14f9-4f99-ac15-a8fab57784e9",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.collectionVariables.set(\"accessToken\", res.data.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"username\": \"admin\",\r\n  \"password\": \"admin123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-62507dd3-14f9-4f99-ac15-a8fab57784e9"
+        },
+        {
+          "name": "Đăng nhập - Organizer",
+          "id": "d208ed33-9e84-44d3-ab63-114cc337920d",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.collectionVariables.set(\"accessToken\", res.data.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"username\": \"organizer\",\r\n    \"password\": \"organizer123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-d208ed33-9e84-44d3-ab63-114cc337920d"
+        },
+        {
+          "name": "Đăng nhập - User",
+          "id": "40497a35-d6f1-4bb6-99fe-df3513d787ed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.collectionVariables.set(\"accessToken\", res.data.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"username\": \"user\",\r\n    \"password\": \"user123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-40497a35-d6f1-4bb6-99fe-df3513d787ed"
+        },
+        {
+          "name": "Lấy thông tin tài khoản hiện tại",
+          "id": "91c74eab-dacd-42c6-8119-b38bb4fd0323",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-91c74eab-dacd-42c6-8119-b38bb4fd0323"
+        },
+        {
+          "name": "Đăng xuất",
+          "id": "4ebad712-b7da-49e4-bab3-fa5efa7887f8",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-4ebad712-b7da-49e4-bab3-fa5efa7887f8"
+        }
+      ],
+      "id": "6f7ecdbc-16b9-4de3-8a58-a72acc47f20f",
+      "description": "AuthController - /api/v1/auth",
+      "uid": "56137981-6f7ecdbc-16b9-4de3-8a58-a72acc47f20f"
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Test cases",
+          "item": [
+            {
+              "name": "Tạo tài khoản - Trùng username (409)",
+              "id": "97658846-d918-41e4-aec0-bd9d896e2ec5",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"username\": \"admin\",\r\n  \"fullName\": \"Người dùng bị trùng\",\r\n  \"email\": \"trunglap@qlskdd.com\",\r\n  \"phone\": \"0999888777\",\r\n  \"roleId\": 3,\r\n  \"password\": \"password123\"\r\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/users",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "users"
+                  ]
+                }
+              },
+              "response": [],
+              "uid": "56137981-97658846-d918-41e4-aec0-bd9d896e2ec5"
+            },
+            {
+              "name": "Tạo tài khoản - Email không hợp lệ (400)",
+              "id": "dd82e34b-2fc9-456b-8320-35b8a7136eee",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"username\": \"testinvalid\",\r\n  \"fullName\": \"Người dùng test email\",\r\n  \"email\": \"email_khong_hop_le\", \r\n  \"phone\": \"0911222333\",\r\n  \"roleId\": 3,\r\n  \"password\": \"password123\"\r\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/users",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "users"
+                  ]
+                }
+              },
+              "response": [],
+              "uid": "56137981-dd82e34b-2fc9-456b-8320-35b8a7136eee"
+            },
+            {
+              "name": "Tạo tài khoản - Thiếu mật khẩu (400)",
+              "id": "931e8f3a-958e-4383-9ab1-b8644d402c6d",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"username\": \"testnopassword\",\r\n  \"fullName\": \"Người dùng thiếu mật khẩu\",\r\n  \"email\": \"nopassword@qlskdd.com\",\r\n  \"phone\": \"0911223344\",\r\n  \"roleId\": 3\r\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/users",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "users"
+                  ]
+                }
+              },
+              "response": [],
+              "uid": "56137981-931e8f3a-958e-4383-9ab1-b8644d402c6d"
+            },
+            {
+              "name": "Bật/tắt trạng thái - Tự khoá tài khoản Admin (400)",
+              "id": "ae1532c8-ec68-4599-884e-1900ca7989b1",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"enabled\": false\r\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/users/1/status",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "users",
+                    "1",
+                    "status"
+                  ]
+                }
+              },
+              "response": [],
+              "uid": "56137981-ae1532c8-ec68-4599-884e-1900ca7989b1"
+            }
+          ],
+          "id": "63402d2d-aa39-4f7a-beaf-2d181787ffbf",
+          "uid": "56137981-63402d2d-aa39-4f7a-beaf-2d181787ffbf"
+        },
+        {
+          "name": "Lấy danh sách tài khoản",
+          "id": "a9bd66ee-cb8e-45fd-805e-cfb038ba5cd5",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users?page=0&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-a9bd66ee-cb8e-45fd-805e-cfb038ba5cd5"
+        },
+        {
+          "name": "Tạo tài khoản",
+          "id": "a040f2cb-3835-4a53-92a2-efff29355aa2",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"username\": \"newuser\",\r\n  \"fullName\": \"Người dùng mới\",\r\n  \"email\": \"newuser@qlskdd.com\",\r\n  \"phone\": \"0912345678\",\r\n  \"roleId\": 3,\r\n  \"password\": \"password123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-a040f2cb-3835-4a53-92a2-efff29355aa2"
+        },
+        {
+          "name": "Cập nhật tài khoản",
+          "id": "022f398b-afe4-4a21-a8a3-1d39d0d9967e",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"username\": \"newuser\", \r\n  \"email\": \"newuser@qlskdd.com\",\r\n  \"fullName\": \"Người dùng mới 1\",\r\n  \"phone\": \"0999888777\",\r\n  \"roleId\": 3\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users/5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "5"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-022f398b-afe4-4a21-a8a3-1d39d0d9967e"
+        },
+        {
+          "name": "Bật/tắt trạng thái tài khoản",
+          "id": "6b869268-4d17-448f-b5b9-799062a53e51",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"enabled\": false\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users/5/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "5",
+                "status"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-6b869268-4d17-448f-b5b9-799062a53e51"
+        },
+        {
+          "name": "Đổi mật khẩu (tài khoản của tôi)",
+          "id": "9515519c-5f29-41d6-aa7a-50aac69891ac",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"oldPassword\": \"password123\",\r\n    \"newPassword\": \"password345\",\r\n    \"confirmPassword\": \"password345\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users/me/password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "password"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-9515519c-5f29-41d6-aa7a-50aac69891ac"
+        }
+      ],
+      "id": "b7f98671-5f23-4575-967e-b925b7e6dd4b",
+      "description": "UserController - /api/v1/users (chỉ ADMIN, trừ PUT /me/password)",
+      "uid": "56137981-b7f98671-5f23-4575-967e-b925b7e6dd4b"
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Lấy danh sách loại sự kiện",
+          "id": "58f821d9-d045-4a8c-9f35-8df0e7479994",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-58f821d9-d045-4a8c-9f35-8df0e7479994"
+        },
+        {
+          "name": "Lấy loại sự kiện theo ID",
+          "id": "03a0715f-bdd8-47fe-a41f-166fea96651d",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories",
+                "1"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-03a0715f-bdd8-47fe-a41f-166fea96651d"
+        },
+        {
+          "name": "Tạo loại sự kiện",
+          "id": "c8fe6262-042b-4006-b310-cc854fcf72be",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Hội thảo\",\r\n  \"description\": \"Các sự kiện hội thảo, chia sẻ kiến thức\"\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-c8fe6262-042b-4006-b310-cc854fcf72be"
+        },
+        {
+          "name": "Cập nhật loại sự kiện",
+          "id": "6a779959-559e-474f-aae5-f13463026c01",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Hội thảo\",\r\n  \"description\": \"Các sự kiện hội thảo, chia sẻ kiến thức\"\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/categories/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories",
+                "1"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-6a779959-559e-474f-aae5-f13463026c01"
+        },
+        {
+          "name": "Xoá loại sự kiện",
+          "id": "a2e64549-c274-42c3-82b0-c3c0d63cdcff",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories/2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories",
+                "2"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-a2e64549-c274-42c3-82b0-c3c0d63cdcff"
+        }
+      ],
+      "id": "6e7d7c52-47bb-40b8-a0a9-1c56ac956cf8",
+      "description": "CategoryController - /api/v1/categories (GET permitAll, ghi dữ liệu chỉ ADMIN)",
+      "uid": "56137981-6e7d7c52-47bb-40b8-a0a9-1c56ac956cf8"
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Lấy danh sách sự kiện",
+          "id": "f1e90a81-36fb-4387-b097-b52f31606f03",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/events?page=0&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "events"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-f1e90a81-36fb-4387-b097-b52f31606f03"
+        },
+        {
+          "name": "Lấy sự kiện theo ID",
+          "id": "41421f98-1680-4b63-aa53-ddb9ebeed2c3",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/events/2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "events",
+                "2"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-41421f98-1680-4b63-aa53-ddb9ebeed2c3"
+        },
+        {
+          "name": "Tạo sự kiện",
+          "id": "1af818be-bc34-4e7b-b002-6281155d5b63",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Hội thảo Trí tuệ nhân tạo 2026\",\r\n  \"description\": \"Chia sẻ kiến thức AI cho sinh viên\",\r\n  \"location\": \"Hội trường A\",\r\n  \"capacity\": 100,\r\n  \"startAt\": \"2026-09-01T08:00:00\",\r\n  \"endAt\": \"2026-09-01T11:00:00\",\r\n  \"categoryId\": 2\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/events",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "events"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-1af818be-bc34-4e7b-b002-6281155d5b63"
+        },
+        {
+          "name": "Cập nhật sự kiện",
+          "id": "099604fd-3fd9-47ff-8f66-956fa11a19a1",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Hội thảo Trí tuệ nhân tạo 2027\",\r\n  \"description\": \"nội dung mô tả\",\r\n  \"location\": \"Hội trường B\",\r\n  \"capacity\": 150,\r\n  \"startAt\": \"2026-09-01T08:00:00\",\r\n  \"endAt\": \"2026-09-01T12:00:00\",\r\n  \"categoryId\": 2\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/events/2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "events",
+                "2"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-099604fd-3fd9-47ff-8f66-956fa11a19a1"
+        },
+        {
+          "name": "Đổi trạng thái sự kiện",
+          "id": "6f5c4ee2-687b-49f1-97e4-4c49f69bfd39",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"status\": \"CLOSED\"\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/events/2/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "events",
+                "2",
+                "status"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-6f5c4ee2-687b-49f1-97e4-4c49f69bfd39"
+        },
+        {
+          "name": "Lấy danh sách người đăng ký theo sự kiện",
+          "id": "f88614b1-2f6f-43b4-abc6-f4a6050ddd3e",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/events/2/registrations?page=0&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "events",
+                "2",
+                "registrations"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-f88614b1-2f6f-43b4-abc6-f4a6050ddd3e"
+        },
+        {
+          "name": "Lấy tổng hợp điểm danh theo sự kiện",
+          "id": "0569e077-6592-4a56-bd54-beb1c8bb93c3",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/events/2/attendance-summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "events",
+                "2",
+                "attendance-summary"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-0569e077-6592-4a56-bd54-beb1c8bb93c3"
+        },
+        {
+          "name": "Lấy danh sách điểm danh theo sự kiện (có lọc)",
+          "id": "d129de9a-a0f6-4ce5-914c-6065454a0cae",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/events/2/attendance?status=all&page=0&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "events",
+                "2",
+                "attendance"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "all"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-d129de9a-a0f6-4ce5-914c-6065454a0cae"
+        }
+      ],
+      "id": "885c58df-139e-4a5b-b60f-2cc7dcb282d9",
+      "description": "EventController - /api/v1/events",
+      "uid": "56137981-885c58df-139e-4a5b-b60f-2cc7dcb282d9"
+    },
+    {
+      "name": "Registrations",
+      "item": [
+        {
+          "name": "Test cases",
+          "item": [
+            {
+              "name": "Huỷ đăng ký - Không phải chủ sở hữu (403)",
+              "id": "b12ea330-5535-4dd0-8495-3db8237b5554",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/registrations/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "registrations",
+                    "1"
+                  ]
+                }
+              },
+              "response": [],
+              "uid": "56137981-b12ea330-5535-4dd0-8495-3db8237b5554"
+            },
+            {
+              "name": "Huỷ đăng ký - Sự kiện đã bắt đầu (400)",
+              "id": "cef41082-34fd-4d2e-b6ed-f334befc4ab4",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/registrations/1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "registrations",
+                    "1"
+                  ]
+                }
+              },
+              "response": [],
+              "uid": "56137981-cef41082-34fd-4d2e-b6ed-f334befc4ab4"
+            }
+          ],
+          "id": "8888ed1d-336e-419e-b681-8e2c2e555f9b",
+          "uid": "56137981-8888ed1d-336e-419e-b681-8e2c2e555f9b"
+        },
+        {
+          "name": "Đăng ký sự kiện",
+          "id": "f2ec7fbf-e71c-4a18-8066-cd9e7b72cc2e",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"eventId\": 1\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/registrations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "registrations"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-f2ec7fbf-e71c-4a18-8066-cd9e7b72cc2e"
+        },
+        {
+          "name": "Lấy danh sách đăng ký của tôi",
+          "id": "bd3a1c7b-5e16-456e-8ccc-0d7557f93578",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/registrations/me?page=0&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "registrations",
+                "me"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-bd3a1c7b-5e16-456e-8ccc-0d7557f93578"
+        },
+        {
+          "name": "Huỷ đăng ký",
+          "id": "0f187597-dd6a-46a5-a976-d747a5f6e932",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/registrations/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "registrations",
+                "1"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-0f187597-dd6a-46a5-a976-d747a5f6e932"
+        },
+        {
+          "name": "Lấy mã QR của lượt đăng ký",
+          "id": "efda80fd-5c03-403b-90f7-ee8566fa90da",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/registrations/1/qr",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "registrations",
+                "1",
+                "qr"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-efda80fd-5c03-403b-90f7-ee8566fa90da"
+        }
+      ],
+      "id": "a59cc77b-11fc-40e3-ba8c-19afd5568c97",
+      "description": "RegistrationController - /api/v1/registrations",
+      "uid": "56137981-a59cc77b-11fc-40e3-ba8c-19afd5568c97"
+    },
+    {
+      "name": "Check-in",
+      "item": [
+        {
+          "name": "Điểm danh theo registrationId",
+          "id": "d8a6d8ba-7ce1-416f-8722-b6c166b6704b",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"registrationId\": 20,\r\n  \"eventId\": 5\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/check-in",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "check-in"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-d8a6d8ba-7ce1-416f-8722-b6c166b6704b"
+        },
+        {
+          "name": "Điểm danh theo mã (quét QR / nhập tay)",
+          "id": "96082995-ed54-4256-8fed-2102ba88fdaa",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"code\": \"REG-0000020\",\r\n  \"eventId\": 5\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/check-in/scan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "check-in",
+                "scan"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-96082995-ed54-4256-8fed-2102ba88fdaa"
+        }
+      ],
+      "id": "d2eb6b53-d9a6-4e17-ae04-e6572d54deec",
+      "description": "CheckInController - /api/v1/check-in (chỉ ADMIN, ORGANIZER)",
+      "uid": "56137981-d2eb6b53-d9a6-4e17-ae04-e6572d54deec"
+    },
+    {
+      "name": "Participants",
+      "item": [
+        {
+          "name": "Lấy danh sách người tham gia",
+          "id": "f9c99f9a-35b3-43b7-8bfe-edc23b695f14",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/participants?keyword=&page=0&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "participants"
+              ],
+              "query": [
+                {
+                  "key": "keyword",
+                  "value": ""
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-f9c99f9a-35b3-43b7-8bfe-edc23b695f14"
+        },
+        {
+          "name": "Lấy người tham gia theo ID",
+          "id": "f2bddd83-d46e-4daf-8e64-b21e07ff3537",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/participants/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "participants",
+                "1"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-f2bddd83-d46e-4daf-8e64-b21e07ff3537"
+        },
+        {
+          "name": "Tạo người tham gia",
+          "id": "bf2bfc90-46fd-4001-a05c-dbeaf9a435b0",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"username\": \"participant01\",\r\n  \"fullName\": \"Người tham gia 01\",\r\n  \"email\": \"participant01@qlskdd.com\",\r\n  \"phone\": \"0911222333\",\r\n  \"password\": \"password123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/participants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "participants"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-bf2bfc90-46fd-4001-a05c-dbeaf9a435b0"
+        },
+        {
+          "name": "Cập nhật người tham gia",
+          "id": "9c6d33b0-0d92-4ec0-968d-368b974d74e6",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"username\": \"participant01\",\r\n  \"fullName\": \"Người tham gia 01 (đã sửa)\",\r\n  \"email\": \"participant01@qlskdd.com\",\r\n  \"phone\": \"0911222333\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/participants/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "participants",
+                "1"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-9c6d33b0-0d92-4ec0-968d-368b974d74e6"
+        },
+        {
+          "name": "Xoá người tham gia",
+          "id": "770b5c4d-6f40-449a-90c6-3d75dcafabd4",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/participants/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "participants",
+                "1"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-770b5c4d-6f40-449a-90c6-3d75dcafabd4"
+        }
+      ],
+      "id": "6e357b95-d046-42db-a923-00c6d52d4435",
+      "description": "ParticipantController - /api/v1/participants (chỉ ADMIN, ORGANIZER)",
+      "uid": "56137981-6e357b95-d046-42db-a923-00c6d52d4435"
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Thống kê tổng quan - Summary (200)",
+          "id": "7d3e4a91-0001-4f0a-9c3d-1a2b3c4d5e6f",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "summary"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-7d3e4a91-0001-4f0a-9c3d-1a2b3c4d5e6f"
+        },
+        {
+          "name": "Top sự kiện - mặc định limit 5 (200)",
+          "id": "7d3e4a91-0002-4f0a-9c3d-1a2b3c4d5e6f",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/top-events",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "top-events"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-7d3e4a91-0002-4f0a-9c3d-1a2b3c4d5e6f"
+        },
+        {
+          "name": "Top sự kiện - limit=3 (200)",
+          "id": "7d3e4a91-0003-4f0a-9c3d-1a2b3c4d5e6f",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/top-events?limit=3",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "top-events"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "3"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-7d3e4a91-0003-4f0a-9c3d-1a2b3c4d5e6f"
+        },
+        {
+          "name": "Top sự kiện - limit=0 dùng mặc định 5 (200)",
+          "id": "7d3e4a91-0004-4f0a-9c3d-1a2b3c4d5e6f",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/top-events?limit=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "top-events"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-7d3e4a91-0004-4f0a-9c3d-1a2b3c4d5e6f"
+        },
+        {
+          "name": "Summary - Không token (401)",
+          "id": "7d3e4a91-0005-4f0a-9c3d-1a2b3c4d5e6f",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "summary"
+              ]
+            }
+          },
+          "response": [],
+          "uid": "56137981-7d3e4a91-0005-4f0a-9c3d-1a2b3c4d5e6f"
+        }
+      ],
+      "id": "7d3e4a91-2b6c-4f0a-9c3d-1a2b3c4d5e6f",
+      "description": "DashboardController - /api/v1/dashboard (chỉ ADMIN, ORGANIZER)",
+      "uid": "56137981-7d3e4a91-2b6c-4f0a-9c3d-1a2b3c4d5e6f"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    }
+  ]
+}

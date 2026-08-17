@@ -1,0 +1,13 @@
+# Maven
+backend/target/
+*.class
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+node_modules/
+dist/
+.env
+*.tsbuildinfo

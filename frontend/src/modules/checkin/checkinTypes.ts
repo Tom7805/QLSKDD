@@ -1,0 +1,60 @@
+import type { EventRegistrationItem } from '../registrations/registrationsTypes';
+
+export type CheckInParticipant = EventRegistrationItem & { checkedInAt?: string };
+
+export interface CheckInRequest {
+  registrationId: number;
+  eventId: number;
+}
+
+export interface CheckInByCodeRequest {
+  code: string;
+  eventId: number;
+}
+
+export interface CheckInResponse {
+  status: 'SUCCESS';
+  message: string;
+  registrationId: number;
+  participantName: string;
+  checkedInAt: string;
+}
+
+export interface CheckInErrorResponse {
+  message?: string;
+  errorCode?: 'ALREADY_CHECKED_IN' | 'INVALID_TICKET' | 'WRONG_EVENT' | string;
+}
+
+export interface AttendanceItem {
+  registrationId: number;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  registeredAt: string;
+  checkedIn: boolean;
+  checkedInAt: string | null;
+}
+
+export type AttendanceFilter = 'all' | 'present' | 'absent';
+
+export interface AttendancePageResponse {
+  content: AttendanceItem[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}
+
+export interface AttendanceSummary {
+  totalRegistered: number;
+  present: number;
+  absent: number;
+  attendanceRate: number;
+}
+
+export interface AttendanceSummaryResponse {
+  summary: AttendanceSummary;
+  present: AttendanceItem[];
+  absent: AttendanceItem[];
+}

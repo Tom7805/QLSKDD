@@ -1,0 +1,34 @@
+import apiClient from '../../configs/apiClient';
+import type {
+  ApiResponse,
+  ChangePasswordRequest,
+  LoginRequest,
+  LoginResponse,
+  ProfileRequest,
+  User,
+} from './authTypes';
+
+const AUTH_BASE_URL = '/auth';
+
+export const login = (req: LoginRequest): Promise<LoginResponse> =>
+  apiClient
+    .post<ApiResponse<LoginResponse>>(`${AUTH_BASE_URL}/login`, req)
+    .then((res) => res.data.data);
+
+export const getMe = (): Promise<User> =>
+  apiClient
+    .get<ApiResponse<User>>(`${AUTH_BASE_URL}/me`)
+    .then((res) => res.data.data);
+
+export const updateProfile = (req: ProfileRequest): Promise<User> =>
+  apiClient
+    .put<ApiResponse<User>>(`${AUTH_BASE_URL}/me`, req)
+    .then((res) => res.data.data);
+
+export const logout = (): Promise<void> =>
+  apiClient.post<ApiResponse<void>>(`${AUTH_BASE_URL}/logout`).then(() => undefined);
+
+export const changePassword = (req: ChangePasswordRequest): Promise<string> =>
+  apiClient
+    .put<ApiResponse<void>>('/users/me/password', req)
+    .then((res) => res.data.message);

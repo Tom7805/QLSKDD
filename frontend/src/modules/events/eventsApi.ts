@@ -1,0 +1,40 @@
+import apiClient from '../../configs/apiClient';
+import type { ApiResponse } from '../auth/authTypes';
+import type { EventCreateRequest, EventDetail, EventsPage, EventStatusRequest } from './eventsTypes';
+
+const EVENTS_BASE_URL = '/events';
+
+export interface EventFilterParams {
+  categoryId?: number;
+  status?: string;
+  from?: string;
+  to?: string;
+}
+
+export const getEvents = (page = 0, size = 9, keyword?: string, filters: EventFilterParams = {}): Promise<EventsPage> =>
+  apiClient
+    .get<ApiResponse<EventsPage>>(EVENTS_BASE_URL, {
+      params: {
+        page,
+        size,
+        ...(keyword?.trim() ? { keyword: keyword.trim() } : {}),
+        ...filters,
+      },
+    })
+    .then((response) => response.data.data);
+
+export const createEvent = (request: EventCreateRequest): Promise<EventDetail> =>
+  apiClient
+    .post<ApiResponse<EventDetail>>(EVENTS_BASE_URL, request)
+    .then((response) => response.data.data);
+
+export const getEventById = (id: number): Promise<EventDetail> =>
+  apiClient.get<ApiResponse<EventDetail>>(`${EVENTS_BASE_URL}/${id}`).then((response) => response.data.data);
+
+export const updateEvent = (id: number, request: EventCreateRequest): Promise<EventDetail> =>
+  apiClient.put<ApiResponse<EventDetail>>(`${EVENTS_BASE_URL}/${id}`, request).then((response) => response.data.data);
+
+export const changeEventStatus = (id: number, request: EventStatusRequest): Promise<EventDetail> =>
+  apiClient
+    .patch<ApiResponse<EventDetail>>(`${EVENTS_BASE_URL}/${id}/status`, request)
+    .then((response) => response.data.data);

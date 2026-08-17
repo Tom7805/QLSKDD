@@ -1,0 +1,24 @@
+# node_modules ở máy này đang tồn tại thật và rất nặng. Không loại ra thì Docker phải
+# nén và gửi toàn bộ nó sang daemon mỗi lần build — chậm hàng chục giây mà hoàn toàn vô ích
+# vì trong image ta chạy `npm ci` để cài lại đúng theo package-lock.json.
+node_modules/
+
+# Bản build cũ trên Windows và cache typescript — image tự build lại từ đầu
+dist/
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+
+# Biến môi trường thật: KHÔNG bao giờ đưa vào image.
+# Frontend nhận cấu hình qua build arg VITE_API_BASE_URL (xem Dockerfile).
+.env
+.env.local
+.env.*.local
+
+# Log, IDE
+*.log
+.idea/
+.vscode/
+
+Dockerfile
+.dockerignore

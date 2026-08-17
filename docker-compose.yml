@@ -1,0 +1,127 @@
+# QLSKDD — chạy toàn bộ hệ thống bằng một lệnh (B6.4-T3)
+#
+#   docker compose up -d --build
+#
+# Cần có file `.env` ở cùng thư mục này (copy từ `.env.example`). `.env` đã nằm trong
+# .gitignore nên không bao giờ bị đẩy lên Git.
+#
+# Sau khi các container báo healthy:
+#   Frontend  http://localhost:3000
+#   Backend   http://localhost:8080/api/v1
+#   Swagger   http://localhost:8080/swagger-ui/index.html  (hoặc http://localhost:3000/swagger-ui/)
+#
+# ---------------------------------------------------------------------------------------
+# VÌ SAO MỌI BIẾN Ở ĐÂY ĐỀU CÓ TIỀN TỐ `QLSKDD_`
+#
+# Docker Compose ưu tiên biến môi trường CỦA MÁY cao hơn file `.env`. Nhiều thành viên đã set
+# sẵn `DB_PASSWORD` trên máy để chạy backend ở chế độ dev — nếu compose cũng đọc `${DB_PASSWORD}`
+# thì giá trị trong `.env` bị bỏ qua HOÀN TOÀN mà không có cảnh báo nào. Lỗi này đã xảy ra thật
+# khi dựng stack lần đầu: container MySQL nhận mật khẩu của MySQL trên máy thay vì mật khẩu
+# trong `.env`, và chỉ lộ ra khi thử đăng nhập vào container. Đặt tiền tố riêng thì không còn
+# khả năng trùng tên với biến của máy.
+# ---------------------------------------------------------------------------------------
+
+services:
+  mysql:
+    # 8.4 chứ không phải 8.0: bản deploy thật dùng Aiven for MySQL, mà gói free của Aiven khoá
+    # cứng MySQL 8.4. Để hai bên lệch phiên bản là tự tạo ra loại lỗi "ở máy em chạy được" —
+    # chạy đúng bản đang chạy trên production thì phát hiện khác biệt ngay ở máy.
+    image: mysql:8.4
+    container_name: qlskdd-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${QLSKDD_DB_PASSWORD:?Thieu QLSKDD_DB_PASSWORD - hay copy .env.example thanh .env}
+      MYSQL_DATABASE: ${QLSKDD_DB_NAME:-qlsk_dd}
+      TZ: Asia/Ho_Chi_Minh
+    # CỐ Ý KHÔNG publish cổng 3306 ra máy thật: nhiều thành viên đã có MySQL chạy sẵn ở
+    # cổng đó, publish sẽ làm `docker compose up` chết vì tranh cổng — mà thông báo lỗi
+    # ("port is already allocated") không hề gợi ý rằng thủ phạm là MySQL cài trên máy.
+    # Backend gọi MySQL qua mạng nội bộ của Docker nên không cần publish.
+    # Muốn vào xem dữ liệu:  docker compose exec mysql mysql -uroot -p qlsk_dd
+    expose:
+      - "3306"
+    volumes:
+      # Volume có tên: dữ liệu còn nguyên sau khi `docker compose down`.
+      # Muốn xoá sạch để dựng lại từ đầu:  docker compose down -v
+      - mysql_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      # `mysqladmin ping` chỉ báo tiến trình đã sống; nhưng lần khởi tạo đầu MySQL còn phải
+      # tạo database và bộ bảng hệ thống, nên vẫn cần start_period dài.
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${QLSKDD_DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    networks:
+      - qlskdd
+
+  backend:
+    build:
+      context: ./backend
+    container_name: qlskdd-backend
+    restart: unless-stopped
+    environment:
+      # Mặc định `prod,demo`: profile prod cho cấu hình chạy thật (không secret trong code,
+      # không log SQL), profile demo để DemoSeeder nạp sẵn tài khoản + sự kiện.
+      #
+      # Nếu để `prod` một mình thì database hoàn toàn RỖNG — không có cả bảng roles — nên
+      # KHÔNG ĐĂNG NHẬP ĐƯỢC bằng bất kỳ tài khoản nào, và giao diện trông như bị hỏng. Muốn
+      # triển khai thật thì đặt QLSKDD_SPRING_PROFILES=prod rồi tự tạo tài khoản admin đầu tiên.
+      SPRING_PROFILES_ACTIVE: ${QLSKDD_SPRING_PROFILES:-prod,demo}
+      # Host là TÊN SERVICE `mysql`. Nếu để 127.0.0.1 như application.yml của profile dev thì
+      # backend sẽ tìm MySQL bên trong chính container của nó và không bao giờ kết nối được.
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${QLSKDD_DB_NAME:-qlsk_dd}?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: root
+      # Tên biến bên trong container là DB_PASSWORD (application-prod.yml đọc biến này),
+      # còn giá trị lấy từ QLSKDD_DB_PASSWORD trong .env — xem giải thích ở đầu file.
+      DB_PASSWORD: ${QLSKDD_DB_PASSWORD:?Thieu QLSKDD_DB_PASSWORD - hay copy .env.example thanh .env}
+      APP_JWT_SECRET: ${QLSKDD_JWT_SECRET:?Thieu QLSKDD_JWT_SECRET - hay copy .env.example thanh .env}
+      APP_JWT_EXPIRATION: ${QLSKDD_JWT_EXPIRATION:-86400000}
+      # Frontend gọi API qua nginx theo đường dẫn tương đối nên cùng origin, không phát sinh
+      # CORS. Để rỗng = không mở CORS cho origin nào.
+      APP_CORS_ALLOWED_ORIGINS: ${QLSKDD_CORS_ALLOWED_ORIGINS:-}
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      # Publish để dùng Swagger/Postman trực tiếp trong buổi demo.
+      # Nếu máy đang chạy backend ở 8080 thì tắt nó đi, hoặc đổi thành "8081:8080".
+      - "8080:8080"
+    depends_on:
+      mysql:
+        # `service_started` là chưa đủ: MySQL nhận cổng trước khi sẵn sàng nhận truy vấn,
+        # backend sẽ khởi động, không kết nối được và chết. Phải chờ healthcheck xanh.
+        condition: service_healthy
+    networks:
+      - qlskdd
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Đường dẫn TƯƠNG ĐỐI — nginx trong image này proxy /api/ sang service backend.
+        # Xem giải thích chi tiết trong frontend/Dockerfile: biến VITE_* bị nhúng vào bundle
+        # lúc build nên phải truyền ở đây, không truyền được lúc chạy.
+        VITE_API_BASE_URL: /api/v1
+    container_name: qlskdd-frontend
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        # Chỉ cần backend đã khởi động: nginx vẫn phục vụ được trang tĩnh trong lúc backend
+        # còn đang lên, người dùng chỉ thấy lỗi khi bấm vào chức năng cần API.
+        condition: service_started
+    networks:
+      - qlskdd
+
+volumes:
+  mysql_data:
+    name: qlskdd-mysql-data
+
+networks:
+  qlskdd:
+    name: qlskdd-network
