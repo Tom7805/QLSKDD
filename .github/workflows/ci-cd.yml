@@ -1,0 +1,116 @@
+# QLSKDD — CI/CD (B6.5)
+#
+# CI  : mọi push và pull request vào `develop`/`main` đều build + chạy toàn bộ test.
+# CD  : chỉ khi push vào `main` VÀ cả hai job test đã xanh thì mới gọi Render deploy.
+#
+# Vì sao gọi Deploy Hook thay vì bật auto-deploy của Render:
+# Render có sẵn tính năng tự deploy mỗi khi có commit mới, nhưng nó deploy NGAY, không quan
+# tâm test xanh hay đỏ — tức là bỏ qua đúng cái mà B6.5 muốn có. Tắt auto-deploy và để workflow
+# này gọi hook sau khi `needs: [backend, frontend]` thành công thì bản lỗi không bao giờ lên
+# được production.
+
+name: CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+# Push liên tiếp lên cùng một nhánh thì huỷ lượt chạy cũ — không tốn thời gian chờ kết quả
+# của commit đã bị thay thế.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend · build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cài JDK 17
+        uses: actions/setup-java@v4
+        with:
+          # 17 đúng theo <java.version> trong pom.xml — không dùng bản mới hơn
+          java-version: '17'
+          distribution: temurin
+          cache: maven
+
+      # `verify` = compile + chạy toàn bộ 172 test (22 file).
+      # KHÔNG cần MySQL và KHÔNG cần secret nào: dự án không có test nào dùng @SpringBootTest,
+      # chỉ có @WebMvcTest, @DataJpaTest (H2 nhúng) và test Mockito thuần. Đã kiểm chứng bằng
+      # cách chạy lại với biến DB_PASSWORD bị xoá — vẫn 172/172 pass.
+      - name: Build & test backend
+        working-directory: backend
+        run: ./mvnw -B verify
+
+  frontend:
+    name: Frontend · build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cài Node 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # `npm ci` (không phải `npm install`): cài đúng theo package-lock.json và BÁO LỖI NGAY
+      # nếu package.json lệch với lock file — đúng thứ cần phát hiện ở CI.
+      - name: Cài dependency
+        working-directory: frontend
+        run: npm ci
+
+      - name: Chạy test frontend
+        working-directory: frontend
+        run: npm test
+
+      # Build luôn để bắt lỗi TypeScript (`npm run build` = `tsc -b && vite build`).
+      # Test xanh mà build đỏ là chuyện có thật khi lỗi chỉ nằm ở kiểu dữ liệu.
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: /api/v1
+
+  deploy:
+    name: Deploy lên Render
+    needs: [backend, frontend]
+    # Chỉ deploy khi PUSH vào main. Pull request không deploy, và nhánh develop cũng không —
+    # develop là nhánh tích hợp, chưa phải bản phát hành.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      # Thiếu secret thì dừng ngay với thông báo rõ ràng. Nếu không kiểm tra, `curl` với URL
+      # rỗng sẽ báo một lỗi khó hiểu và người đọc log không biết nguyên nhân là chưa khai secret.
+      - name: Kiểm tra đã khai đủ secret chưa
+        env:
+          BACKEND_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}
+          FRONTEND_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}
+        run: |
+          missing=0
+          if [ -z "$BACKEND_HOOK" ]; then
+            echo "::error::Thiếu secret RENDER_DEPLOY_HOOK_BACKEND (Settings → Secrets and variables → Actions)"
+            missing=1
+          fi
+          if [ -z "$FRONTEND_HOOK" ]; then
+            echo "::error::Thiếu secret RENDER_DEPLOY_HOOK_FRONTEND"
+            missing=1
+          fi
+          exit $missing
+
+      - name: Kích hoạt deploy backend
+        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}" -o /dev/null
+
+      - name: Kích hoạt deploy frontend
+        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}" -o /dev/null
+
+      # Hook chỉ ĐẶT LỆNH deploy rồi trả về ngay; Render build ở phía họ mất vài phút.
+      # Job này xanh nghĩa là "đã yêu cầu deploy thành công", KHÔNG phải "đã deploy xong".
+      # Trạng thái build thật xem ở dashboard Render.
+      - name: Ghi chú
+        run: echo "Đã gửi yêu cầu deploy. Theo dõi tiến trình tại dashboard Render."
