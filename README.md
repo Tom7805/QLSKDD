@@ -311,7 +311,7 @@ Lần đầu mất 3–5 phút, lần sau vài chục giây nhờ cache. Thiếu
 | API (trực tiếp, cho Postman) | http://localhost:8080/api/v1 |
 | Swagger UI | http://localhost:3000/swagger-ui/index.html |
 
-Đăng nhập bằng `demo_admin` / `admin123` — dữ liệu demo (4 sự kiện, 12 tài khoản, 17 lượt đăng ký) được nạp sẵn.
+Đăng nhập bằng `admin` / `admin123` — dữ liệu demo (4 sự kiện, 12 tài khoản, 17 lượt đăng ký) được nạp sẵn.
 
 > Hướng dẫn đầy đủ — bảng biến môi trường, lệnh vận hành, xử lý sự cố, các quyết định thiết kế
 > và phần chưa làm: **[docs/deployment.md](docs/deployment.md)**
