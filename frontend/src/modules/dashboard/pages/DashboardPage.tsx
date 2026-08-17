@@ -88,6 +88,8 @@ export default function DashboardPage() {
       icon: <CalendarIcon className="h-4 w-4" />,
       hint: stat ? `${stat.upcomingEvents} sự kiện sắp diễn ra` : null,
       progress: null,
+      tone: 'indigo' as const,
+      to: ROUTES.EVENTS,
     },
     {
       label: 'Sắp diễn ra',
@@ -97,6 +99,8 @@ export default function DashboardPage() {
         ? `Chiếm ${Math.round((stat.upcomingEvents / stat.totalEvents) * 100)}% tổng số sự kiện`
         : 'Chưa có sự kiện nào',
       progress: null,
+      tone: 'amber' as const,
+      to: ROUTES.EVENTS,
     },
     {
       label: 'Lượt đăng ký',
@@ -104,6 +108,8 @@ export default function DashboardPage() {
       icon: <TicketIcon className="h-4 w-4" />,
       hint: stat ? `${stat.totalCheckIns} lượt đã điểm danh` : null,
       progress: null,
+      tone: 'sky' as const,
+      to: ROUTES.PARTICIPANTS,
     },
     {
       label: 'Tỷ lệ điểm danh',
@@ -112,6 +118,8 @@ export default function DashboardPage() {
       hint: stat ? `${stat.totalCheckIns}/${stat.totalRegistrations} lượt có mặt` : null,
       progress: attendanceRate,
       progressTone: attendanceTone,
+      tone: 'emerald' as const,
+      to: ROUTES.PARTICIPANTS,
     },
   ];
 
@@ -125,7 +133,7 @@ export default function DashboardPage() {
       title: 'Lượt đăng ký theo sự kiện',
       className: 'xl:col-span-2',
       content: (
-        <Card floating className="h-full">
+        <Card floating className="h-full border-indigo-200/80">
           <CardHeader
             icon={<ChartIcon className="h-4 w-4" />}
             title="Lượt đăng ký theo sự kiện"
@@ -152,7 +160,7 @@ export default function DashboardPage() {
       title: 'Top sự kiện đăng ký nhiều nhất',
       className: 'xl:col-span-3',
       content: (
-        <Card floating className="h-full overflow-hidden">
+        <Card floating className="h-full overflow-hidden border-sky-200/80">
           <CardHeader
             icon={<TrendingUpIcon className="h-4 w-4" />}
             title="Top sự kiện đăng ký nhiều nhất"
@@ -175,6 +183,8 @@ export default function DashboardPage() {
         hint={card.hint}
         progress={card.progress}
         progressTone={card.progressTone}
+        tone={card.tone}
+        to={card.to}
         loading={cardLoading}
       />
     ),
@@ -186,7 +196,7 @@ export default function DashboardPage() {
       khi nền khác màu chúng mới thật sự "nổi" lên thành từng khối rời, thay vì tan vào
       nền và phải nhờ đường viền mới phân biệt được.
     */
-    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-scene p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-[1400px]">
         <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
@@ -199,7 +209,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex shrink-0 items-center gap-2 self-start">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3.5 py-2 text-xs font-semibold capitalize text-ink-muted shadow-card backdrop-blur">
+            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold capitalize text-ink-muted shadow-raise">
               <CalendarIcon className="h-4 w-4 text-slate-400" />
               {today}
             </span>
@@ -207,7 +217,7 @@ export default function DashboardPage() {
               type="button"
               onClick={resetLayout}
               title="Đưa các thẻ về vị trí ban đầu"
-              className="inline-flex h-9 items-center rounded-full bg-white/80 px-3.5 text-xs font-bold text-ink-muted shadow-card backdrop-blur transition-all duration-150 hover:bg-ink hover:text-white active:scale-[0.97]"
+              className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-3.5 text-xs font-bold text-ink-muted transition-all duration-150 hover:border-ink hover:bg-ink hover:text-white raise"
             >
               Bố cục mặc định
             </button>
@@ -220,7 +230,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => setReloadKey((key) => key + 1)}
-              className="mt-3 inline-flex h-10 items-center rounded-xl bg-ink px-4 text-sm font-semibold text-white transition-all duration-150 hover:bg-ink-soft active:scale-[0.97]"
+              className="mt-3 inline-flex h-10 items-center rounded-xl bg-ink px-4 text-sm font-semibold text-white transition-all duration-150 hover:bg-ink-soft active:scale-[0.97] raise"
             >
               Thử lại
             </button>

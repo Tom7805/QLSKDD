@@ -13,8 +13,23 @@ import {
 import type { TopEvent } from '../dashboardTypes';
 
 const AXIS_LABEL_MAX_CHARS = 12;
-const BAR_IDLE = '#e6e8ec';
-const BAR_ACTIVE = '#16181d';
+/*
+ * Mỗi cột một sắc riêng thay vì cả dãy cùng một màu xám. Cột là các sự kiện KHÁC NHAU
+ * nên màu khác nhau giúp mắt bám được cột nào là cột nào khi rê chuột dọc trục; xám hết
+ * thì phải đọc nhãn mới biết mình đang trỏ vào đâu.
+ *
+ * Mỗi sắc có hai mức: mức nhạt lúc bình thường, mức đậm khi cột đang được trỏ vào.
+ */
+const BAR_COLORS = [
+  { idle: '#c7d2fe', active: '#6366f1' },
+  { idle: '#fde68a', active: '#f59e0b' },
+  { idle: '#bae6fd', active: '#0ea5e9' },
+  { idle: '#a7f3d0', active: '#10b981' },
+  { idle: '#fbcfe8', active: '#ec4899' },
+  { idle: '#ddd6fe', active: '#8b5cf6' },
+  { idle: '#99f6e4', active: '#14b8a6' },
+  { idle: '#fed7aa', active: '#f97316' },
+];
 
 interface ChartDatum {
   eventId: number;
@@ -75,7 +90,7 @@ export default function TopEventsChart({ events, loading, onSelect }: TopEventsC
         {Array.from({ length: 5 }, (_, index) => (
           <div
             key={index}
-            className="flex-1 animate-pulse rounded-t-lg bg-slate-100"
+            className="flex-1 animate-pulse rounded-t-lg bg-gradient-to-t from-slate-100 to-slate-200/70"
             style={{ height: `${40 + ((index * 37) % 55)}%` }}
           />
         ))}
@@ -145,13 +160,16 @@ export default function TopEventsChart({ events, loading, onSelect }: TopEventsC
             }}
             className={onSelect ? 'cursor-pointer' : undefined}
           >
-            {data.map((datum, index) => (
-              <Cell
-                key={datum.eventId}
-                fill={activeIndex === index ? BAR_ACTIVE : BAR_IDLE}
-                className="transition-[fill] duration-150"
-              />
-            ))}
+            {data.map((datum, index) => {
+              const color = BAR_COLORS[index % BAR_COLORS.length];
+              return (
+                <Cell
+                  key={datum.eventId}
+                  fill={activeIndex === index ? color.active : color.idle}
+                  className="transition-[fill] duration-150"
+                />
+              );
+            })}
           </Bar>
         </BarChart>
       </ResponsiveContainer>

@@ -30,7 +30,9 @@ export default function MainLayout() {
   }, [pathname]);
 
   return (
-    <div className="flex h-screen gap-0 bg-canvas p-0 lg:gap-3 lg:p-3">
+    <div className="relative flex h-screen gap-0 overflow-hidden bg-canvas p-0 lg:gap-3 lg:p-3">
+      <div aria-hidden="true" className="pointer-events-none absolute -left-24 -top-40 h-96 w-96 rounded-full bg-indigo-200/35 blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-48 right-0 h-[30rem] w-[30rem] rounded-full bg-sky-200/30 blur-3xl" />
       <Sidebar
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed((value) => !value)}
@@ -38,7 +40,7 @@ export default function MainLayout() {
         onCloseMobile={() => setMobileOpen(false)}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-white shadow-shell lg:rounded-[24px]">
+      <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden border-white/80 bg-white/95 shadow-shell backdrop-blur-xl lg:rounded-[26px] lg:border">
         <Topbar onOpenMobileMenu={() => setMobileOpen(true)} />
         <main id="app-scroll-area" className="min-h-0 flex-1 overflow-y-auto scrollbar-slim">
           {/*

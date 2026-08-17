@@ -37,7 +37,7 @@ export default function EventAgendaPanel({ events, categoryOrder, className = ''
   return (
     <aside
       aria-label="Sự kiện kế tiếp và lịch trình tháng"
-      className={`flex flex-col rounded-3xl bg-white p-4 shadow-float ${className}`}
+      className={`flex flex-col glass-card border-emerald-200/80 p-4 ${className}`}
     >
       <div className="flex shrink-0 items-start justify-between gap-3">
         <div className="min-w-0">
@@ -51,7 +51,7 @@ export default function EventAgendaPanel({ events, categoryOrder, className = ''
             to={ROUTES.EVENT_DETAIL.replace(':id', String(next.id))}
             aria-label={`Mở chi tiết ${next.name}`}
             title="Mở chi tiết"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-ink-muted transition-all duration-150 hover:bg-ink hover:text-white active:scale-90"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-ink-muted transition-all duration-150 hover:bg-ink hover:text-white active:scale-90 raise"
           >
             <ChevronRightIcon className="h-4 w-4" />
           </Link>

@@ -14,9 +14,11 @@ export function Card({
   floating?: boolean;
   children: ReactNode;
 }) {
-  const base = floating
-    ? 'rounded-3xl bg-white shadow-float'
-    : 'rounded-2xl border border-hairline bg-white shadow-card';
+  /*
+   * Bản kính mờ dùng lớp dùng chung `.glass-card` chứ không chép lại chuỗi lớp: nó xuất
+   * hiện ở gần 20 chỗ trong app, để mỗi nơi một chuỗi riêng thì sớm muộn cũng lệch nhau.
+   */
+  const base = floating ? 'glass-card' : 'rounded-2xl border border-hairline/90 bg-white shadow-card';
   return <div className={`${base} ${className}`}>{children}</div>;
 }
 
@@ -31,10 +33,10 @@ interface CardHeaderProps {
 
 export function CardHeader({ icon, title, subtitle, actions, className = '' }: CardHeaderProps) {
   return (
-    <div className={`flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-4 py-3 sm:px-5 ${className}`}>
+    <div className={`flex flex-wrap items-center justify-between gap-3 border-b border-hairline/80 px-4 py-3.5 sm:px-5 ${className}`}>
       <div className="flex min-w-0 items-center gap-2.5">
         {icon && (
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-ink-muted" aria-hidden="true">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100" aria-hidden="true">
             {icon}
           </span>
         )}

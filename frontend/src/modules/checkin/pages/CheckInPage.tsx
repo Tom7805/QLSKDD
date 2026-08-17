@@ -111,15 +111,15 @@ export default function CheckInPage() {
   };
 
   return (
-    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-scene p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-6xl">
         <button type="button" onClick={() => navigate(`/events/${numericEventId}/registrations`)} className="mb-4 text-sm font-semibold text-ink">← Danh sách đăng ký</button>
         <header className="mb-5"><p className="text-sm font-semibold text-ink">Điểm danh sự kiện</p><h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">Danh sách người tham gia</h1><p className="mt-2 text-sm text-slate-500">{participants.filter((item) => item.checkedIn).length}/{participants.length} người đã đến</p></header>
-        <section className="mb-6 overflow-hidden rounded-3xl bg-white shadow-float">
+        <section className="mb-6 overflow-hidden glass-card border-emerald-200/80">
           <div className="border-b border-slate-100 bg-gradient-to-r from-slate-950 via-blue-950 to-blue-800 px-5 py-5 text-white sm:px-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-200">Check-in nhanh</p><h2 className="mt-1 text-xl font-extrabold">Quét QR hoặc nhập mã vé</h2><p className="mt-1 text-sm text-blue-100">Sẵn sàng cho người tiếp theo ngay sau mỗi lần điểm danh.</p></div>
-              <button type="button" onClick={() => { setCameraOpen((open) => !open); setCameraMessage(null); }} className="min-h-11 rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-bold backdrop-blur transition hover:bg-white/20">{cameraOpen ? 'Ẩn camera' : 'Mở camera'}</button>
+              <button type="button" onClick={() => { setCameraOpen((open) => !open); setCameraMessage(null); }} className="min-h-11 rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-bold backdrop-blur transition hover:bg-white/20 raise">{cameraOpen ? 'Ẩn camera' : 'Mở camera'}</button>
             </div>
           </div>
           <div className={`grid gap-5 p-4 sm:p-6 ${cameraOpen ? 'lg:grid-cols-[minmax(18rem,0.85fr)_minmax(20rem,1.15fr)]' : ''}`}>
@@ -132,7 +132,7 @@ export default function CheckInPage() {
               <form className="mt-5 flex flex-col gap-3 sm:flex-row" onSubmit={(event) => { event.preventDefault(); void submitCode(ticketCode); }}>
                 <label className="sr-only" htmlFor="ticket-code">Mã đăng ký</label>
                 <input id="ticket-code" autoComplete="off" autoCapitalize="characters" value={ticketCode} onChange={(event) => setTicketCode(event.target.value.toUpperCase())} placeholder="VD: A1B2C3D4" disabled={codePending} className="min-h-14 min-w-0 flex-1 rounded-xl border border-slate-300 bg-slate-50 px-4 font-mono text-lg font-bold uppercase tracking-widest text-slate-900 outline-none transition placeholder:font-sans placeholder:text-sm placeholder:font-medium placeholder:normal-case placeholder:tracking-normal focus:border-ink/30 focus:bg-white focus:ring-4 focus:ring-ink/10 disabled:opacity-60" />
-                <button type="submit" aria-label="Điểm danh bằng mã" disabled={!ticketCode.trim() || codePending} className="min-h-14 rounded-xl bg-ink px-6 font-bold text-white shadow-md shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-ink-soft disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-slate-300 disabled:shadow-none">{codePending ? 'Đang xử lý…' : 'Điểm danh'}</button>
+                <button type="submit" aria-label="Điểm danh bằng mã" disabled={!ticketCode.trim() || codePending} className="min-h-14 rounded-xl bg-ink px-6 font-bold text-white shadow-md shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-ink-soft disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-slate-300 disabled:shadow-none raise">{codePending ? 'Đang xử lý…' : 'Điểm danh'}</button>
               </form>
               <p className="mt-2 text-xs text-slate-400">Nhấn Enter để gửi · Ô nhập tự xoá sau mỗi lần xử lý</p>
             </div>

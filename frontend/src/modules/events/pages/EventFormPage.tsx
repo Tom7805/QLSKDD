@@ -71,8 +71,8 @@ export default function EventFormPage() {
 
   if (notFound) {
     return (
-      <div className="min-h-full bg-workspace p-6">
-        <div className="mx-auto max-w-xl rounded-3xl bg-white p-8 text-center shadow-float">
+      <div className="min-h-full bg-scene p-6">
+        <div className="mx-auto max-w-xl glass-card border-rose-200/80 p-8 text-center">
           <p className="text-sm font-semibold text-ink">404</p>
           <h1 className="mt-2 text-2xl font-bold text-slate-900">Không tìm thấy sự kiện</h1>
           <p className="mt-2 text-sm text-slate-500">Sự kiện không tồn tại hoặc đã bị xóa.</p>
@@ -89,7 +89,7 @@ export default function EventFormPage() {
   }
 
   return (
-    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-scene p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8">
           <p className="text-sm font-medium text-ink">Quản trị sự kiện</p>

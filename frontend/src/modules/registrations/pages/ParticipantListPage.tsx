@@ -75,7 +75,7 @@ export default function ParticipantListPage() {
   };
 
   return (
-    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-scene p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
         <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -86,7 +86,7 @@ export default function ParticipantListPage() {
           <button type="button" onClick={() => { setEditing(null); setFormOpen(true); }} className="h-11 rounded-xl bg-ink px-4 text-sm font-semibold text-white">＋ Thêm người tham gia</button>
         </header>
 
-        <section className="overflow-hidden rounded-3xl bg-white shadow-float">
+        <section className="overflow-hidden glass-card border-sky-200/80">
           <div className="border-b p-4">
             <ParticipantFilter
               value={filters}

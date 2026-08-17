@@ -113,7 +113,7 @@ export default function EventDetailPage() {
 
   if (loading) return <div className="mx-auto max-w-7xl animate-pulse space-y-5 p-6" aria-label="Đang tải chi tiết sự kiện"><div className="h-10 w-2/3 rounded bg-slate-200" /><div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]"><div className="h-96 rounded-2xl bg-slate-200" /><div className="h-72 rounded-2xl bg-slate-200" /></div></div>;
 
-  if (error || !event) return <div className="min-h-full bg-workspace p-6"><div role="alert" className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-8 text-center"><p className="font-semibold text-red-700">{error ?? 'Không tìm thấy sự kiện.'}</p><button type="button" onClick={() => setReloadKey((key) => key + 1)} className="mt-4 font-semibold text-ink">Thử lại</button></div></div>;
+  if (error || !event) return <div className="min-h-full bg-scene p-6"><div role="alert" className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-8 text-center"><p className="font-semibold text-red-700">{error ?? 'Không tìm thấy sự kiện.'}</p><button type="button" onClick={() => setReloadKey((key) => key + 1)} className="mt-4 font-semibold text-ink">Thử lại</button></div></div>;
 
   const registered = event.totalRegistered ?? Math.max(0, event.capacity - (event.availableSeats ?? event.capacity));
   const usagePercent = event.capacity > 0 ? Math.min(100, Math.round((registered / event.capacity) * 100)) : 0;
@@ -161,7 +161,7 @@ export default function EventDetailPage() {
   };
 
   return (
-    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-scene p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
         <button type="button" onClick={() => navigate(ROUTES.EVENTS)} className="mb-5 text-sm font-semibold text-ink">← Danh sách sự kiện</button>
         {/*
@@ -178,18 +178,18 @@ export default function EventDetailPage() {
               title: 'Thông tin sự kiện',
               className: 'lg:col-span-2',
               content: (
-          <main className="rounded-3xl bg-white p-5 shadow-float sm:p-7">
+          <main className="glass-card border-indigo-200/80 p-5 sm:p-7">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div><p className="text-sm font-semibold text-ink">{event.categoryName || 'Sự kiện'}</p><h1 className="mt-1 text-3xl font-bold text-slate-900">{event.name}</h1></div>
               <EventStatusBadge status={event.status} />
             </div>
             <dl className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="rounded-xl bg-slate-50 p-4"><dt className="text-xs font-semibold uppercase text-slate-400">Bắt đầu</dt><dd className="mt-1 font-medium text-slate-800">{formatDateTime(event.startAt)}</dd></div>
-              <div className="rounded-xl bg-slate-50 p-4"><dt className="text-xs font-semibold uppercase text-slate-400">Kết thúc</dt><dd className="mt-1 font-medium text-slate-800">{formatDateTime(event.endAt)}</dd></div>
-              <div className="rounded-xl bg-slate-50 p-4"><dt className="text-xs font-semibold uppercase text-slate-400">Địa điểm</dt><dd className="mt-1 font-medium text-slate-800">{event.location}</dd></div>
+              <div className="glass-tile border-indigo-200 p-4"><dt className="text-xs font-semibold uppercase text-slate-400">Bắt đầu</dt><dd className="mt-1 font-medium text-slate-800">{formatDateTime(event.startAt)}</dd></div>
+              <div className="glass-tile border-amber-200 p-4"><dt className="text-xs font-semibold uppercase text-slate-400">Kết thúc</dt><dd className="mt-1 font-medium text-slate-800">{formatDateTime(event.endAt)}</dd></div>
+              <div className="glass-tile border-emerald-200 p-4"><dt className="text-xs font-semibold uppercase text-slate-400">Địa điểm</dt><dd className="mt-1 font-medium text-slate-800">{event.location}</dd></div>
             </dl>
             <section className="mt-6"><h2 className="font-semibold text-slate-900">Mô tả</h2><p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">{event.description || 'Chưa có mô tả cho sự kiện này.'}</p></section>
-            <section className="mt-7 rounded-xl border border-slate-200 p-4 sm:p-5">
+            <section className="glass-tile mt-7 p-4 sm:p-5 hover:translate-y-0 hover:border-slate-200 hover:shadow-raise">
               <h2 className="font-semibold text-slate-900">Thống kê tham dự</h2>
               <div className={`mt-4 grid grid-cols-1 gap-6 ${canManageEvent && attendanceSummary ? 'lg:grid-cols-2' : ''}`}>
                 <div>
@@ -213,7 +213,7 @@ export default function EventDetailPage() {
               title: 'Thao tác',
               className: 'lg:col-span-1',
               content: (
-          <aside className="rounded-3xl bg-white p-5 shadow-float">
+          <aside className="glass-card border-emerald-200/80 p-5">
             <h2 className="text-lg font-bold text-slate-900">Thao tác</h2>
             <div className="mt-5 flex flex-col gap-3">
               {user?.role === 'ROLE_USER' && (
@@ -222,7 +222,7 @@ export default function EventDetailPage() {
                     type="button"
                     onClick={handleRegister}
                     disabled={!canRegister || isRegistering}
-                    className="min-h-11 rounded-xl bg-ink px-4 py-2 font-semibold text-white hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-slate-300"
+                    className="min-h-11 rounded-xl bg-ink px-4 py-2 font-semibold text-white hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-slate-300 raise"
                   >
                     {isRegistering ? 'Đang xử lý...' : isRegistered ? 'Đã đăng ký' : 'Đăng ký tham gia'}
                   </button>
@@ -230,19 +230,19 @@ export default function EventDetailPage() {
                 </>
               )}
               {canManageEvent && <>
-                <button type="button" onClick={() => navigate(ROUTES.EVENT_EDIT.replace(':id', String(event.id)))} className="min-h-11 rounded-xl border border-slate-200 px-4 py-2 font-semibold text-ink hover:bg-slate-50">Sửa sự kiện</button>
-                {event.status === 'OPEN' && <button type="button" onClick={() => setPendingStatus('CLOSED')} className="min-h-11 rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50">Đóng sự kiện</button>}
+                <button type="button" onClick={() => navigate(ROUTES.EVENT_EDIT.replace(':id', String(event.id)))} className="min-h-11 rounded-xl border border-slate-200 px-4 py-2 font-semibold text-ink hover:bg-slate-50 raise">Sửa sự kiện</button>
+                {event.status === 'OPEN' && <button type="button" onClick={() => setPendingStatus('CLOSED')} className="min-h-11 rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50 raise">Đóng sự kiện</button>}
                 <button
                   type="button"
                   onClick={() => navigate(ROUTES.EVENT_REGISTRATIONS.replace(':eventId', String(event.id)))}
-                  className="min-h-11 rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+                  className="min-h-11 rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50 raise"
                 >
                   Xem người đăng ký
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate(ROUTES.EVENT_CHECK_IN.replace(':eventId', String(event.id)))}
-                  className="min-h-11 rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+                  className="min-h-11 rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50 raise"
                 >
                   Điểm danh
                 </button>

@@ -182,7 +182,7 @@ export default function EventStatusReport({
 
   if (loading) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col rounded-3xl bg-white p-4 shadow-card" aria-label="Đang tải lịch sự kiện">
+      <div className="flex min-h-0 flex-1 flex-col glass-card border-indigo-200/80 p-4" aria-label="Đang tải lịch sự kiện">
         <div className="space-y-1">
           {Array.from({ length: 8 }, (_, index) => (
             <div key={index} className="h-9 animate-pulse rounded-lg bg-slate-100" />
@@ -193,7 +193,7 @@ export default function EventStatusReport({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col rounded-3xl bg-white p-4 shadow-card">
+    <div className="flex min-h-0 flex-1 flex-col glass-card border-indigo-200/80 p-4">
       {/*
         Màn hẹp thì KHÔNG bóp 31 cột cho vừa (mỗi ngày còn ~9px, thanh sự kiện thành cái
         gạch) — cho cả bảng cuộn ngang, đầu bảng và các dòng cuộn cùng nhau vì nằm chung
@@ -349,11 +349,20 @@ export default function EventStatusReport({
                       })}
                     </span>
 
+                    {/*
+                      Thanh dùng dải chuyển sắc thay vì một màu phẳng, cộng một vệt sáng
+                      trắng mảnh ở nửa trên (`before:`) để mặt thanh trông cong như một
+                      viên thuốc chứ không phẳng lì — thanh dài cả trăm pixel mà tô màu
+                      phẳng thì nhìn rất chết.
+                    */}
                     <span
                       className={[
-                        'absolute flex items-center justify-center overflow-hidden rounded-full px-2 text-white shadow-sm',
-                        'transition-transform duration-150 group-hover:scale-y-110',
-                        palette.pill,
+                        'absolute flex items-center justify-center overflow-hidden rounded-full px-2 text-white',
+                        'bg-gradient-to-r shadow-md transition-all duration-200',
+                        'group-hover:scale-y-110 group-hover:shadow-lg',
+                        'before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-1/2',
+                        'before:rounded-t-full before:bg-gradient-to-b before:from-white/35 before:to-transparent',
+                        palette.gradient,
                         palette.glow,
                         row.finished ? 'opacity-55 saturate-[0.6]' : '',
                         row.continuesBefore ? 'rounded-l-sm' : '',
@@ -367,7 +376,7 @@ export default function EventStatusReport({
                       }}
                     >
                       {insideLabel && (
-                        <span className="truncate text-[10px] font-bold">
+                        <span className="relative truncate text-[10px] font-bold drop-shadow-sm">
                           {row.continuesBefore && '◂ '}
                           {insideLabel}
                         </span>

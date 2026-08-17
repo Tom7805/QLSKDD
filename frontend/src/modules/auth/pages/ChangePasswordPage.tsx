@@ -203,7 +203,7 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="min-h-full bg-workspace px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-full bg-scene px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-2xl">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-900">Đổi mật khẩu</h1>
@@ -212,7 +212,7 @@ export default function ChangePasswordPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-5 rounded-3xl bg-white p-5 shadow-float sm:p-7">
+        <form onSubmit={handleSubmit} noValidate className="space-y-5 glass-card border-amber-200/80 p-5 sm:p-7">
           {error && (
             <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
@@ -281,14 +281,14 @@ export default function ChangePasswordPage() {
               type="button"
               disabled={submitting}
               onClick={() => navigate(ROUTES.HOME)}
-              className="min-h-11 rounded-xl border border-slate-300 px-5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="min-h-11 rounded-xl border border-slate-300 px-5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 raise"
             >
               Huỷ
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex min-h-11 min-w-36 items-center justify-center rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-blue-400"
+              className="inline-flex min-h-11 min-w-36 items-center justify-center rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-blue-400 raise"
             >
               {submitting ? 'Đang đổi mật khẩu...' : 'Đổi mật khẩu'}
             </button>
