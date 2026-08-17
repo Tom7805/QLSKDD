@@ -17,6 +17,12 @@ public class EventRes {
     private Integer capacity;
     private Integer availableSeats;
 
+    // Loại sự kiện đã có sẵn ở EventDetailRes; bổ sung vào danh sách để lịch tuần tô màu
+    // được từng sự kiện theo loại mà không phải gọi thêm API chi tiết cho mỗi sự kiện.
+    // Null với các sự kiện mẫu cũ (B0.4) chưa gán loại.
+    private Long categoryId;
+    private String categoryName;
+
     // B4.3-T4: tỷ lệ tham dự hiển thị ngay ở danh sách sự kiện — cùng công thức và
     // cùng nguồn tính (AttendanceRateUtil) với chi tiết sự kiện và attendance-summary.
     private Double attendanceRate;

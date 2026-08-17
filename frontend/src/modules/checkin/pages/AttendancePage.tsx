@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Pagination from '../../../components/common/Pagination';
+import SortableGrid from '../../../components/ui/SortableGrid';
 import { getAttendanceList, getAttendanceSummary } from '../checkinApi';
 import type {
   AttendanceFilter,
@@ -62,9 +63,12 @@ function rateColor(rate: number) {
   return 'bg-emerald-400';
 }
 
+/** Khoá localStorage nhớ thứ tự ba ô số liệu */
+const ATTENDANCE_ORDER_KEY = 'qlskdd.attendance.statOrder';
+
 function StatCard({ label, value, accent }: { label: string; value: number; accent: string }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="rounded-3xl bg-white p-5 shadow-float">
       <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p>
       <p className={`mt-2 text-3xl font-extrabold ${accent}`}>{value}</p>
     </div>
@@ -73,7 +77,7 @@ function StatCard({ label, value, accent }: { label: string; value: number; acce
 
 function MobileCard({ item, order }: { item: AttendanceItem; order: number }) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:hidden">
+    <article className="rounded-3xl bg-white p-4 shadow-float sm:hidden">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-sm font-extrabold ${item.checkedIn ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
@@ -145,9 +149,9 @@ export default function AttendancePage() {
   const activeFilter = FILTERS.find((filter) => filter.value === status) ?? FILTERS[0];
 
   return (
-    <div className="min-h-full bg-slate-50/70 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
-        <button type="button" onClick={() => navigate(`/events/${numericEventId}/check-in`)} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-blue-700">
+        <button type="button" onClick={() => navigate(`/events/${numericEventId}/check-in`)} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-ink">
           <span aria-hidden="true">←</span> Quay lại điểm danh
         </button>
 
@@ -172,31 +176,48 @@ export default function AttendancePage() {
         </header>
 
         {!error && (
-          <section aria-label="Số liệu tổng hợp" className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <StatCard label="Tổng đăng ký" value={summary.summary.totalRegistered} accent="text-slate-900" />
-            <StatCard label="Có mặt" value={summary.summary.present} accent="text-emerald-600" />
-            <StatCard label="Vắng" value={summary.summary.absent} accent="text-red-600" />
-          </section>
+          <SortableGrid
+            storageKey={ATTENDANCE_ORDER_KEY}
+            ariaLabel="Số liệu tổng hợp"
+            className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3"
+            blocks={[
+              {
+                id: 'total',
+                title: 'Tổng đăng ký',
+                content: <StatCard label="Tổng đăng ký" value={summary.summary.totalRegistered} accent="text-slate-900" />,
+              },
+              {
+                id: 'present',
+                title: 'Có mặt',
+                content: <StatCard label="Có mặt" value={summary.summary.present} accent="text-emerald-600" />,
+              },
+              {
+                id: 'absent',
+                title: 'Vắng',
+                content: <StatCard label="Vắng" value={summary.summary.absent} accent="text-red-600" />,
+              },
+            ]}
+          />
         )}
 
         {error ? (
-          <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center text-red-700 shadow-sm">
+          <div role="alert" className="rounded-3xl bg-red-50 p-8 text-center text-red-700 shadow-float">
             <p className="font-semibold">{error}</p>
             <button type="button" onClick={() => setReloadKey((key) => key + 1)} className="mt-3 rounded-xl bg-red-100 px-4 py-2 font-bold transition hover:bg-red-200">Thử lại</button>
           </div>
         ) : (
           <>
-            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <section className="rounded-3xl bg-white p-4 shadow-float sm:p-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-blue-600">Bộ lọc danh sách</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-ink">Bộ lọc danh sách</p>
                   <h2 className="mt-1 text-xl font-extrabold text-slate-900">{activeFilter.label}</h2>
                   <p className="mt-1 text-sm text-slate-500">{activeFilter.description} · {result.totalElements} kết quả</p>
                 </div>
                 <div className="w-full lg:w-72">
                   <label htmlFor="attendance-status" className="mb-1.5 block text-sm font-semibold text-slate-700">Trạng thái tham dự</label>
                   <div className="relative">
-                    <select id="attendance-status" value={status} onChange={(event) => changeFilter(event.target.value as AttendanceFilter)} className="min-h-12 w-full appearance-none rounded-xl border border-slate-300 bg-white px-4 pr-10 text-sm font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
+                    <select id="attendance-status" value={status} onChange={(event) => changeFilter(event.target.value as AttendanceFilter)} className="min-h-12 w-full appearance-none rounded-xl border border-slate-300 bg-white px-4 pr-10 text-sm font-semibold text-slate-800 outline-none transition focus:border-ink/30 focus:ring-4 focus:ring-ink/10">
                       {FILTERS.map((filter) => <option key={filter.value} value={filter.value}>{filter.label}</option>)}
                     </select>
                     <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true">⌄</span>
@@ -220,7 +241,7 @@ export default function AttendancePage() {
                 <div className="mt-5 space-y-3 sm:hidden">
                   {result.content.map((item, index) => <MobileCard key={item.registrationId} item={item} order={page * PAGE_SIZE + index + 1} />)}
                 </div>
-                <div className="mt-5 hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:block">
+                <div className="mt-5 hidden overflow-hidden rounded-3xl bg-white shadow-float sm:block">
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-left text-sm">
                       <thead className="border-b border-slate-200 bg-slate-50/80 text-xs font-bold uppercase tracking-wide text-slate-500">
@@ -228,7 +249,7 @@ export default function AttendancePage() {
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {result.content.map((item, index) => (
-                          <tr key={item.registrationId} className="transition hover:bg-blue-50/40">
+                          <tr key={item.registrationId} className="transition hover:bg-slate-50/40">
                             <td className="px-5 py-4 font-semibold text-slate-400">{String(page * PAGE_SIZE + index + 1).padStart(2, '0')}</td>
                             <td className="px-5 py-4"><p className="font-bold text-slate-900">{item.fullName}</p><p className="mt-0.5 text-xs text-slate-400">Đăng ký {formatDateTime(item.registeredAt)}</p></td>
                             <td className="px-5 py-4"><p className="text-slate-700">{item.email}</p><p className="mt-0.5 text-xs text-slate-400">{item.phone || 'Chưa có SĐT'}</p></td>

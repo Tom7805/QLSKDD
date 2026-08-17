@@ -88,13 +88,13 @@ function PasswordInput({
           className={`block min-h-11 w-full rounded-xl border px-3.5 py-2.5 pr-11 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4 ${
             error
               ? 'border-red-400 focus:border-red-500 focus:ring-red-100'
-              : 'border-slate-300 focus:border-blue-500 focus:ring-blue-100'
+              : 'border-slate-300 focus:border-ink/30 focus:ring-ink/10'
           }`}
         />
         <button
           type="button"
           onClick={() => setVisible((current) => !current)}
-          className="absolute inset-y-0 right-0 flex min-w-11 items-center justify-center rounded-r-xl text-slate-400 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+          className="absolute inset-y-0 right-0 flex min-w-11 items-center justify-center rounded-r-xl text-slate-400 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ink/30"
           aria-label={visible ? `Ẩn ${label.toLowerCase()}` : `Hiện ${label.toLowerCase()}`}
         >
           <EyeIcon hidden={visible} />
@@ -116,7 +116,7 @@ function getPasswordStrength(password: string) {
   const levels = [
     { label: 'Yếu', color: 'bg-red-500' },
     { label: 'Trung bình', color: 'bg-amber-500' },
-    { label: 'Khá', color: 'bg-blue-500' },
+    { label: 'Khá', color: 'bg-slate-500' },
     { label: 'Mạnh', color: 'bg-emerald-500' },
   ];
 
@@ -203,7 +203,7 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-full bg-workspace px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-2xl">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-900">Đổi mật khẩu</h1>
@@ -212,7 +212,7 @@ export default function ChangePasswordPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+        <form onSubmit={handleSubmit} noValidate className="space-y-5 rounded-3xl bg-white p-5 shadow-float sm:p-7">
           {error && (
             <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
@@ -288,7 +288,7 @@ export default function ChangePasswordPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex min-h-11 min-w-36 items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
+              className="inline-flex min-h-11 min-w-36 items-center justify-center rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-blue-400"
             >
               {submitting ? 'Đang đổi mật khẩu...' : 'Đổi mật khẩu'}
             </button>

@@ -156,7 +156,7 @@ export default function LoginForm() {
             setFieldErrors((current) => ({ ...current, username: undefined }));
           }}
           placeholder="Nhập tên đăng nhập"
-          className={`block min-h-11 w-full rounded-lg border px-3.5 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 ${fieldErrors.username ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500/20'}`}
+          className={`block min-h-11 w-full rounded-lg border px-3.5 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 ${fieldErrors.username ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-300 focus:border-ink/30 focus:ring-ink/30/20'}`}
         />
         {fieldErrors.username && (
           <p id="username-error" className="mt-1 text-sm text-red-600">
@@ -184,7 +184,7 @@ export default function LoginForm() {
               setFieldErrors((current) => ({ ...current, password: undefined }));
             }}
             placeholder="Nhập mật khẩu"
-            className={`block min-h-11 w-full rounded-lg border px-3.5 py-2.5 pr-11 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 ${fieldErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500/20'}`}
+            className={`block min-h-11 w-full rounded-lg border px-3.5 py-2.5 pr-11 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 ${fieldErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-300 focus:border-ink/30 focus:ring-ink/30/20'}`}
           />
           <button
             type="button"
@@ -206,7 +206,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-ink px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-blue-400"
       >
         {loading && <SpinnerIcon />}
         {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}

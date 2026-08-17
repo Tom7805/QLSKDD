@@ -107,7 +107,7 @@ describe('EventDetailPage registration', () => {
     await waitFor(() => expect(mocks.registerForEventMock).toHaveBeenCalledWith(1));
     expect(await screen.findByText('Đã đăng ký')).toBeInTheDocument();
     expect(screen.getAllByText(/Đăng ký thành công/).length).toBeGreaterThan(0);
-    expect(screen.getByRole('dialog', { name: 'Vé tham dự của bạn' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Vé tham dự' })).toBeInTheDocument();
   });
 
   it('hiển thị "Đã đăng ký" ngay khi tải trang nếu API báo đã đăng ký từ trước, không cần bấm mới biết', async () => {

@@ -71,12 +71,12 @@ export default function EventFormPage() {
 
   if (notFound) {
     return (
-      <div className="p-6">
-        <div className="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm font-semibold text-blue-600">404</p>
+      <div className="min-h-full bg-workspace p-6">
+        <div className="mx-auto max-w-xl rounded-3xl bg-white p-8 text-center shadow-float">
+          <p className="text-sm font-semibold text-ink">404</p>
           <h1 className="mt-2 text-2xl font-bold text-slate-900">Không tìm thấy sự kiện</h1>
           <p className="mt-2 text-sm text-slate-500">Sự kiện không tồn tại hoặc đã bị xóa.</p>
-          <button type="button" onClick={() => navigate(ROUTES.HOME)} className="mt-6 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white">
+          <button type="button" onClick={() => navigate(ROUTES.HOME)} className="mt-6 rounded-xl bg-ink px-5 py-3 text-sm font-semibold text-white">
             Về trang chủ
           </button>
         </div>
@@ -89,10 +89,10 @@ export default function EventFormPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8">
-          <p className="text-sm font-medium text-blue-600">Quản trị sự kiện</p>
+          <p className="text-sm font-medium text-ink">Quản trị sự kiện</p>
           <h1 className="mt-1 text-3xl font-bold text-slate-900">{isEditing ? 'Sửa sự kiện' : 'Tạo sự kiện mới'}</h1>
           <p className="mt-2 text-sm text-slate-500">
             {isEditing ? 'Cập nhật thông tin sự kiện và lưu thay đổi.' : 'Nhập thông tin chi tiết sự kiện để mở đăng ký.'}

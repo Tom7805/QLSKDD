@@ -29,6 +29,9 @@ export interface EventSummary {
   capacity: number | null;
   availableSeats: number | null;
   attendanceRate: number | null;
+  // Lịch tuần tô màu khối sự kiện theo loại; null với sự kiện chưa gán loại
+  categoryId: number | null;
+  categoryName: string | null;
 }
 
 export interface EventsPage {

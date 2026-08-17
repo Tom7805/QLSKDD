@@ -33,7 +33,7 @@ export default function Pagination({ page, totalPages, onChange, onPageChange }:
             aria-current={item === page ? 'page' : undefined}
             onClick={() => changePage(item)}
             className={`h-9 min-w-9 rounded-lg px-2 text-sm font-medium ${
-              item === page ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+              item === page ? 'bg-ink text-white' : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             {item + 1}

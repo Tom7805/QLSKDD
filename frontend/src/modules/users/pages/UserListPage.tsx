@@ -78,20 +78,20 @@ export default function UserListPage() {
   const roleLabel = (role: string) => ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? role.replace('ROLE_', '');
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-blue-600">Quản trị hệ thống</p>
+            <p className="text-sm font-medium text-ink">Quản trị hệ thống</p>
             <h1 className="mt-1 text-2xl font-bold text-slate-900">Danh sách tài khoản</h1>
             <p className="mt-1 text-sm text-slate-500">Quản lý thông tin và trạng thái người dùng trong hệ thống.</p>
           </div>
-          <button type="button" onClick={() => { setFormMode('create'); setSelectedUser(null); setIsFormOpen(true); }} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">
+          <button type="button" onClick={() => { setFormMode('create'); setSelectedUser(null); setIsFormOpen(true); }} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-ink px-4 text-sm font-semibold text-white shadow-sm hover:bg-ink-soft">
             <span className="text-xl leading-none">＋</span> Thêm mới
           </button>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-3xl bg-white shadow-float">
           <div className="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
             <SearchInput value={keyword} onChange={setKeyword} placeholder="Tìm theo tên đăng nhập, họ tên..." />
             <p className="text-sm text-slate-500">{result.totalElements} tài khoản</p>
@@ -100,11 +100,11 @@ export default function UserListPage() {
           {error ? (
             <div className="p-10 text-center">
               <p role="alert" className="text-sm font-medium text-red-600">{error}</p>
-              <button type="button" onClick={() => setReloadKey((key) => key + 1)} className="mt-3 text-sm font-semibold text-blue-600">Thử lại</button>
+              <button type="button" onClick={() => setReloadKey((key) => key + 1)} className="mt-3 text-sm font-semibold text-ink">Thử lại</button>
             </div>
           ) : loading ? (
             <div className="flex min-h-64 items-center justify-center" role="status">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-100 border-t-blue-600" />
               <span className="sr-only">Đang tải danh sách tài khoản</span>
             </div>
           ) : result.content.length === 0 ? (
@@ -136,7 +136,7 @@ export default function UserListPage() {
                       <td className="truncate px-4 py-4 text-sm text-slate-600">{user.email}</td>
                       <td className="truncate px-4 py-4 text-sm text-slate-600">{roleLabel(user.role)}</td>
                       <td className="whitespace-nowrap px-4 py-4 text-sm">
-                        <button type="button" onClick={() => openEditForm(user)} className="font-semibold text-blue-600 hover:text-blue-800">Sửa</button>
+                        <button type="button" onClick={() => openEditForm(user)} className="font-semibold text-ink hover:text-ink">Sửa</button>
                         <span className="mx-2 text-slate-300">|</span>
                         <button type="button" onClick={() => setStatusTarget(user)} className={`font-semibold ${user.enabled ? 'text-red-600 hover:text-red-800' : 'text-emerald-600 hover:text-emerald-800'}`}>{user.enabled ? 'Khóa' : 'Mở khóa'}</button>
                       </td>
@@ -163,7 +163,7 @@ export default function UserListPage() {
                     </div>
                   </dl>
                   <div className="mt-4 flex gap-2 border-t border-slate-100 pt-3">
-                    <button type="button" onClick={() => openEditForm(user)} className="flex-1 rounded-lg border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50">Sửa</button>
+                    <button type="button" onClick={() => openEditForm(user)} className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-ink hover:bg-slate-50">Sửa</button>
                     <button type="button" onClick={() => setStatusTarget(user)} className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold ${user.enabled ? 'border-red-200 text-red-700 hover:bg-red-50' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'}`}>{user.enabled ? 'Khóa' : 'Mở khóa'}</button>
                   </div>
                 </article>

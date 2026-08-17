@@ -15,4 +15,5 @@ export const ROUTES = {
   EVENT_CHECK_IN: '/events/:eventId/check-in',
   EVENT_ATTENDANCE: '/events/:eventId/attendance',
   CHANGE_PASSWORD: '/change-password',
+  PROFILE: '/profile',
 } as const;

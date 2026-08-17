@@ -1,8 +1,11 @@
+import { configureStore } from '@reduxjs/toolkit';
 import { render, screen, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '../../../components/common/Toast';
+import authReducer from '../../../stores/slices/authSlice';
 import MyRegistrationsPage from './MyRegistrationsPage';
 import * as registrationsApi from '../registrationsApi';
 
@@ -15,13 +18,17 @@ vi.mock('../registrationsApi', () => ({
 const mockedGetMyRegistrations = vi.mocked(registrationsApi.getMyRegistrations);
 const mockedCancelRegistration = vi.mocked(registrationsApi.cancelRegistration);
 
+// Trang lấy tên người dùng từ store để in lên vé tham dự
 function renderPage() {
+  const store = configureStore({ reducer: { auth: authReducer } });
   render(
-    <MemoryRouter>
-      <ToastProvider>
-        <MyRegistrationsPage />
-      </ToastProvider>
-    </MemoryRouter>,
+    <Provider store={store}>
+      <MemoryRouter>
+        <ToastProvider>
+          <MyRegistrationsPage />
+        </ToastProvider>
+      </MemoryRouter>
+    </Provider>,
   );
 }
 

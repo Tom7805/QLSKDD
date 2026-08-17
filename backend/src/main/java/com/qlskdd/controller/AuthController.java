@@ -1,6 +1,7 @@
 package com.qlskdd.controller;
 
 import com.qlskdd.dto.request.LoginReq;
+import com.qlskdd.dto.request.ProfileReq;
 import com.qlskdd.mapper.response.BaseRes;
 import com.qlskdd.mapper.response.LoginRes;
 import com.qlskdd.service.AuthService;
@@ -38,6 +39,20 @@ public class AuthController {
         String username = authentication.getName();
         LoginRes.UserLoginInfo userInfo = authService.getCurrentUserInfo(username);
         return ResponseEntity.ok(BaseRes.success("Lấy thông tin người dùng thành công", userInfo));
+    }
+
+    /**
+     * Người dùng tự cập nhật hồ sơ của chính mình. Không nhận id từ client — luôn lấy
+     * theo Authentication, nên không thể sửa hồ sơ của người khác bằng cách đổi tham số.
+     */
+    @PutMapping("/me")
+    public ResponseEntity<BaseRes<LoginRes.UserLoginInfo>> updateProfile(
+            Authentication authentication, @Valid @RequestBody ProfileReq request) {
+        if (authentication == null) {
+            throw new UsernameNotFoundException("Bạn cần đăng nhập để thực hiện thao tác này");
+        }
+        LoginRes.UserLoginInfo updated = authService.updateProfile(authentication.getName(), request);
+        return ResponseEntity.ok(BaseRes.success("Cập nhật hồ sơ thành công", updated));
     }
 
     // Endpoint đăng xuất cho task B1.2-T1

@@ -206,6 +206,10 @@ public class EventServiceImpl implements EventService {
             res.setEndAt(event.getEndAt());
             res.setStatus(event.getStatus());
             res.setCapacity(event.getCapacity());
+            // Category là LAZY nhưng findAll ở đây đi kèm @EntityGraph("category") nên đọc
+            // ở đây không sinh thêm truy vấn cho từng sự kiện (N+1)
+            res.setCategoryId(event.getCategory() != null ? event.getCategory().getId() : null);
+            res.setCategoryName(event.getCategory() != null ? event.getCategory().getName() : null);
 
             Integer capacity = event.getCapacity();
             long activeCount = activeCountByEventId.getOrDefault(event.getId(), 0L);

@@ -49,6 +49,10 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
+                // Sửa hồ sơ phải đăng nhập — khai báo TRƯỚC permitAll của /auth/** để
+                // khách vãng lai nhận 401 đúng chuẩn qua entry point, thay vì lọt vào
+                // controller rồi mới ném lỗi
+                .requestMatchers(HttpMethod.PUT, "/api/v1/auth/me").authenticated()
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/events/**", "/api/v1/categories/**").permitAll()
                 // B1.5-T1: đổi mật khẩu của chính mình — phải khai báo TRƯỚC rule ADMIN bên

@@ -24,6 +24,10 @@ public class LoginRes {
         private String username;
         private String fullName;
         private String email;
+        private String phone;
         private String role;
+
+        // Ảnh đại diện: "preset:<màu>" hoặc data URI (xem User.avatar)
+        private String avatar;
     }
 }

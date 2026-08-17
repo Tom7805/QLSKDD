@@ -7,6 +7,8 @@ import { useToast } from '../../../components/common/Toast';
 import { cancelRegistration, getMyRegistrations } from '../registrationsApi';
 import type { MyRegistration, RegistrationsPage } from '../registrationsTypes';
 import QrTicketModal from '../components/QrTicketModal';
+import { selectUser } from '../../../stores/slices/authSlice';
+import { useAppSelector } from '../../../stores/store';
 
 const PAGE_SIZE = 10;
 const EMPTY_PAGE: RegistrationsPage = { content: [], page: 0, size: PAGE_SIZE, totalElements: 0, totalPages: 0, last: true };
@@ -28,6 +30,7 @@ export default function MyRegistrationsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = readPage(searchParams.get('page'));
   const { showToast } = useToast();
+  const currentUser = useAppSelector(selectUser);
   const [result, setResult] = useState<RegistrationsPage>(EMPTY_PAGE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,10 +91,10 @@ export default function MyRegistrationsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-6xl">
         <header className="mb-6">
-          <p className="text-sm font-semibold text-blue-600">Đăng ký</p>
+          <p className="text-sm font-semibold text-ink">Đăng ký</p>
           <h1 className="mt-1 text-3xl font-bold text-slate-900">Sự kiện của tôi</h1>
           <p className="mt-2 text-sm text-slate-500">Theo dõi các sự kiện bạn đã đăng ký và huỷ đăng ký khi cần.</p>
         </header>
@@ -99,7 +102,7 @@ export default function MyRegistrationsPage() {
         {error ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center" role="alert">
             <p className="font-medium text-red-700">{error}</p>
-            <button type="button" onClick={() => setReloadKey((key) => key + 1)} className="mt-3 font-semibold text-blue-700">
+            <button type="button" onClick={() => setReloadKey((key) => key + 1)} className="mt-3 font-semibold text-ink">
               Thử lại
             </button>
           </div>
@@ -118,7 +121,7 @@ export default function MyRegistrationsPage() {
           <>
             <div className="space-y-4">
               {result.content.map((item) => (
-                <article key={item.registrationId} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <article key={item.registrationId} className="rounded-3xl bg-white p-5 shadow-float">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -145,7 +148,7 @@ export default function MyRegistrationsPage() {
                         <button
                           type="button"
                           onClick={() => setTicket(item)}
-                          className="group flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md"
+                          className="group flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-ink-soft hover:shadow-md"
                         >
                           <span className="grid grid-cols-2 gap-0.5" aria-hidden="true">{Array.from({ length: 4 }, (_, index) => <i key={index} className="h-1.5 w-1.5 rounded-[1px] bg-white" />)}</span>
                           Xem vé QR
@@ -192,6 +195,10 @@ export default function MyRegistrationsPage() {
         registrationId={ticket?.registrationId ?? null}
         code={ticket?.code ?? ''}
         eventName={ticket?.eventName ?? ''}
+        startAt={ticket?.startAt ?? null}
+        endAt={ticket?.endAt ?? null}
+        location={ticket?.location ?? null}
+        attendeeName={currentUser?.fullName ?? null}
         onClose={() => setTicket(null)}
       />
     </div>

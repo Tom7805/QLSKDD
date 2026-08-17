@@ -7,3 +7,167 @@ input[type='password']::-ms-reveal,
 input[type='password']::-ms-clear {
   display: none;
 }
+
+@layer base {
+  body {
+    @apply bg-canvas text-ink antialiased;
+  }
+
+  /* Mọi phần tử bấm được đều chuyển trạng thái mượt thay vì đổi màu giật cục. Đặt ở
+     lớp base nên từng component vẫn ghi đè được bằng lớp transition-* riêng. */
+  button,
+  a,
+  select,
+  [role='button'] {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Viền focus thống nhất cho điều hướng bằng bàn phím — chỉ hiện khi dùng phím Tab,
+     không nhảy ra khi bấm chuột (focus-visible thay cho focus) */
+  :focus-visible {
+    outline: 2px solid rgba(22, 24, 29, 0.35);
+    outline-offset: 2px;
+  }
+
+  /* Ô nhập ngày: icon lịch mặc định của Chrome màu xám nhạt, khó thấy */
+  input[type='date']::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 150ms;
+  }
+  input[type='date']:hover::-webkit-calendar-picker-indicator {
+    opacity: 0.9;
+  }
+
+  /* Người dùng bật "giảm chuyển động" ở hệ điều hành thì tắt mọi animation/transition —
+     hiệu ứng ở đây chỉ để trang trí, không mang thông tin nào. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Nội dung mới (đổi tuần/tháng, đổi tab) trồi lên nhẹ thay vì hiện đột ngột */
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-rise {
+    animation: rise 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /*
+   * Chuyển cảnh khi sang trang khác.
+   *
+   * CỐ Ý chỉ đổi opacity, KHÔNG dùng transform: lớp này bọc toàn bộ nội dung trang, mà
+   * một phần tử cha có transform sẽ biến mọi `position: fixed` bên trong thành neo theo
+   * chính nó thay vì theo màn hình. Hộp thoại, ngăn kéo lọc trên mobile và thanh nút đáy
+   * của form đều là fixed — từng làm hộp thoại rơi xuống giữa chiều cao toàn trang,
+   * phải cuộn mới thấy. Hiệu ứng trồi lên (transform) chỉ dùng ở các khối con bên trong
+   * trang, nơi không chứa phần tử fixed nào.
+   */
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-page {
+    animation: page-enter 0.2s ease-out both;
+  }
+
+  /* Danh sách/lưới hiện lần lượt từng phần tử thay vì ập vào cùng lúc. Đặt
+     `style={{ animationDelay: ... }}` trên từng con để so le. */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Hộp thoại/menu bung ra từ 96% — nhẹ hơn hiệu ứng trượt, hợp với lớp phủ */
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-pop-in {
+    animation: pop-in 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Khung xương quét sáng qua lại — nhìn "đang tải" hơn hẳn animate-pulse phẳng */
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden bg-slate-100;
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+    animation: shimmer 1.4s infinite;
+  }
+
+  /* Thanh cuộn mảnh cho các vùng cuộn trong khung ứng dụng (sidebar, lưới lịch) —
+     thanh cuộn mặc định của Windows quá dày, cắt ngang bố cục bo tròn. */
+  .scrollbar-slim {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+  .scrollbar-slim::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8;
+    background-clip: content-box;
+  }
+}

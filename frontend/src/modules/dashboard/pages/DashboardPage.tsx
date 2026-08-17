@@ -1,30 +1,50 @@
 import axios from 'axios';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  CalendarIcon,
+  ChartIcon,
+  CheckSquareIcon,
+  SparkIcon,
+  TicketIcon,
+  TrendingUpIcon,
+} from '../../../components/common/Icons';
+import { Card, CardBody, CardHeader } from '../../../components/ui/Card';
+import { ROUTES } from '../../../constants/routes';
+import { selectUser } from '../../../stores/slices/authSlice';
+import { useAppSelector } from '../../../stores/store';
+import ExportReportPanel from '../components/ExportReportPanel';
+import SortableGrid, { type SortableBlock } from '../../../components/ui/SortableGrid';
+import StatCard, { type StatCardProps } from '../components/StatCard';
+import TopEventsChart from '../components/TopEventsChart';
+import TopEventsTable from '../components/TopEventsTable';
 import { getDashboardSummary, getTopEvents } from '../dashboardApi';
 import type { DashboardStat, TopEvent } from '../dashboardTypes';
-import StatCard from '../components/StatCard';
-import TopEventsTable from '../components/TopEventsTable';
-import ExportReportPanel from '../components/ExportReportPanel';
-import { ROUTES } from '../../../constants/routes';
 
-const BAR_COLOR = '#1c5cab';
-const AXIS_LABEL_MAX_CHARS = 10;
-
-function truncateLabel(name: string) {
-  return name.length > AXIS_LABEL_MAX_CHARS ? `${name.slice(0, AXIS_LABEL_MAX_CHARS)}…` : name;
-}
+/** Khoá localStorage nhớ thứ tự thẻ người dùng đã sắp */
+const STAT_ORDER_KEY = 'qlskdd.dashboard.statOrder';
+const PANEL_ORDER_KEY = 'qlskdd.dashboard.panelOrder';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const user = useAppSelector(selectUser);
   const [stat, setStat] = useState<DashboardStat | null>(null);
   const [topEvents, setTopEvents] = useState<TopEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  /** Đổi khoá này là hai lưới được dựng lại và đọc lại thứ tự (lúc này đã trống) */
+  const [layoutKey, setLayoutKey] = useState(0);
 
-  const isEmpty = !loading && stat !== null && topEvents.length === 0;
+  const resetLayout = () => {
+    try {
+      localStorage.removeItem(STAT_ORDER_KEY);
+      localStorage.removeItem(PANEL_ORDER_KEY);
+    } catch {
+      // Trình duyệt chặn localStorage — vẫn đưa bố cục về mặc định cho phiên hiện tại
+    }
+    setLayoutKey((key) => key + 1);
+  };
 
   useEffect(() => {
     let active = true;
@@ -49,126 +69,180 @@ export default function DashboardPage() {
     };
   }, [reloadKey]);
 
+  const cardLoading = loading || stat === null;
+  const handleRowClick = (eventId: number) => navigate(ROUTES.EVENT_DETAIL.replace(':id', String(eventId)));
+
+  const today = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'full' }).format(new Date());
+  const attendanceRate = stat?.attendanceRate ?? 0;
+  const attendanceTone: StatCardProps['progressTone'] =
+    attendanceRate < 50 ? 'red' : attendanceRate <= 80 ? 'amber' : 'emerald';
+
+  /**
+   * Dòng phụ của mỗi thẻ nêu ngữ cảnh lấy từ chính dữ liệu API trả về (không bịa ra
+   * kiểu "+71% so với tuần trước" vì backend chưa có số liệu theo thời gian để so sánh).
+   */
   const statCards = [
-    { label: 'Tổng sự kiện', value: stat?.totalEvents ?? 0 },
-    { label: 'Sắp diễn ra', value: stat?.upcomingEvents ?? 0 },
-    { label: 'Lượt đăng ký', value: stat?.totalRegistrations ?? 0 },
-    { label: 'Tỷ lệ điểm danh', value: stat ? `${stat.attendanceRate}%` : '0%' },
+    {
+      label: 'Tổng sự kiện',
+      value: stat?.totalEvents ?? 0,
+      icon: <CalendarIcon className="h-4 w-4" />,
+      hint: stat ? `${stat.upcomingEvents} sự kiện sắp diễn ra` : null,
+      progress: null,
+    },
+    {
+      label: 'Sắp diễn ra',
+      value: stat?.upcomingEvents ?? 0,
+      icon: <SparkIcon className="h-4 w-4" />,
+      hint: stat && stat.totalEvents > 0
+        ? `Chiếm ${Math.round((stat.upcomingEvents / stat.totalEvents) * 100)}% tổng số sự kiện`
+        : 'Chưa có sự kiện nào',
+      progress: null,
+    },
+    {
+      label: 'Lượt đăng ký',
+      value: stat?.totalRegistrations ?? 0,
+      icon: <TicketIcon className="h-4 w-4" />,
+      hint: stat ? `${stat.totalCheckIns} lượt đã điểm danh` : null,
+      progress: null,
+    },
+    {
+      label: 'Tỷ lệ điểm danh',
+      value: `${attendanceRate}%`,
+      icon: <CheckSquareIcon className="h-4 w-4" />,
+      hint: stat ? `${stat.totalCheckIns}/${stat.totalRegistrations} lượt có mặt` : null,
+      progress: attendanceRate,
+      progressTone: attendanceTone,
+    },
   ];
 
-  const chartData = useMemo(
-    () =>
-      topEvents.map((e) => ({
-        name: e.eventName,
-        registered: e.registered,
-        eventId: e.eventId,
-      })),
-    [topEvents],
-  );
+  /**
+   * Ba khối lớn có bề rộng 2 + 1 + 3 trên lưới 3 cột, nên xếp theo thứ tự nào thì tổng
+   * bề rộng cũng lấp kín hàng — người dùng đổi chỗ thoải mái mà lưới không bao giờ hở.
+   */
+  const panelBlocks: SortableBlock[] = [
+    {
+      id: 'chart',
+      title: 'Lượt đăng ký theo sự kiện',
+      className: 'xl:col-span-2',
+      content: (
+        <Card floating className="h-full">
+          <CardHeader
+            icon={<ChartIcon className="h-4 w-4" />}
+            title="Lượt đăng ký theo sự kiện"
+            subtitle="Rê chuột vào từng cột để xem số liệu chi tiết"
+            actions={
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-ink-muted">
+                Top {topEvents.length || 5}
+              </span>
+            }
+          />
+          <CardBody className="pt-2">
+            <TopEventsChart events={topEvents} loading={cardLoading} onSelect={handleRowClick} />
+          </CardBody>
+        </Card>
+      ),
+    },
+    {
+      id: 'export',
+      title: 'Xuất báo cáo CSV',
+      content: <ExportReportPanel />,
+    },
+    {
+      id: 'table',
+      title: 'Top sự kiện đăng ký nhiều nhất',
+      className: 'xl:col-span-3',
+      content: (
+        <Card floating className="h-full overflow-hidden">
+          <CardHeader
+            icon={<TrendingUpIcon className="h-4 w-4" />}
+            title="Top sự kiện đăng ký nhiều nhất"
+            subtitle="Bấm tiêu đề cột để sắp xếp, bấm dòng để mở chi tiết"
+          />
+          <TopEventsTable events={topEvents} loading={cardLoading} onRowClick={handleRowClick} />
+        </Card>
+      ),
+    },
+  ];
 
-  const cardLoading = loading || stat === null;
-
-  const handleRowClick = (eventId: number) => {
-    navigate(ROUTES.EVENT_DETAIL.replace(':id', String(eventId)));
-  };
+  const statBlocks: SortableBlock[] = statCards.map((card) => ({
+    id: card.label,
+    title: card.label,
+    content: (
+      <StatCard
+        label={card.label}
+        value={card.value}
+        icon={card.icon}
+        hint={card.hint}
+        progress={card.progress}
+        progressTone={card.progressTone}
+        loading={cardLoading}
+      />
+    ),
+  }));
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-7xl">
-        <header className="mb-6">
-          <p className="text-sm font-semibold text-blue-600">Tổng quan</p>
-          <h1 className="mt-1 text-3xl font-bold text-slate-900">Dashboard</h1>
+    /*
+      Nền có màu (chuyển sắc tím nhạt) chứ không để trắng: các thẻ đều màu trắng nên chỉ
+      khi nền khác màu chúng mới thật sự "nổi" lên thành từng khối rời, thay vì tan vào
+      nền và phải nhờ đường viền mới phân biệt được.
+    */
+    <div className="min-h-full bg-workspace p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-[1400px]">
+        <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-extrabold tracking-tight text-ink sm:text-[28px]">
+              Xin chào{user ? `, ${user.fullName}` : ''} 👋
+            </h1>
+            <p className="mt-1.5 text-sm text-ink-muted">
+              Đây là bức tranh tổng quan — kéo tay cầm ở mép trên mỗi thẻ để sắp lại theo ý bạn.
+            </p>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2 self-start">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3.5 py-2 text-xs font-semibold capitalize text-ink-muted shadow-card backdrop-blur">
+              <CalendarIcon className="h-4 w-4 text-slate-400" />
+              {today}
+            </span>
+            <button
+              type="button"
+              onClick={resetLayout}
+              title="Đưa các thẻ về vị trí ban đầu"
+              className="inline-flex h-9 items-center rounded-full bg-white/80 px-3.5 text-xs font-bold text-ink-muted shadow-card backdrop-blur transition-all duration-150 hover:bg-ink hover:text-white active:scale-[0.97]"
+            >
+              Bố cục mặc định
+            </button>
+          </div>
         </header>
 
         {error ? (
-          <div
-            role="alert"
-            className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center text-red-700"
-          >
-            <p>{error}</p>
+          <div role="alert" className="animate-rise rounded-3xl bg-red-50 p-8 text-center text-red-700 shadow-float">
+            <p className="font-medium">{error}</p>
             <button
               type="button"
               onClick={() => setReloadKey((key) => key + 1)}
-              className="mt-3 font-semibold text-blue-700"
+              className="mt-3 inline-flex h-10 items-center rounded-xl bg-ink px-4 text-sm font-semibold text-white transition-all duration-150 hover:bg-ink-soft active:scale-[0.97]"
             >
               Thử lại
             </button>
           </div>
         ) : (
-          <>
-            <section aria-label="Số liệu thống kê">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {statCards.map((card) => (
-                  <StatCard key={card.label} label={card.label} value={card.value} loading={cardLoading} />
-                ))}
-              </div>
-            </section>
+          <div className="animate-rise space-y-6">
+            <SortableGrid
+              key={`stats-${layoutKey}`}
+              storageKey={STAT_ORDER_KEY}
+              ariaLabel="Số liệu thống kê"
+              blocks={statBlocks}
+              className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4"
+            />
 
-            <section className="mt-6">
-              <ExportReportPanel />
-            </section>
-
-            <section className="mt-6">
-              <h2 className="mb-3 text-lg font-semibold text-slate-900">Top 5 sự kiện đăng ký nhiều người</h2>
-              <TopEventsTable events={topEvents} loading={cardLoading} onRowClick={handleRowClick} />
-            </section>
-
-            <section className="mt-6">
-              <h2 className="mb-3 text-lg font-semibold text-slate-900">Biểu đồ đăng ký theo sự kiện</h2>
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                {cardLoading ? (
-                  <div className="flex items-end gap-2 overflow-x-auto py-4">
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <div key={`bar-skel-${i}`} className="h-6 w-10 shrink-0 animate-pulse rounded bg-slate-200" />
-                    ))}
-                  </div>
-                ) : isEmpty ? (
-                  <div className="py-10 text-center text-slate-500">Chưa có sự kiện nào.</div>
-                ) : (
-                  <div className="h-[260px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData} margin={{ top: 20, right: 0, left: -24, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                        <XAxis
-                          dataKey="name"
-                          tickFormatter={truncateLabel}
-                          tick={{ fontSize: 11, fill: '#64748b' }}
-                          tickLine={false}
-                          axisLine={false}
-                          interval={0}
-                          height={36}
-                        />
-                        <YAxis
-                          domain={[0, 'dataMax + 5']}
-                          tick={{ fontSize: 11, fill: '#64748b' }}
-                          tickLine={false}
-                          axisLine={false}
-                          width={32}
-                        />
-                        <Tooltip
-                          isAnimationActive={false}
-                          cursor={{ fill: '#f1f5f9' }}
-                          contentStyle={{ fontSize: 12, borderRadius: 6 }}
-                          labelFormatter={(_, payload) => payload?.[0]?.payload?.name ?? ''}
-                        />
-                        <Bar
-                          dataKey="registered"
-                          fill={BAR_COLOR}
-                          radius={[6, 6, 0, 0]}
-                          isAnimationActive={false}
-                          className="cursor-pointer transition-opacity hover:opacity-90"
-                          onClick={(data) => {
-                            const eventId = (data?.payload as { eventId?: number } | undefined)?.eventId;
-                            if (eventId) handleRowClick(eventId);
-                          }}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </div>
-            </section>
-          </>
+            <SortableGrid
+              key={`panels-${layoutKey}`}
+              storageKey={PANEL_ORDER_KEY}
+              ariaLabel="Các khối biểu đồ và báo cáo"
+              blocks={panelBlocks}
+              className="grid grid-cols-1 gap-6 xl:grid-cols-3"
+            />
+          </div>
         )}
       </div>
     </div>
