@@ -4,6 +4,19 @@
 # biến môi trường, và CỐ Ý không đặt giá trị mặc định — thiếu biến thì ứng dụng phải chết
 # ngay lúc khởi động với thông báo rõ ràng, tốt hơn nhiều so với việc lặng lẽ chạy bằng một
 # khoá mặc định mà ai đọc repo cũng biết.
+
+# Cổng lắng nghe.
+#
+# Render (và hầu hết nền tảng PaaS) tự chọn cổng rồi báo cho ứng dụng qua biến `PORT`, và CHỈ
+# định tuyến traffic vào đúng cổng đó. Nghe cứng 8080 thì Render quét không thấy cổng nào mở,
+# báo "Port scan timeout reached, no open ports detected" rồi coi như deploy hỏng — dù ứng dụng
+# vẫn chạy và đã kết nối được database. Đã gặp đúng lỗi này ở lần deploy đầu tiên.
+#
+# Để `${PORT:8080}`: có biến PORT (trên Render) thì dùng, không có (Docker ở máy, chạy dev)
+# thì vẫn là 8080 như cũ — nên docker-compose và healthcheck trong Dockerfile không phải sửa.
+server:
+  port: ${PORT:8080}
+
 spring:
   datasource:
     # Trong Docker, host là TÊN SERVICE `mysql`, không phải 127.0.0.1 — trong container thì
