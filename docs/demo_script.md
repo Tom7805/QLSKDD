@@ -26,7 +26,7 @@ Chờ console in đúng dòng này thì mới coi là dựng xong:
 
 ```
 DemoSeeder: đã tạo dữ liệu demo sạch — 3 loại sự kiện · 4 sự kiện (OPEN / CLOSED / CANCELLED /
-kín chỗ) · 12 tài khoản (demo_admin, demo_organizer, participant_1..10) · 18 lượt đăng ký ·
+kín chỗ) · 12 tài khoản (admin, organizer, user, user_2..user_10) · 18 lượt đăng ký ·
 6 lượt điểm danh.
 ```
 
@@ -43,7 +43,7 @@ cd frontend && npm run dev        # http://localhost:5173
 
 - [ ] Backend chạy, mở `http://localhost:8080/swagger-ui/index.html` thấy trang Swagger
 - [ ] Frontend mở được `http://localhost:5173`, không có lỗi đỏ ở Console (F12)
-- [ ] Đăng nhập thử `demo_admin` **rồi đăng xuất** — để chắc chắn tài khoản chạy được
+- [ ] Đăng nhập thử `admin` **rồi đăng xuất** — để chắc chắn tài khoản chạy được
 - [ ] **Xoá `localStorage`** sau khi thử (F12 → Application → Clear site data) để demo bắt đầu từ trang đăng nhập
 - [ ] Zoom trình duyệt **110–125%** cho người ngồi xa đọc được
 - [ ] Đóng hết tab lạ, tắt thông báo Windows/Zalo/Messenger (**Focus assist: On**)
@@ -51,17 +51,47 @@ cd frontend && npm run dev        # http://localhost:5173
 - [ ] Điện thoại đã kết nối **cùng mạng LAN**, mở sẵn trang check-in (cho phần quét QR)
 - [ ] Video dự phòng và file backup SQL đã ở sẵn trên Desktop (mục [5](#5-phương-án-dự-phòng-b63-t4))
 
+### 1.3. Nếu demo trên bản deploy thay vì máy cá nhân
+
+Hệ thống đã chạy thật trên internet:
+
+| Thành phần | Địa chỉ |
+|---|---|
+| **Ứng dụng** | https://qlskdd-frontend.onrender.com |
+| API (Postman) | https://qlskdd-backend.onrender.com/api/v1 |
+| Swagger UI | https://qlskdd-frontend.onrender.com/swagger-ui/index.html |
+
+> [!CAUTION]
+> **Bắt buộc đánh thức trước 5 phút.** Backend chạy gói miễn phí của Render nên **tự tắt sau 15 phút không ai dùng**, lần gọi đầu sau đó mất **tới 50 giây**. Database trên Aiven cũng có thể bị tắt khi để lâu.
+>
+> Cách đánh thức: mở trang, đăng nhập một lần, mở Dashboard. Thấy số liệu hiện ra là cả hai đã sẵn sàng.
+>
+> Không làm bước này thì đúng lúc trình bày sẽ đứng nhìn màn hình trắng gần một phút — tình huống hoàn toàn tránh được.
+
+Ưu điểm khi demo bản deploy: chứng minh được sản phẩm chạy thật ngoài môi trường phát triển, và cho thấy phần CI/CD có kết quả cụ thể. Nhược điểm: phụ thuộc mạng phòng thi và độ trễ Singapore ↔ Bangalore.
+
+**Khuyến nghị: chạy bản ở máy làm chính, mở sẵn bản deploy ở một tab riêng** để chiếu khi nói tới phần triển khai. Bản ở máy nhanh hơn và không phụ thuộc mạng.
+
 ---
 
 ## 2. Dữ liệu & tài khoản demo
 
 ### 2.1. Tài khoản
 
-| Username | Mật khẩu | Vai trò | Dùng ở phần |
-|---|---|---|---|
-| `demo_admin` | `admin123` | `ROLE_ADMIN` | Phần 2 (phân quyền), Phần 6 (thống kê) |
-| `demo_organizer` | `organizer123` | `ROLE_ORGANIZER` | Phần 3, 4, 5 |
-| `participant_1` … `participant_10` | `user123` | `ROLE_USER` | Phần 4 (đăng ký), Phần 5 (vé QR) |
+| Username | Vai trò | Dùng ở phần |
+|---|---|---|
+| `admin` | `ROLE_ADMIN` | Phần 2 (phân quyền), Phần 6 (thống kê) |
+| `organizer` | `ROLE_ORGANIZER` | Phần 3, 4, 5 |
+| `user`, `user_2` … `user_10` | `ROLE_USER` | Phần 4 (đăng ký), Phần 5 (vé QR) |
+
+**Tên tài khoản giống nhau ở mọi môi trường, nhưng MẬT KHẨU thì không:**
+
+| Môi trường | Mật khẩu |
+|---|---|
+| Chạy ở máy (`docker compose` hoặc `mvnw spring-boot:run`) | `admin123` · `organizer123` · `user123` |
+| **Bản deploy** https://qlskdd-frontend.onrender.com | Mật khẩu riêng của nhóm, đặt ở Render → `qlskdd-backend` → Environment → `APP_DEMO_*_PASSWORD` |
+
+Bản deploy có URL công khai trên internet nên **cố ý** không dùng mật khẩu mặc định — để `admin123` thì ai tìm ra địa chỉ cũng vào được với quyền quản trị. Ba mật khẩu đó **không nằm trong repo**; hỏi người giữ tài khoản Render trước buổi demo.
 
 ### 2.2. Sự kiện có sẵn
 
@@ -93,10 +123,10 @@ Bảng Top sự kiện sắp giảm dần: Hội thảo AI (6) → Thiết kế 
 | Mốc | Phần | Người trình bày | Nội dung & thao tác |
 |---|---|---|---|
 | **0:00 – 1:30** | **1. Giới thiệu** | TV1 | Bài toán: quản lý sự kiện bằng Google Form + Excel không chống được vượt chỗ, điểm danh chậm, số liệu tổng hợp tay. Nêu 3 điều hệ thống giải quyết. Chiếu sơ đồ kiến trúc 2 tầng (React ⇄ REST API ⇄ MySQL). **Chưa mở app.** |
-| **1:30 – 3:30** | **2. Đăng nhập & phân quyền** | TV1 | Đăng nhập `demo_admin` → chỉ Sidebar có đủ mục quản trị. Đăng xuất, đăng nhập `participant_1` → Sidebar **rút gọn**, không còn Người dùng / Loại sự kiện. Gõ thẳng URL `/users` → ra trang **403**. Chuyển sang Postman: gọi `POST /events` bằng token của `participant_1` → **403 JSON**. Chốt: *"chặn ở backend, không chỉ ẩn nút."* |
-| **3:30 – 6:00** | **3. Quản lý sự kiện** | TV2 | Đăng nhập `demo_organizer`. Danh sách sự kiện: chỉ **chế độ lịch** (thanh thời lượng theo ngày, màu theo loại) rồi bấm sang **chế độ danh sách**. Lọc theo loại `Workshop` → chỉ ra vào URL. **Tạo sự kiện mới** ngay trên sân khấu (sức chứa 2, thời gian 2 ngày tới) → 201, chuyển sang trang chi tiết. Thử sửa cho `endAt` trước `startAt` → hiện lỗi validate. |
-| **6:00 – 8:30** | **4. Đăng ký & chống vượt chỗ** | TV3 | Đăng nhập `participant_6` → mở sự kiện vừa tạo → **Đăng ký** → toast kèm **mã vé 8 ký tự**, số chỗ còn giảm. Mở **Sự kiện của tôi** → xem **vé QR**. Sau đó mở **"Workshop Thiết kế giao diện (đã kín chỗ)"** bằng `participant_7` → bấm Đăng ký → **`Sự kiện đã hết chỗ`**. Thử đăng ký lại sự kiện đã đăng ký → **`Bạn đã đăng ký sự kiện này`**. Chốt: *"chặn ở tầng nghiệp vụ, một người một suất."* |
-| **8:30 – 11:00** | **5. Điểm danh QR** | TV4 | `demo_organizer` → sự kiện vừa tạo → **Xem người đăng ký** (thanh tiến độ `1/2`) → sang **Điểm danh**. **Chuyển sang màn hình điện thoại**: quét mã QR của `participant_6` → điểm danh thành công, có tiếng báo. Quét **lần thứ hai cùng mã** → `Người này đã điểm danh lúc HH:mm`. Nhập tay một mã sai → `Vé không hợp lệ`. Mở trang **Có mặt / Vắng mặt**, lọc `Chưa đến`. Chốt: *"một vé quét đúng một lần."* |
+| **1:30 – 3:30** | **2. Đăng nhập & phân quyền** | TV1 | Đăng nhập `admin` → chỉ Sidebar có đủ mục quản trị. Đăng xuất, đăng nhập `user` → Sidebar **rút gọn**, không còn Người dùng / Loại sự kiện. Gõ thẳng URL `/users` → ra trang **403**. Chuyển sang Postman: gọi `POST /events` bằng token của `user` → **403 JSON**. Chốt: *"chặn ở backend, không chỉ ẩn nút."* |
+| **3:30 – 6:00** | **3. Quản lý sự kiện** | TV2 | Đăng nhập `organizer`. Danh sách sự kiện: chỉ **chế độ lịch** (thanh thời lượng theo ngày, màu theo loại) rồi bấm sang **chế độ danh sách**. Lọc theo loại `Workshop` → chỉ ra vào URL. **Tạo sự kiện mới** ngay trên sân khấu (sức chứa 2, thời gian 2 ngày tới) → 201, chuyển sang trang chi tiết. Thử sửa cho `endAt` trước `startAt` → hiện lỗi validate. |
+| **6:00 – 8:30** | **4. Đăng ký & chống vượt chỗ** | TV3 | Đăng nhập `user_6` → mở sự kiện vừa tạo → **Đăng ký** → toast kèm **mã vé 8 ký tự**, số chỗ còn giảm. Mở **Sự kiện của tôi** → xem **vé QR**. Sau đó mở **"Workshop Thiết kế giao diện (đã kín chỗ)"** bằng `user_7` → bấm Đăng ký → **`Sự kiện đã hết chỗ`**. Thử đăng ký lại sự kiện đã đăng ký → **`Bạn đã đăng ký sự kiện này`**. Chốt: *"chặn ở tầng nghiệp vụ, một người một suất."* |
+| **8:30 – 11:00** | **5. Điểm danh QR** | TV4 | `organizer` → sự kiện vừa tạo → **Xem người đăng ký** (thanh tiến độ `1/2`) → sang **Điểm danh**. **Chuyển sang màn hình điện thoại**: quét mã QR của `user_6` → điểm danh thành công, có tiếng báo. Quét **lần thứ hai cùng mã** → `Người này đã điểm danh lúc HH:mm`. Nhập tay một mã sai → `Vé không hợp lệ`. Mở trang **Có mặt / Vắng mặt**, lọc `Chưa đến`. Chốt: *"một vé quét đúng một lần."* |
 | **11:00 – 13:30** | **6. Dashboard & báo cáo** | TV5 | Mở **Dashboard**: 4 thẻ số liệu + tỷ lệ điểm danh + biểu đồ Top sự kiện. Bấm vào một dòng Top → nhảy sang chi tiết sự kiện. **Xuất báo cáo CSV** theo khoảng thời gian → **mở file bằng Excel ngay trên sân khấu** để cho thấy tiếng Việt không lỗi font. |
 | **13:30 – 15:00** | **7. Chất lượng & kết** | TV1 điều phối | Nêu số liệu kiểm thử: **172 test case backend / 76 test frontend, tất cả xanh**. Nhắc kiến trúc phân tầng + `BaseRes`/`ErrorResponse` thống nhất. Việc còn lại (Docker hoá, CI/CD) nói là **hạng `Could`, chưa làm**, không nói quá. Cảm ơn & mời đặt câu hỏi. |
 

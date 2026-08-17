@@ -66,11 +66,18 @@ qlskdd-mysql      Up 28 seconds (healthy)
 
 Mặc định `QLSKDD_SPRING_PROFILES=prod,demo` nên `DemoSeeder` nạp sẵn dữ liệu:
 
-| Username | Mật khẩu | Vai trò |
+| Username | Mật khẩu (chạy ở máy) | Vai trò |
 |---|---|---|
-| `demo_admin` | `admin123` | ADMIN |
-| `demo_organizer` | `organizer123` | ORGANIZER |
-| `participant_1` … `participant_10` | `user123` | USER |
+| `admin` | `admin123` | ADMIN |
+| `organizer` | `organizer123` | ORGANIZER |
+| `user`, `user_2` … `user_10` | `user123` | USER |
+
+Tên tài khoản **giống hệt** `DataSeeder` của profile `dev`, cố ý như vậy để mọi môi trường dùng chung một bộ tên — trước đây profile demo dùng `demo_admin`/`participant_1` còn dev dùng `admin`/`user`, làm tài liệu và thực tế lệch nhau.
+
+Mật khẩu thì **khác nhau tuỳ môi trường**: ba giá trị trong bảng là mặc định khi không đặt biến môi trường (chạy ở máy). Trên bản deploy, chúng được ghi đè bằng `APP_DEMO_ADMIN_PASSWORD` / `APP_DEMO_ORGANIZER_PASSWORD` / `APP_DEMO_USER_PASSWORD`.
+
+> [!IMPORTANT]
+> `DemoSeeder` **chỉ tạo tài khoản khi database còn rỗng**. Đổi ba biến mật khẩu trên Render **không** đổi được mật khẩu của tài khoản đã tồn tại — muốn đổi phải xoá sạch bảng để seeder chạy lại (xem mục 6).
 
 > [!WARNING]
 > Đây là tài khoản demo với mật khẩu công khai. Khi triển khai thật, đặt
@@ -140,6 +147,8 @@ Ghi lại để người sau không "sửa lại cho gọn" rồi làm hỏng:
 | **`depends_on: condition: service_healthy`** cho MySQL | MySQL nhận cổng trước khi sẵn sàng nhận truy vấn; chỉ `service_started` thì backend khởi động sớm, không kết nối được và chết |
 | **JDK/JRE 17**, không lấy bản mới nhất | Khớp `<java.version>17</java.version>` trong pom; Spring Boot 3.2 chưa kiểm chứng trên các bản Java mới hơn |
 | **`ddl-auto: update` ở profile prod** | `validate` đúng hơn cho production thật nhưng đòi schema có sẵn, nên sẽ làm backend chết ở lần chạy đầu trên MySQL rỗng — mất mục tiêu "một lệnh là cả hệ thống lên". Cách làm đúng là thêm Flyway/Liquibase rồi đổi sang `validate`; **dự án chưa làm phần đó** |
+| **`server.port: ${PORT:8080}`** ở profile prod | Render (và mọi nền tảng PaaS) tự chọn cổng, báo qua biến `PORT`, và **chỉ định tuyến traffic vào đúng cổng đó**. Nghe cứng 8080 thì Render quét không thấy cổng nào mở → `Port scan timeout reached` → container bị giết (`status 137`) → deploy hỏng, **dù ứng dụng vẫn chạy và đã kết nối được database**. Lần deploy đầu tiên đã chết đúng vì lý do này. Để `${PORT:8080}` thì Render dùng `PORT`, còn Docker ở máy (không có biến đó) vẫn 8080 như cũ |
+| **JVM: `MaxRAMPercentage=65` + `UseSerialGC` + `TieredStopAtLevel=1`** | Máy free của Render chỉ 512MB RAM và 1 CPU chia sẻ. Để 75% heap thì chỉ còn ~128MB cho metaspace và bộ nhớ ngoài heap — quá sát. G1 tốn RAM và thời gian khởi tạo trên container 1 nhân; JIT tầng 1 đổi thông lượng đỉnh lấy thời gian khởi động, đáng giá vì instance free ngủ dậy phải khởi động lại từ đầu |
 | **`try_files $uri $uri/ /index.html`** trong nginx | Thiếu dòng này thì đang ở `/events/5` bấm F5 sẽ ra 404 — lỗi kinh điển của SPA |
 | **`index.html` không cache, `/assets/` cache 1 năm** | File trong `/assets/` có hash trong tên nên đổi nội dung là đổi tên; còn `index.html` trỏ tới chúng, cache nó thì sau khi deploy bản mới người dùng vẫn nạp bundle cũ đã bị xoá → trang trắng |
 
@@ -153,6 +162,38 @@ Ghi lại để người sau không "sửa lại cho gọn" rồi làm hỏng:
 | Mở app thấy giao diện nhưng **không đăng nhập được bằng tài khoản nào** | Đang chạy `QLSKDD_SPRING_PROFILES=prod` thuần → database rỗng. Đổi về `prod,demo` rồi `docker compose down -v && docker compose up -d` |
 | Bấm chức năng nào cũng lỗi mạng, Console báo CORS | Frontend được build với địa chỉ tuyệt đối thay vì `/api/v1`. Kiểm tra `args.VITE_API_BASE_URL` trong `docker-compose.yml` rồi build lại **không dùng cache**: `docker compose build --no-cache frontend` |
 | Sửa code rồi mà container vẫn chạy bản cũ | Image không tự build lại: phải `docker compose up -d --build` |
+| **Đổi `APP_DEMO_*_PASSWORD` trên Render mà đăng nhập vẫn báo sai** | `DemoSeeder` chỉ chạy khi database rỗng; tài khoản cũ vẫn giữ mật khẩu cũ đã băm. Phải xoá bảng để seeder nạp lại — xem dưới |
+
+### Dựng lại dữ liệu demo trên Aiven
+
+Dùng khi cần đổi mật khẩu tài khoản demo, đổi tên tài khoản, hoặc dữ liệu bị làm sai lệch khi thử nghiệm.
+
+**Bước 1 — xoá bảng.** Aiven Console → service `qlskdd-mysql` → **Query editor**, chạy:
+
+```sql
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS check_in_histories, registrations, events, event_categories, users, roles;
+SET FOREIGN_KEY_CHECKS = 1;
+```
+
+Hoặc từ máy có sẵn MySQL client:
+
+```bash
+mysql -h qlskdd-mysql-databasemanagementproject.b.aivencloud.com -P 18972 \
+      -u avnadmin -p --ssl-mode=REQUIRED defaultdb
+```
+
+> Xoá **bảng**, không xoá database. Aiven hạn chế thao tác trên `defaultdb`, mà `ddl-auto: update` sẽ tự tạo lại toàn bộ bảng ở lần khởi động sau.
+
+**Bước 2 — cho backend khởi động lại.** Render → `qlskdd-backend` → **Manual Deploy → Restart service**.
+
+**Bước 3 — kiểm tra log** phải có dòng:
+
+```
+DemoSeeder: đã tạo dữ liệu demo sạch — 3 loại sự kiện · 4 sự kiện ... 18 lượt đăng ký · 6 lượt điểm danh.
+```
+
+Thấy `database đã có dữ liệu nên bỏ qua tạo mới` nghĩa là bảng chưa được xoá hết — kiểm tra lại bước 1.
 
 ## 7. Kết quả rà soát secret trong lịch sử Git (B6.4-T4)
 
@@ -227,6 +268,14 @@ git push origin main          # pipeline chạy lại và deploy bản đã reve
 
 ### 8.5. Hạ tầng đang dùng
 
+Hệ thống **đã chạy thật** tại:
+
+| | |
+|---|---|
+| **Ứng dụng** | https://qlskdd-frontend.onrender.com |
+| API | https://qlskdd-backend.onrender.com/api/v1 |
+| Swagger UI | https://qlskdd-frontend.onrender.com/swagger-ui/index.html |
+
 | Thành phần | Nơi chạy | Gói | Lưu ý |
 |---|---|---|---|
 | Frontend | Render Static Site · Singapore | Free | **Không bao giờ ngủ** |
@@ -255,5 +304,6 @@ Nói rõ để không ai tưởng phần này đã xong:
 
 - **Chưa có migration tự động** (Flyway/Liquibase) — đang dựa vào `ddl-auto: update`
 - **Deploy thật**: đã có (Render + Aiven, xem mục 8). Nhưng toàn bộ ở gói miễn phí — backend ngủ sau 15 phút, database 1GB và có thể bị tắt khi để lâu không dùng. Không phù hợp cho lưu lượng thật
-- **Chưa có HTTPS** — nginx chỉ nghe cổng 80 trong mạng nội bộ Docker
-- **Chưa giới hạn tài nguyên container** (`deploy.resources.limits`) — không cần ở quy mô đồ án
+- **HTTPS**: bản deploy trên Render **có sẵn** (Render tự cấp chứng chỉ). Còn bản chạy bằng `docker compose` ở máy thì nginx chỉ nghe cổng 80 — đủ cho môi trường phát triển
+- **Chưa giới hạn tài nguyên container** (`deploy.resources.limits`) trong `docker-compose.yml` — không cần ở quy mô đồ án
+- **Chưa có backup tự động cho dữ liệu production** — Aiven gói free có backup nhưng nhóm chưa thử khôi phục lần nào, nên coi như **chưa được kiểm chứng**

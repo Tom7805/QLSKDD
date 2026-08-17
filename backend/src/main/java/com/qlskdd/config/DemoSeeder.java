@@ -89,20 +89,20 @@ public class DemoSeeder implements CommandLineRunner {
         Role userRole = ensureRole(RoleEnum.ROLE_USER.name());
 
         User admin = userRepository.save(User.builder()
-                .username("demo_admin")
+                .username("admin")
                 .password(passwordEncoder.encode(demoAdminPassword))
                 .fullName("Quản trị viên Demo")
-                .email("demo.admin@qlskdd.com")
+                .email("admin@qlskdd.com")
                 .phone("0901000001")
                 .role(adminRole)
                 .enabled(true)
                 .build());
 
         User organizer = userRepository.save(User.builder()
-                .username("demo_organizer")
+                .username("organizer")
                 .password(passwordEncoder.encode(demoOrganizerPassword))
                 .fullName("Ban tổ chức Demo")
-                .email("demo.organizer@qlskdd.com")
+                .email("organizer@qlskdd.com")
                 .phone("0901000002")
                 .role(organizerRole)
                 .enabled(true)
@@ -115,12 +115,21 @@ public class DemoSeeder implements CommandLineRunner {
                 "Bùi Anh Tú", "Mai Hồng Loan"
         };
 
+        /*
+         * B6.5: dung CHUNG bo ten tai khoan voi DataSeeder (profile dev) — nguoi dau tien la
+         * `user`, nhung nguoi sau la `user_2`..`user_10`.
+         *
+         * Truoc day profile demo dung `demo_admin`/`participant_1`, con profile dev dung
+         * `admin`/`user`, nen README, tai lieu demo va ban deploy moi noi mot bo ten khac nhau
+         * — dung loai chi tiet lam nguoi trinh bay lung tung ngay truoc hoi dong. Hai profile
+         * khong bao gio chay cung luc tren mot database nen trung ten khong gay xung dot.
+         */
         for (int i = 0; i < participantNames.length; i++) {
             participants.add(userRepository.save(User.builder()
-                    .username("participant_" + (i + 1))
+                    .username(i == 0 ? "user" : "user_" + (i + 1))
                     .password(passwordEncoder.encode(demoUserPassword))
                     .fullName(participantNames[i])
-                    .email("participant" + (i + 1) + "@qlskdd.com")
+                    .email(i == 0 ? "user@qlskdd.com" : "user" + (i + 1) + "@qlskdd.com")
                     .phone("0902000" + String.format("%03d", i + 1))
                     .role(userRole)
                     .enabled(true)
@@ -226,7 +235,7 @@ public class DemoSeeder implements CommandLineRunner {
         // không phải mở từng trang ra đếm.
         System.out.println("DemoSeeder: đã tạo dữ liệu demo sạch — "
                 + "3 loại sự kiện · 4 sự kiện (OPEN / CLOSED / CANCELLED / kín chỗ) · "
-                + "12 tài khoản (demo_admin, demo_organizer, participant_1..10) · "
+                + "12 tài khoản (admin, organizer, user, user_2..user_10) · "
                 + (registrations.size()) + " lượt đăng ký · 6 lượt điểm danh.");
     }
 
