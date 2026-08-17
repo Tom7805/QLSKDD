@@ -279,11 +279,13 @@ Hệ thống **đã chạy thật** tại:
 | Thành phần | Nơi chạy | Gói | Lưu ý |
 |---|---|---|---|
 | Frontend | Render Static Site · Singapore | Free | **Không bao giờ ngủ** |
-| Backend | Render Web Service (Docker) · Singapore | Free | **Ngủ sau 15 phút** không dùng, lần gọi đầu mất ~1 phút |
+| Backend | Render Web Service (Docker) · Singapore | Free | **Ngủ sau 15 phút** không dùng; lần gọi đầu chờ **~1 phút rưỡi** (đo thực tế: khởi động ứng dụng mất 65,8 giây, chưa kể thời gian dựng container) |
 | MySQL 8.4 | Aiven · DigitalOcean Bangalore | Free | 1GB · 1 CPU · tối đa 76 kết nối; **có thể bị tắt nếu để lâu không dùng** |
 
 > [!IMPORTANT]
-> **Trước buổi demo phải "đánh thức" cả backend lẫn database ít nhất 5 phút trước.** Mở trang, đăng nhập một lần, xem Dashboard. Cả hai dịch vụ đều ở gói miễn phí và đều tự tắt khi rảnh — chờ 1 phút màn hình trắng ngay lúc trình bày là tình huống hoàn toàn tránh được.
+> **Trước buổi demo phải "đánh thức" cả backend lẫn database ít nhất 5 phút trước.** Mở trang, đăng nhập một lần, xem Dashboard. Cả hai dịch vụ đều ở gói miễn phí và đều tự tắt khi rảnh — đứng chờ gần một phút rưỡi trước màn hình trắng ngay lúc trình bày là tình huống hoàn toàn tránh được.
+>
+> Tham số JVM đã chỉnh để rút ngắn thời gian này (xem mục 5) nhưng nút thắt là Hibernate khởi tạo trên 1 CPU chia sẻ — không rút thêm được nhiều nếu không đổi kiến trúc.
 
 ### 8.6. Bảng biến môi trường trên Render (service backend)
 
