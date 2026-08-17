@@ -59,7 +59,10 @@ public class DemoSeeder implements CommandLineRunner {
     public void run(String... args) {
         // Chỉ chạy khi database demo đang trống để tránh dữ liệu lẫn nhau.
         if (userRepository.count() > 0 || eventRepository.count() > 0 || registrationRepository.count() > 0) {
-            System.out.println("DemoSeeder: dữ liệu demo đã tồn tại, bỏ qua tạo mới.");
+            // Nói rõ cách dựng lại: nếu chỉ in "bỏ qua" thì lúc lên demo mà thiếu dữ liệu sẽ
+            // không ai biết phải làm gì, mà đó đúng là lúc không có thời gian mò.
+            System.out.println("DemoSeeder: database đã có dữ liệu nên bỏ qua tạo mới. "
+                    + "Muốn dựng lại dữ liệu demo sạch: DROP DATABASE qlsk_dd_demo; rồi chạy lại profile demo.");
             return;
         }
 
@@ -145,11 +148,27 @@ public class DemoSeeder implements CommandLineRunner {
         cancelledEvent.setStatus(EventStatus.CANCELLED);
         cancelledEvent.setCreatedBy(organizer.getUsername());
 
-        List<Event> savedEvents = eventRepository.saveAll(List.of(openEvent, closedEvent, cancelledEvent));
+        // Sự kiện thứ 4: CÒN MỞ nhưng đã kín chỗ (capacity 5, sẽ nạp đúng 5 đăng ký ACTIVE).
+        // Chống overbooking là tính năng đầu bảng của dự án; nếu mọi sự kiện demo đều còn chỗ
+        // thì trên sân khấu không có cách nào bấm ra được lỗi "Sự kiện đã hết chỗ".
+        Event fullEvent = new Event();
+        fullEvent.setName("Workshop Thiết kế giao diện (đã kín chỗ)");
+        fullEvent.setDescription("Sự kiện còn mở nhưng đã đủ số lượng — dùng để minh hoạ chặn đăng ký khi hết chỗ.");
+        fullEvent.setLocation("Phòng Lab 1 - Nhà B");
+        fullEvent.setCapacity(5);
+        fullEvent.setCategory(workshopCategory);
+        fullEvent.setStartAt(now.plusDays(5).withHour(14).withMinute(0).withSecond(0).withNano(0));
+        fullEvent.setEndAt(now.plusDays(5).withHour(17).withMinute(0).withSecond(0).withNano(0));
+        fullEvent.setStatus(EventStatus.OPEN);
+        fullEvent.setCreatedBy(organizer.getUsername());
+
+        List<Event> savedEvents = eventRepository.saveAll(
+                List.of(openEvent, closedEvent, cancelledEvent, fullEvent));
 
         Event eventOpen = savedEvents.get(0);
         Event eventClosed = savedEvents.get(1);
         Event eventCancelled = savedEvents.get(2);
+        Event eventFull = savedEvents.get(3);
 
         List<Registration> registrations = new ArrayList<>();
 
@@ -166,6 +185,12 @@ public class DemoSeeder implements CommandLineRunner {
             registrations.add(createRegistration(eventCancelled, participants.get(i + 8), RegistrationStatus.ACTIVE));
         }
 
+        // Nạp ĐÚNG capacity (5) đăng ký ACTIVE cho sự kiện kín chỗ. Dùng lại participant 0..4:
+        // ràng buộc unique là (event_id, user_id) nên cùng một người đăng ký sự kiện khác không sao.
+        for (int i = 0; i < eventFull.getCapacity(); i++) {
+            registrations.add(createRegistration(eventFull, participants.get(i), RegistrationStatus.ACTIVE));
+        }
+
         registrationRepository.saveAll(registrations);
 
         // Điểm danh cho 1 phần sự kiện để thống kê hiển thị trên dashboard.
@@ -179,7 +204,12 @@ public class DemoSeeder implements CommandLineRunner {
             saveCheckIn(closedRegistrations.get(i), organizer, CheckInStatus.SUCCESS);
         }
 
-        System.out.println("DemoSeeder: tạo thành công dữ liệu demo sạch cho demo cuối kỳ.");
+        // In sẵn số liệu để trước khi lên demo chỉ cần nhìn console là biết dữ liệu đã đúng chưa,
+        // không phải mở từng trang ra đếm.
+        System.out.println("DemoSeeder: đã tạo dữ liệu demo sạch — "
+                + "3 loại sự kiện · 4 sự kiện (OPEN / CLOSED / CANCELLED / kín chỗ) · "
+                + "12 tài khoản (demo_admin, demo_organizer, participant_1..10) · "
+                + (registrations.size()) + " lượt đăng ký · 6 lượt điểm danh.");
     }
 
     private Role ensureRole(String roleName) {
