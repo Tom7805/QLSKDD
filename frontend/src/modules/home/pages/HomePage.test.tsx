@@ -82,8 +82,11 @@ describe('HomePage', () => {
 
     renderHome('ROLE_USER');
 
+    // Tiêu đề lấy tên từ store nên có NGAY, còn câu tóm tắt phải chờ phản hồi API sự kiện.
+    // Dùng `findByText` cho câu tóm tắt: `getByText` ngay sau đó chỉ đúng khi máy đủ nhanh để
+    // promise kịp resolve — chạy cả 14 file song song thì không kịp và test đỏ oan.
     expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Nguyễn Văn A');
-    expect(screen.getByText('Có 2 sự kiện sẽ diễn ra trong 7 ngày tới.')).toBeInTheDocument();
+    expect(await screen.findByText('Có 2 sự kiện sẽ diễn ra trong 7 ngày tới.')).toBeInTheDocument();
   });
 
   /**
@@ -93,7 +96,10 @@ describe('HomePage', () => {
   it('không gọi API dashboard khi người dùng thường mở trang chủ', async () => {
     renderHome('ROLE_USER');
 
-    await waitFor(() => expect(mockedGetEvents).toHaveBeenCalled());
+    // Chờ trang render xong hẳn rồi mới khẳng định "không gọi": nếu chỉ chờ getEvents được
+    // gọi thì lời khẳng định chạy quá sớm và sẽ XANH GIẢ — API dashboard có thể được gọi ngay
+    // sau đó mà test không bắt được.
+    await screen.findByText('Chưa có sự kiện nào sắp diễn ra');
     expect(mockedGetDashboardSummary).not.toHaveBeenCalled();
   });
 
@@ -138,7 +144,18 @@ describe('HomePage', () => {
    */
   it('đổi vị trí thẻ bằng phím mũi tên và ghi nhớ thứ tự mới', async () => {
     renderHome('ROLE_USER');
-    await waitFor(() => expect(mockedGetEvents).toHaveBeenCalled());
+
+    /*
+     * Chờ NỘI DUNG hiện ra, không phải chờ API ĐƯỢC GỌI.
+     *
+     * `waitFor(() => expect(mockedGetEvents).toHaveBeenCalled())` xanh ngay khi request vừa
+     * bắn đi, lúc đó thẻ vẫn đang ở trạng thái tải và chỉ có mỗi tiêu đề. Máy nhanh thì
+     * promise kịp resolve trước dòng khẳng định bên dưới nên may mà qua; runner CI 2 nhân
+     * chạy 14 file test song song thì không kịp — và test đỏ đúng vì lý do đó, chứ không
+     * phải do code sai. `findByText` thử lại tới khi phần tử xuất hiện nên hết phụ thuộc
+     * vào tốc độ máy.
+     */
+    await screen.findByText('Chưa có sự kiện nào sắp diễn ra');
 
     const cards = screen.getByRole('list', { name: 'Các thẻ của trang chủ' });
     expect(within(cards).getAllByRole('listitem')[0]).toHaveTextContent('Chưa có sự kiện nào sắp diễn ra');
@@ -152,7 +169,9 @@ describe('HomePage', () => {
   it('ẩn lối tắt quản trị với người dùng thường', async () => {
     renderHome('ROLE_USER');
 
-    await waitFor(() => expect(mockedGetEvents).toHaveBeenCalled());
+    // Cùng lý do như trên: khẳng định phần tử KHÔNG tồn tại chỉ có nghĩa khi trang đã render
+    // xong, chứ chưa render thì đương nhiên không tìm thấy gì.
+    await screen.findByText('Chưa có sự kiện nào sắp diễn ra');
     expect(screen.queryByRole('link', { name: /Dashboard/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Tạo sự kiện/ })).not.toBeInTheDocument();
   });

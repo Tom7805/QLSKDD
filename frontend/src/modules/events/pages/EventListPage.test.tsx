@@ -124,9 +124,9 @@ describe('EventListPage — chế độ danh sách', () => {
 
   it('đổi bộ lọc ở rail và đưa phân trang về trang đầu', async () => {
     renderPage('/events?view=list&keyword=AI&page=4');
-    await waitFor(() => expect(mockedGetCategories).toHaveBeenCalled());
-
-    fireEvent.click(screen.getByRole('button', { name: 'Hội thảo' }));
+    // Chờ chính CÁI CHIP hiện ra, không phải chờ API danh mục được gọi: chip do phản hồi
+    // API vẽ ra, mà `toHaveBeenCalled()` xanh ngay lúc request vừa bắn đi.
+    fireEvent.click(await screen.findByRole('button', { name: 'Hội thảo' }));
     await waitFor(() => expect(mockedGetEvents).toHaveBeenLastCalledWith(0, 9, 'AI', { categoryId: 7 }));
   });
 });
@@ -153,9 +153,9 @@ describe('EventListPage — chế độ lịch', () => {
 
   it('lọc theo loại sự kiện và bỏ lọc khi bấm lại', async () => {
     renderPage(`/events?week=${ANCHOR}`);
-    await waitFor(() => expect(mockedGetCategories).toHaveBeenCalled());
-
-    fireEvent.click(screen.getByRole('button', { name: 'Hội thảo' }));
+    // Chờ chính CÁI CHIP hiện ra, không phải chờ API danh mục được gọi: chip do phản hồi
+    // API vẽ ra, mà `toHaveBeenCalled()` xanh ngay lúc request vừa bắn đi.
+    fireEvent.click(await screen.findByRole('button', { name: 'Hội thảo' }));
     await waitFor(() =>
       expect(mockedGetEvents).toHaveBeenLastCalledWith(0, CALENDAR_SIZE, '', { categoryId: 7, ...MONTH_RANGE }),
     );
@@ -197,9 +197,7 @@ describe('EventListPage — chế độ lịch', () => {
 
   it('hàng đầu bảng ghi đủ số ngày trong tháng để vẫn đọc được như một cuốn lịch', async () => {
     renderPage(`/events?week=${ANCHOR}`);
-    await waitFor(() => expect(mockedGetEvents).toHaveBeenCalled());
-
-    const axis = screen.getByRole('group', { name: 'Các ngày trong tháng' });
+    const axis = await screen.findByRole('group', { name: 'Các ngày trong tháng' });
     expect(within(axis).getByText('1')).toBeInTheDocument();
     expect(within(axis).getByText('31')).toBeInTheDocument();
   });
@@ -256,17 +254,14 @@ describe('EventListPage — chế độ lịch', () => {
    */
   it('không khoá nút Hôm nay ngay cả khi đang ở tháng chứa hôm nay', async () => {
     renderPage('/events');
-    await waitFor(() => expect(mockedGetEvents).toHaveBeenCalled());
-
-    const todayButton = screen.getByRole('button', { name: 'Hôm nay' });
+    const todayButton = await screen.findByRole('button', { name: 'Hôm nay' });
     expect(todayButton).not.toBeDisabled();
     expect(todayButton).toHaveAttribute('aria-current', 'date');
   });
 
   it('bấm Hôm nay thì kéo lịch về đúng tháng chứa hôm nay', async () => {
     renderPage('/events?week=2026-11-01');
-    await waitFor(() => expect(mockedGetEvents).toHaveBeenCalled());
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('tháng 11 năm 2026');
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('tháng 11 năm 2026');
 
     fireEvent.click(screen.getByRole('button', { name: 'Hôm nay' }));
 
