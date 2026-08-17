@@ -23,7 +23,10 @@
 
 services:
   mysql:
-    image: mysql:8.0
+    # 8.4 chứ không phải 8.0: bản deploy thật dùng Aiven for MySQL, mà gói free của Aiven khoá
+    # cứng MySQL 8.4. Để hai bên lệch phiên bản là tự tạo ra loại lỗi "ở máy em chạy được" —
+    # chạy đúng bản đang chạy trên production thì phát hiện khác biệt ngay ở máy.
+    image: mysql:8.4
     container_name: qlskdd-mysql
     restart: unless-stopped
     environment:

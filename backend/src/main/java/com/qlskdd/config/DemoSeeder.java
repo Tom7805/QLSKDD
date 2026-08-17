@@ -16,6 +16,7 @@ import com.qlskdd.repository.RegistrationRepository;
 import com.qlskdd.repository.RoleRepository;
 import com.qlskdd.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,6 +38,23 @@ public class DemoSeeder implements CommandLineRunner {
     private final RegistrationRepository registrationRepository;
     private final CheckInHistoryRepository checkInHistoryRepository;
     private final PasswordEncoder passwordEncoder;
+
+    /*
+     * B6.5: mật khẩu tài khoản demo đọc từ cấu hình, mặc định giữ nguyên giá trị cũ.
+     *
+     * Ở máy cá nhân thì không có gì thay đổi — vẫn admin123/organizer123/user123 như tài liệu
+     * demo đã ghi. Nhưng bản deploy lên Render có URL công khai trên internet: để mật khẩu
+     * mặc định nằm trong mã nguồn thì bất kỳ ai tìm ra địa chỉ đều đăng nhập được với quyền
+     * quản trị và xoá sửa dữ liệu. Trên Render sẽ đặt 3 biến này thành mật khẩu riêng của nhóm.
+     */
+    @Value("${app.demo.admin-password:admin123}")
+    private String demoAdminPassword;
+
+    @Value("${app.demo.organizer-password:organizer123}")
+    private String demoOrganizerPassword;
+
+    @Value("${app.demo.user-password:user123}")
+    private String demoUserPassword;
 
     public DemoSeeder(RoleRepository roleRepository,
                       UserRepository userRepository,
@@ -72,7 +90,7 @@ public class DemoSeeder implements CommandLineRunner {
 
         User admin = userRepository.save(User.builder()
                 .username("demo_admin")
-                .password(passwordEncoder.encode("admin123"))
+                .password(passwordEncoder.encode(demoAdminPassword))
                 .fullName("Quản trị viên Demo")
                 .email("demo.admin@qlskdd.com")
                 .phone("0901000001")
@@ -82,7 +100,7 @@ public class DemoSeeder implements CommandLineRunner {
 
         User organizer = userRepository.save(User.builder()
                 .username("demo_organizer")
-                .password(passwordEncoder.encode("organizer123"))
+                .password(passwordEncoder.encode(demoOrganizerPassword))
                 .fullName("Ban tổ chức Demo")
                 .email("demo.organizer@qlskdd.com")
                 .phone("0901000002")
@@ -100,7 +118,7 @@ public class DemoSeeder implements CommandLineRunner {
         for (int i = 0; i < participantNames.length; i++) {
             participants.add(userRepository.save(User.builder()
                     .username("participant_" + (i + 1))
-                    .password(passwordEncoder.encode("user123"))
+                    .password(passwordEncoder.encode(demoUserPassword))
                     .fullName(participantNames[i])
                     .email("participant" + (i + 1) + "@qlskdd.com")
                     .phone("0902000" + String.format("%03d", i + 1))

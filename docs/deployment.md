@@ -179,11 +179,81 @@ bẫy thật: sau này ai thêm một secret vào đó thì nó sẽ **âm thầ
 Sau thay đổi này, người mới clone về phải `cp .env.example .env` trong thư mục `frontend/`
 (đã ghi trong README).
 
-## 8. Việc chưa làm
+## 8. CI/CD (B6.5)
+
+### 8.1. Pipeline chạy khi nào
+
+Định nghĩa ở [`.github/workflows/ci-cd.yml`](../.github/workflows/ci-cd.yml).
+
+| Sự kiện | `backend` | `frontend` | `deploy` |
+|---|:--:|:--:|:--:|
+| Pull request vào `develop` / `main` | ✅ | ✅ | ❌ |
+| Push vào `develop` | ✅ | ✅ | ❌ |
+| **Push vào `main`** | ✅ | ✅ | ✅ |
+
+Job `deploy` khai báo `needs: [backend, frontend]` nên **chỉ chạy khi cả hai job test đã xanh**. Test đỏ thì không có gì được deploy.
+
+Push liên tiếp lên cùng một nhánh sẽ **huỷ lượt chạy cũ** (`concurrency` + `cancel-in-progress`) — không phải chờ kết quả của commit đã bị thay thế.
+
+CI **không cần secret và không cần MySQL**: dự án không có test nào dùng `@SpringBootTest`, chỉ có `@WebMvcTest`, `@DataJpaTest` (H2 nhúng) và test Mockito thuần. Đã kiểm chứng bằng cách chạy lại toàn bộ với biến `DB_PASSWORD` bị xoá — vẫn 172/172 pass.
+
+### 8.2. Vì sao dùng Deploy Hook thay vì auto-deploy của Render
+
+Render có sẵn tính năng tự deploy mỗi khi repo có commit mới, nhưng nó deploy **ngay lập tức, không quan tâm test xanh hay đỏ** — tức là bỏ qua đúng cái mà `B6.5-T2` yêu cầu. Vì vậy `render.yaml` đặt `autoDeployTrigger: off`, và workflow gọi Deploy Hook sau khi test xanh.
+
+> Job `deploy` xanh nghĩa là **đã gửi yêu cầu deploy thành công**, không phải "đã deploy xong". Render build ở phía họ mất thêm vài phút — xem tiến trình thật ở dashboard Render.
+
+### 8.3. Xem kết quả
+
+- **GitHub → tab Actions** → chọn lượt chạy → xem log từng job
+- Trên mỗi Pull Request, kết quả hiện ngay ở khối *Checks* dưới phần bình luận
+- Deploy: **Render Dashboard → service → tab Events / Logs**
+
+### 8.4. Rollback nhanh khi bản mới lỗi
+
+**Cách 1 — Rollback trên Render (nhanh nhất, ~1 phút).** Dashboard → service → tab **Deploys** → tìm bản deploy tốt gần nhất → **Rollback**. Không cần đụng tới Git, dùng lại đúng image đã build trước đó.
+
+**Cách 2 — Revert bằng Git (khi lỗi nằm ở mã nguồn).**
+
+```bash
+git revert <hash-commit-loi>
+git push origin main          # pipeline chạy lại và deploy bản đã revert
+```
+
+Ưu tiên **Cách 1** để dừng chảy máu trước, rồi mới bình tĩnh làm Cách 2. Đừng sửa vội rồi push thẳng lên `main` khi đang hỏng — dễ hỏng thêm.
+
+> [!WARNING]
+> Rollback **không** hoàn tác thay đổi cơ sở dữ liệu. Dự án đang dùng `ddl-auto: update` nên nếu bản lỗi đã thêm cột/bảng thì rollback ứng dụng không xoá chúng đi. Đây là một lý do nữa để chuyển sang Flyway (xem mục 9).
+
+### 8.5. Hạ tầng đang dùng
+
+| Thành phần | Nơi chạy | Gói | Lưu ý |
+|---|---|---|---|
+| Frontend | Render Static Site · Singapore | Free | **Không bao giờ ngủ** |
+| Backend | Render Web Service (Docker) · Singapore | Free | **Ngủ sau 15 phút** không dùng, lần gọi đầu mất ~1 phút |
+| MySQL 8.4 | Aiven · DigitalOcean Bangalore | Free | 1GB · 1 CPU · tối đa 76 kết nối; **có thể bị tắt nếu để lâu không dùng** |
+
+> [!IMPORTANT]
+> **Trước buổi demo phải "đánh thức" cả backend lẫn database ít nhất 5 phút trước.** Mở trang, đăng nhập một lần, xem Dashboard. Cả hai dịch vụ đều ở gói miễn phí và đều tự tắt khi rảnh — chờ 1 phút màn hình trắng ngay lúc trình bày là tình huống hoàn toàn tránh được.
+
+### 8.6. Bảng biến môi trường trên Render (service backend)
+
+| Biến | Nguồn | Giá trị |
+|---|---|---|
+| `SPRING_PROFILES_ACTIVE` | `render.yaml` | `prod,demo` |
+| `SPRING_DATASOURCE_URL` | **nhập tay** | `jdbc:mysql://<host>.aivencloud.com:<port>/defaultdb?sslMode=REQUIRED&serverTimezone=Asia/Ho_Chi_Minh&characterEncoding=UTF-8` |
+| `SPRING_DATASOURCE_USERNAME` | **nhập tay** | `avnadmin` |
+| `DB_PASSWORD` | **nhập tay** | mật khẩu Aiven |
+| `APP_JWT_SECRET` | Render tự sinh | — |
+| `APP_DEMO_ADMIN_PASSWORD` … | **nhập tay** | mật khẩu demo riêng của nhóm |
+
+`sslMode=REQUIRED` là **bắt buộc** — Aiven từ chối mọi kết nối không mã hoá. Chuỗi kết nối ở profile dev đang để `useSSL=false` nên copy nguyên si sang sẽ không kết nối được.
+
+## 9. Việc chưa làm
 
 Nói rõ để không ai tưởng phần này đã xong:
 
 - **Chưa có migration tự động** (Flyway/Liquibase) — đang dựa vào `ddl-auto: update`
-- **Chưa deploy lên hạ tầng thật** — mọi thứ ở trên chạy trên máy cá nhân. `B6.5-T3` (CD tự động triển khai) cần một server, dự án chưa có
+- **Deploy thật**: đã có (Render + Aiven, xem mục 8). Nhưng toàn bộ ở gói miễn phí — backend ngủ sau 15 phút, database 1GB và có thể bị tắt khi để lâu không dùng. Không phù hợp cho lưu lượng thật
 - **Chưa có HTTPS** — nginx chỉ nghe cổng 80 trong mạng nội bộ Docker
 - **Chưa giới hạn tài nguyên container** (`deploy.resources.limits`) — không cần ở quy mô đồ án
