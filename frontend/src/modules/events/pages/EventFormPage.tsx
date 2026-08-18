@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ChevronLeftIcon } from '../../../components/common/Icons';
 import { ROUTES } from '../../../constants/routes';
 import EventForm from '../components/EventForm';
 import { getEventById } from '../eventsApi';
@@ -91,6 +92,22 @@ export default function EventFormPage() {
   return (
     <div className="min-h-full bg-scene p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-5xl">
+        {/*
+          * Lối quay lại đặt ở ĐẦU trang, nơi người dùng theo phản xạ tìm khi muốn thoát —
+          * nút "Huỷ" nằm cuối form, phải cuộn hết trang mới thấy.
+          *
+          * Dùng <Link> chứ không phải <button>: EventFormPage đã có sẵn bộ chặn cảnh báo
+          * "thay đổi chưa lưu" bắt theo cú bấm vào thẻ <a>, nên dùng Link là tự động được
+          * bảo vệ, không phải viết lại logic xác nhận.
+          */}
+        <Link
+          to={isEditing ? ROUTES.EVENT_DETAIL.replace(':id', String(eventId)) : ROUTES.EVENTS}
+          className="mb-5 inline-flex items-center gap-1.5 rounded-xl px-2 py-1.5 -ml-2 text-sm font-semibold text-ink-muted transition-colors hover:bg-white/70 hover:text-ink"
+        >
+          <ChevronLeftIcon className="h-4 w-4" />
+          {isEditing ? 'Quay lại chi tiết sự kiện' : 'Quay lại danh sách sự kiện'}
+        </Link>
+
         <div className="mb-8">
           <p className="text-sm font-medium text-ink">Quản trị sự kiện</p>
           <h1 className="mt-1 text-3xl font-bold text-slate-900">{isEditing ? 'Sửa sự kiện' : 'Tạo sự kiện mới'}</h1>
