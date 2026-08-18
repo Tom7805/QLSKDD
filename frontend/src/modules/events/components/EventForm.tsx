@@ -210,6 +210,21 @@ export default function EventForm({ initialEvent, onDirtyChange }: EventFormProp
     }
   };
 
+  /*
+   * Bỏ dở và quay lại.
+   *
+   * Đi thẳng tới trang đích thay vì `navigate(-1)`: người dùng có thể mở trang sửa bằng đường
+   * dẫn trực tiếp (dán link, F5, hoặc mở tab mới), lúc đó "lùi một bước" sẽ rơi ra khỏi ứng dụng.
+   * Sửa thì về chi tiết sự kiện đó, tạo mới thì về danh sách.
+   *
+   * Tự hỏi xác nhận khi còn thay đổi chưa lưu: cảnh báo sẵn có ở EventFormPage chỉ chặn cú bấm
+   * vào thẻ <a>, không bắt được nút này.
+   */
+  const cancel = () => {
+    if (dirty && !window.confirm('Bạn có thay đổi chưa lưu. Bạn có chắc muốn rời trang?')) return;
+    navigate(initialEvent ? ROUTES.EVENT_DETAIL.replace(':id', String(initialEvent.id)) : ROUTES.EVENTS);
+  };
+
   const fieldError = (field: keyof FormState) =>
     fieldErrors[field] ? (
       <span id={`${field}-error`} className="mt-1.5 block text-xs font-medium text-red-600">
@@ -327,6 +342,14 @@ export default function EventForm({ initialEvent, onDirtyChange }: EventFormProp
 
       <div className="hidden justify-end gap-3 sm:flex">
         <button
+          type="button"
+          onClick={cancel}
+          disabled={saving}
+          className="inline-flex min-w-[120px] items-center justify-center rounded-xl border border-hairline bg-white px-4 py-3 text-sm font-semibold text-ink-muted transition-colors hover:border-slate-300 hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Huỷ
+        </button>
+        <button
           type="submit"
           disabled={saving || loadingCategories}
           className="inline-flex min-w-[160px] items-center justify-center rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-white hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-blue-400"
@@ -335,11 +358,19 @@ export default function EventForm({ initialEvent, onDirtyChange }: EventFormProp
         </button>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-center bg-white px-4 py-4 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] sm:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-50 flex items-center gap-3 bg-white px-4 py-4 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] sm:hidden">
+        <button
+          type="button"
+          onClick={cancel}
+          disabled={saving}
+          className="shrink-0 rounded-2xl border border-hairline px-5 py-3 text-sm font-semibold text-ink-muted disabled:opacity-60"
+        >
+          Huỷ
+        </button>
         <button
           type="submit"
           disabled={saving || loadingCategories}
-          className="min-w-full rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-blue-400"
+          className="flex-1 rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-blue-400"
         >
           {saving ? 'Đang lưu...' : initialEvent ? 'Lưu thay đổi' : 'Lưu sự kiện'}
         </button>
