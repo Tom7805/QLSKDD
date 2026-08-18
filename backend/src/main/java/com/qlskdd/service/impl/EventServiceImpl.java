@@ -44,7 +44,18 @@ public class EventServiceImpl implements EventService {
     private final com.qlskdd.repository.UserRepository userRepository;
     private final EventMapper eventMapper;
 
+    /*
+     * @Transactional cho ca 3 thao tac GHI: khong co no thi moi loi goi repository chay trong
+     * mot session rieng roi dong ngay. Hau qua o update()/changeStatus(): `eventRepository.save()`
+     * tren entity da tach khoi session thuc hien merge() va tra ve MOT INSTANCE KHAC, trong do
+     * `category` la proxy chua khoi tao — buildDetailRes() goi getCategory().getName() la nem
+     * LazyInitializationException, toan bo thao tac luu su kien tra 500.
+     *
+     * create() truoc mat khong loi (persist tra ve chinh instance vua tao, category la entity
+     * that) nhung van can transaction: mot thao tac ghi phai la mot don vi nguyen tu.
+     */
     @Override
+    @Transactional
     public EventDetailRes create(EventReq req) {
         EventCategory category = categoryRepository.findById(req.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Loại sự kiện", "id", req.getCategoryId()));
@@ -68,6 +79,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public EventDetailRes update(Long id, EventReq req) {
         Event event = findEventOrThrow(id);
 
@@ -95,6 +107,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public EventDetailRes changeStatus(Long id, EventStatusReq req) {
         Event event = findEventOrThrow(id);
         EventStatus current = event.getStatus();
