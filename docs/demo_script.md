@@ -86,12 +86,14 @@ Hệ thống đã chạy thật trên internet:
 
 **Tên tài khoản giống nhau ở mọi môi trường, nhưng MẬT KHẨU thì không:**
 
-| Môi trường | Mật khẩu |
-|---|---|
-| Chạy ở máy (`docker compose` hoặc `mvnw spring-boot:run`) | `admin123` · `organizer123` · `user123` |
-| **Bản deploy** https://qlskdd-frontend.onrender.com | Mật khẩu riêng của nhóm, đặt ở Render → `qlskdd-backend` → Environment → `APP_DEMO_*_PASSWORD` |
+| Môi trường | `admin` | `organizer` | `user`, `user_2`…`user_10` |
+|---|---|---|---|
+| Chạy ở máy (`docker compose` hoặc `mvnw spring-boot:run`) | `admin123` | `organizer123` | `user123` |
+| **Bản deploy** https://qlskdd-frontend.onrender.com | `admin@123` | `organizer@123` | `user@123` |
 
-Bản deploy có URL công khai trên internet nên **cố ý** không dùng mật khẩu mặc định — để `admin123` thì ai tìm ra địa chỉ cũng vào được với quyền quản trị. Ba mật khẩu đó **không nằm trong repo**; hỏi người giữ tài khoản Render trước buổi demo.
+Bản deploy dùng mật khẩu khác vì có URL công khai trên internet — để nguyên mật khẩu mặc định thì ai tìm ra địa chỉ cũng vào được với quyền quản trị.
+
+Ba giá trị của bản deploy nằm ở Render → `qlskdd-backend` → **Environment** → `APP_DEMO_ADMIN_PASSWORD` / `APP_DEMO_ORGANIZER_PASSWORD` / `APP_DEMO_USER_PASSWORD`. Đổi ở đó **không đủ** để đổi mật khẩu: `DemoSeeder` chỉ tạo tài khoản khi database còn rỗng, nên phải xoá bảng rồi **Deploy latest commit** (xem `deployment.md` mục 6).
 
 ### 2.2. Sự kiện có sẵn
 

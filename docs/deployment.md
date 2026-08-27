@@ -74,7 +74,13 @@ Mặc định `QLSKDD_SPRING_PROFILES=prod,demo` nên `DemoSeeder` nạp sẵn d
 
 Tên tài khoản **giống hệt** `DataSeeder` của profile `dev`, cố ý như vậy để mọi môi trường dùng chung một bộ tên — trước đây profile demo dùng `demo_admin`/`participant_1` còn dev dùng `admin`/`user`, làm tài liệu và thực tế lệch nhau.
 
-Mật khẩu thì **khác nhau tuỳ môi trường**: ba giá trị trong bảng là mặc định khi không đặt biến môi trường (chạy ở máy). Trên bản deploy, chúng được ghi đè bằng `APP_DEMO_ADMIN_PASSWORD` / `APP_DEMO_ORGANIZER_PASSWORD` / `APP_DEMO_USER_PASSWORD`.
+Mật khẩu thì **khác nhau tuỳ môi trường**: ba giá trị trong bảng là mặc định khi không đặt biến môi trường (chạy ở máy). Trên bản deploy, chúng được ghi đè bằng `APP_DEMO_ADMIN_PASSWORD` / `APP_DEMO_ORGANIZER_PASSWORD` / `APP_DEMO_USER_PASSWORD`, hiện đang đặt là:
+
+| Tài khoản | Mật khẩu trên bản deploy |
+|---|---|
+| `admin` | `admin@123` |
+| `organizer` | `organizer@123` |
+| `user`, `user_2` … `user_10` | `user@123` |
 
 > [!IMPORTANT]
 > `DemoSeeder` **chỉ tạo tài khoản khi database còn rỗng**. Đổi ba biến mật khẩu trên Render **không** đổi được mật khẩu của tài khoản đã tồn tại — muốn đổi phải xoá sạch bảng để seeder chạy lại (xem mục 6).
@@ -296,7 +302,7 @@ Hệ thống **đã chạy thật** tại:
 | `SPRING_DATASOURCE_USERNAME` | **nhập tay** | `avnadmin` |
 | `DB_PASSWORD` | **nhập tay** | mật khẩu Aiven |
 | `APP_JWT_SECRET` | Render tự sinh | — |
-| `APP_DEMO_ADMIN_PASSWORD` … | **nhập tay** | mật khẩu demo riêng của nhóm |
+| `APP_DEMO_ADMIN_PASSWORD` … | **nhập tay** | mật khẩu demo của bản deploy (`admin@123` · `organizer@123` · `user@123`) |
 
 `sslMode=REQUIRED` là **bắt buộc** — Aiven từ chối mọi kết nối không mã hoá. Chuỗi kết nối ở profile dev đang để `useSSL=false` nên copy nguyên si sang sẽ không kết nối được.
 
