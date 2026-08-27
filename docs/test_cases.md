@@ -202,6 +202,18 @@ cd frontend && npm test        # 14 file test · 76 test
 |---|---|---|---|---|
 | Trước khi mở PR B6.2 | 17/08/2026 | ✅ 172/172 (22 file) | ✅ 76/76 (14 file) | Không có test nào fail hay bị skip |
 
+### Ba loại lỗi mà kiểm thử tự động KHÔNG bắt được
+
+Ghi lại từ những lỗi có thật đã lọt tới người dùng, để lần sau kiểm đúng chỗ:
+
+| Loại lỗi | Vì sao test không bắt | Phải kiểm bằng cách nào |
+|---|---|---|
+| **Nạp lười ngoài transaction** (`LazyInitializationException`) — 3 lần: chi tiết sự kiện, lưu sự kiện, xem vé QR | Test backend dùng `@WebMvcTest` + Mockito, **không có Hibernate session thật**. Profile `dev` lại bật `open-in-view=true` che mất | Chạy thật với database (Docker), mở từng trang bằng **trình duyệt** |
+| **CORS chặn request ghi** (403 `Invalid CORS request`) | `curl` **không bao giờ gửi header `Origin`**, còn trình duyệt luôn gửi với POST/PUT/DELETE | Mở trình duyệt thật, hoặc thêm `-H "Origin: https://..."` khi thử bằng curl |
+| **Chỉ đúng với vai quản trị** — vé QR và huỷ đăng ký của chính chủ | SpEL `hasAnyRole('ADMIN','ORGANIZER') or isOwner(...)` **ngắn mạch**: thử bằng tài khoản admin thì nhánh `isOwner` không bao giờ chạy | Kiểm mọi chức năng của người tham dự bằng **tài khoản `user`**, không phải `admin` |
+
+> Quy tắc rút ra: **đăng nhập bằng đúng vai trò của người sẽ dùng chức năng đó**. Phần lớn lỗi lọt lưới hôm nay đều vì kiểm bằng tài khoản quản trị — vai có nhiều quyền nhất lại là vai đi qua ít nhánh mã nhất.
+
 Hai bộ test này **không thay thế** kiểm thử tay ở mục 1–7: chúng phủ logic tầng service/controller và
 các trang React ở mức component, nhưng không phủ luồng thật xuyên backend ↔ frontend ↔ MySQL,
 không phủ camera QR, và không phủ responsive.
